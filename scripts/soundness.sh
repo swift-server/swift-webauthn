@@ -76,7 +76,7 @@ EOF
 ##
 ## This source file is part of the WebAuthn Swift open source project
 ##
-## Copyright (c) 2022 the WebAuthn Swift project authors
+## Copyright (c) YEARS the WebAuthn Swift project authors
 ## Licensed under Apache License v2.0
 ##
 ## See LICENSE.txt for license information
