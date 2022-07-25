@@ -19,7 +19,7 @@ import Foundation
 
 public enum WebAuthn {
     public static func validateAssertion(_ data: AssertionCredential, challengeProvided: String, publicKey: P256.Signing.PublicKey, logger: Logger) throws {
-        guard let clientObjectData = Data(base64Encoded: data.response.clientDataJSON) else {
+        guard let clientObjectData = data.response.clientDataJSON.base64URLDecodedData else {
             throw WebAuthnError.badRequestData
         }
         let clientObject = try JSONDecoder().decode(ClientDataObject.self, from: clientObjectData)
@@ -28,20 +28,12 @@ public enum WebAuthn {
         }
         let clientDataJSONHash = SHA256.hash(data: clientObjectData)
         
-        var base64AssertionString = data.response.authenticatorData.replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
-        while base64AssertionString.count % 4 != 0 {
-            base64AssertionString = base64AssertionString.appending("=")
-        }
-        guard let authenticatorData = Data(base64Encoded: base64AssertionString) else {
+        guard let authenticatorData = data.response.authenticatorData.base64URLDecodedData else {
             throw WebAuthnError.badRequestData
         }
         let signedData = authenticatorData + clientDataJSONHash
         
-        var base64SignatureString = data.response.signature.replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
-        while base64SignatureString.count % 4 != 0 {
-            base64SignatureString = base64SignatureString.appending("=")
-        }
-        guard let signatureData = Data(base64Encoded: base64SignatureString) else {
+        guard let signatureData = data.response.signature.base64URLDecodedData else {
             throw WebAuthnError.badRequestData
         }
         let signature = try P256.Signing.ECDSASignature(derRepresentation: signatureData)
@@ -51,7 +43,7 @@ public enum WebAuthn {
     }
     
     public static func parseRegisterCredentials(_ data: RegisterWebAuthnCredentialData, challengeProvided: String, origin: String, logger: Logger) throws -> Credential {
-        guard let clientObjectData = Data(base64Encoded: data.response.clientDataJSON) else {
+        guard let clientObjectData = data.response.clientDataJSON.base64URLDecodedData else {
             throw WebAuthnError.badRequestData
         }
         let clientObject = try JSONDecoder().decode(ClientDataObject.self, from: clientObjectData)
@@ -64,11 +56,8 @@ public enum WebAuthn {
         guard origin == clientObject.origin else {
             throw WebAuthnError.validationError
         }
-        var base64AttestationString = data.response.attestationObject.replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
-        while base64AttestationString.count % 4 != 0 {
-            base64AttestationString = base64AttestationString.appending("=")
-        }
-        guard let attestationData = Data(base64Encoded: base64AttestationString) else {
+
+        guard let attestationData = data.response.attestationObject.base64URLDecodedData else {
             throw WebAuthnError.badRequestData
         }
         guard let decodedAttestationObject = try CBOR.decode([UInt8](attestationData)) else {
