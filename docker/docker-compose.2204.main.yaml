@@ -1,0 +1,18 @@
+version: "3"
+
+services:
+
+  runtime-setup:
+    image: webauthn-swift:22.04-main
+    build:
+      args:
+        base_image: "swiftlang/swift:nightly-main-focal"
+
+  test:
+    image: webauthn-swift:22.04-main
+    environment:
+      - IMPORT_CHECK_ARG=--explicit-target-dependency-import-check error
+      #- SANITIZER_ARG=--sanitize=thread
+
+  shell:
+    image: webauthn-swift:22.04-main
