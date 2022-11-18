@@ -131,7 +131,8 @@ public enum WebAuthn {
     static func parseAttestationObject(_ bytes: [UInt8], logger: Logger) throws -> AttestedCredentialData? {
         let minAuthDataLength = 37
         let minAttestedAuthLength = 55
-        let maxCredentialIDLength = 1023
+        // TODO - fix
+        // let maxCredentialIDLength = 1023
         // What to do when we don't have this
         var credentialsData: AttestedCredentialData? = nil
         
@@ -139,9 +140,11 @@ public enum WebAuthn {
             throw WebAuthnError.authDataTooShort
         }
         
-        let rpIDHashData = bytes[..<32]
+        // TODO: Use
+        // let rpIDHashData = bytes[..<32]
         let flags = AuthenticatorFlags(bytes[32])
-        let counter: UInt32 = Data(bytes[33..<37]).toInteger(endian: .big)
+        // TODO: Use
+        // let counter: UInt32 = Data(bytes[33..<37]).toInteger(endian: .big)
         
         var remainingCount = bytes.count - minAuthDataLength
         
