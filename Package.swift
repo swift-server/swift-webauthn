@@ -16,7 +16,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "WebAuthn",
+    name: "webauthn-swift",
     platforms: [
         .macOS(.v12)
     ],

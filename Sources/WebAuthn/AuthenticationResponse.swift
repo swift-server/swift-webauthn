@@ -14,21 +14,26 @@
 
 import Foundation
 
-public struct RegisterWebAuthnCredentialData: Codable {
+public struct AuthenticationResponse: Codable {
     public let id: String
-    let rawID: String
-    let type: String
-    let response: RegisterCredentialsResponse
-    
+    public let rawID: String
+    public let response: AuthenticatorAssertionResponse
+    public let authenticatorAttachment: String?
+    /// This is the public-key
+    public let type: String
+
     enum CodingKeys: String, CodingKey {
         case id
         case rawID = "rawId"
-        case type
         case response
+        case authenticatorAttachment
+        case type
     }
 }
 
-public struct RegisterCredentialsResponse: Codable {
-    let attestationObject: String
+public struct AuthenticatorAssertionResponse: Codable {
     let clientDataJSON: String
+    let authenticatorData: String
+    let signature: String
+    let userHandle: String?
 }

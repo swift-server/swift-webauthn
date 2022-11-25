@@ -14,12 +14,13 @@
 
 import Foundation
 
-public struct AssertionCredential: Codable {
+public struct RegistrationResponse: Codable {
     public let id: String
-    public let type: String
-    public let response: AssertionCredentialResponse
-    public let rawID: String
-    
+    let rawID: String
+    /// This is the public-key
+    let type: String
+    let response: AuthenticatorAttestationResponse
+
     enum CodingKeys: String, CodingKey {
         case id
         case rawID = "rawId"
@@ -28,9 +29,7 @@ public struct AssertionCredential: Codable {
     }
 }
 
-public struct AssertionCredentialResponse: Codable {
-    let authenticatorData: String
+public struct AuthenticatorAttestationResponse: Codable {
     let clientDataJSON: String
-    let signature: String
-    let userHandle: String
+    let attestationObject: String
 }
