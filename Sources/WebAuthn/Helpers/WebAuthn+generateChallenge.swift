@@ -1,7 +1,7 @@
 import Foundation
 import Logging
 
-extension WebAuthn {
+extension WebAuthnManager {
     struct ChallengeGeneratorError: Error {}
     /// Generate a suitably random value to be used as an attestation or assertion challenge
     /// - Throws: An error if something went wrong while generating random byte
@@ -17,11 +17,17 @@ extension WebAuthn {
 extension Array where Element == UInt8 {
     /// Encodes an array of bytes into a base64url-encoded string
     /// - Returns: A base64url-encoded string
-    public func base64URLEncode() -> String {
+    public func base64URLEncodedString() -> String {
         let base64String = Data(bytes: self, count: self.count).base64EncodedString()
         return base64String.replacingOccurrences(of: "+", with: "-")
             .replacingOccurrences(of: "/", with: "_")
             .replacingOccurrences(of: "=", with: "")
+    }
+
+    /// Encodes an array of bytes into a base64 string
+    /// - Returns: A base64-encoded string
+    public func base64EncodedString() -> String {
+        return Data(bytes: self, count: self.count).base64EncodedString()
     }
 }
 

@@ -17,7 +17,24 @@ import Crypto
 import Logging
 import Foundation
 
-public enum WebAuthn {
+public enum WebAuthnManager {
+    /// Generate a new set of registration data to be sent to the client and authenticator.
+    public static func beginRegistration(user: User) throws -> (PublicKeyCredentialCreationOptions, SessionData) {
+        let userEntity = PublicKeyCredentialUserEntity(name: user.name, id: user.id, displayName: user.displayName)
+        let relyingParty = PublicKeyCredentialRpEntity(name: config.relyingPartyDisplayName, id: config.relyingPartyID)
+
+        let challenge = try generateChallenge()
+
+        let options = PublicKeyCredentialCreationOptions(
+            challenge: challenge.base64EncodedString(),
+            user: userEntity,
+            relyingParty: relyingParty
+        )
+        let sessionData = SessionData(challenge: challenge.base64URLEncodedString(), userID: user.id)
+
+        return (options, sessionData)
+    }
+
     /// Verify that the user has legitimately completed the login process
     ///
     /// - Parameters:
