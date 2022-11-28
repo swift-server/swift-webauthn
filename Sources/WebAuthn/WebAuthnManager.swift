@@ -17,10 +17,24 @@ import Crypto
 import Logging
 import Foundation
 
-public enum WebAuthnManager {
+public struct WebAuthnManager {
+    enum WebAuthnManagerError: Error {
+        case base64EncodingFailed
+        case challengeGenerationFailed
+    }
+    private let config: WebAuthnConfig
+
+    public init(config: WebAuthnConfig) {
+        self.config = config
+    }
+
     /// Generate a new set of registration data to be sent to the client and authenticator.
-    public static func beginRegistration(user: User) throws -> (PublicKeyCredentialCreationOptions, SessionData) {
-        let userEntity = PublicKeyCredentialUserEntity(name: user.name, id: user.id, displayName: user.displayName)
+    public func beginRegistration(user: User) throws -> (PublicKeyCredentialCreationOptions, SessionData) {
+        guard let base64ID = user.userID.data(using: .utf8)?.base64EncodedString() else {
+            throw WebAuthnManagerError.base64EncodingFailed
+        }
+
+        let userEntity = PublicKeyCredentialUserEntity(name: user.name, id: base64ID, displayName: user.displayName)
         let relyingParty = PublicKeyCredentialRpEntity(name: config.relyingPartyDisplayName, id: config.relyingPartyID)
 
         let challenge = try generateChallenge()
@@ -28,9 +42,11 @@ public enum WebAuthnManager {
         let options = PublicKeyCredentialCreationOptions(
             challenge: challenge.base64EncodedString(),
             user: userEntity,
-            relyingParty: relyingParty
+            relyingParty: relyingParty,
+            publicKeyCredentialParameters: PublicKeyCredentialParameters.allCases,
+            timeout: config.timeout
         )
-        let sessionData = SessionData(challenge: challenge.base64URLEncodedString(), userID: user.id)
+        let sessionData = SessionData(challenge: challenge.base64URLEncodedString(), userID: user.userID)
 
         return (options, sessionData)
     }
@@ -44,7 +60,7 @@ public enum WebAuthnManager {
     ///   - logger: A logger
     /// - Throws:
     ///   - An error if the authentication response isn't valid
-    public static func verifyAuthenticationResponse(
+    public func verifyAuthenticationResponse(
         _ data: AuthenticationResponse,
         expectedChallenge: String,
         publicKey: P256.Signing.PublicKey,
@@ -74,7 +90,7 @@ public enum WebAuthnManager {
         }
     }
 
-    public static func parseRegisterCredentials(
+    public func parseRegisterCredentials(
         _ data: RegistrationResponse,
         challengeProvided: String,
         origin: String,
@@ -148,7 +164,7 @@ public enum WebAuthnManager {
         return Credential(credentialID: data.id, publicKey: key)
     }
 
-    static func parseAttestedData(
+    func parseAttestedData(
         _ data: [UInt8],
         logger: Logger
     ) throws -> AttestedCredentialData {
@@ -168,7 +184,7 @@ public enum WebAuthnManager {
         return AttestedCredentialData(aaguid: Array(aaguid), credentialID: Array(credentialID), publicKey: Array(publicKeyBytes))
     }
 
-    static func parseAttestationObject(
+    func parseAttestationObject(
         _ bytes: [UInt8],
         logger: Logger
     ) throws -> AttestedCredentialData? {
@@ -218,5 +234,17 @@ public enum WebAuthnManager {
             throw WebAuthnError.leftOverBytes
         }
         return credentialsData
+    }
+}
+
+extension WebAuthnManager {
+    /// Generate a suitably random value to be used as an attestation or assertion challenge
+    /// - Throws: An error if something went wrong while generating random byte
+    /// - Returns: 32 bytes
+    func generateChallenge() throws -> [UInt8] {
+        var bytes = [UInt8](repeating: 0, count: 32)
+        let status = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
+        guard status == errSecSuccess else { throw WebAuthnManagerError.challengeGenerationFailed }
+        return bytes
     }
 }
