@@ -37,7 +37,7 @@ public struct WebAuthnManager {
         let userEntity = PublicKeyCredentialUserEntity(name: user.name, id: base64ID, displayName: user.displayName)
         let relyingParty = PublicKeyCredentialRpEntity(name: config.relyingPartyDisplayName, id: config.relyingPartyID)
 
-        let challenge = try generateChallenge()
+        let challenge = try generateChallengeString()
 
         let options = PublicKeyCredentialCreationOptions(
             challenge: challenge.base64EncodedString(),
@@ -241,7 +241,7 @@ extension WebAuthnManager {
     /// Generate a suitably random value to be used as an attestation or assertion challenge
     /// - Throws: An error if something went wrong while generating random byte
     /// - Returns: 32 bytes
-    func generateChallenge() throws -> [UInt8] {
+    func generateChallengeString() throws -> [UInt8] {
         var bytes = [UInt8](repeating: 0, count: 32)
         let status = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
         guard status == errSecSuccess else { throw WebAuthnManagerError.challengeGenerationFailed }

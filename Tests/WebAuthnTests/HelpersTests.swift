@@ -4,8 +4,8 @@ import XCTest
 final class HelpersTests: XCTestCase {
     func testGenerateChallengeReturnsRandomBytes() throws {
         let webAuthn = WebAuthnManager(config: .init(relyingPartyDisplayName: "123", relyingPartyID: "1", timeout: 60))
-        let challenge1 = try webAuthn.generateChallenge()
-        let challenge2 = try webAuthn.generateChallenge()
+        let challenge1 = try webAuthn.generateChallengeString()
+        let challenge2 = try webAuthn.generateChallengeString()
 
         XCTAssertNotEqual(challenge1, challenge2)
     }
