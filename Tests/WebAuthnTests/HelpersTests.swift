@@ -1,9 +1,17 @@
 import XCTest
+
 @testable import WebAuthn
 
 final class HelpersTests: XCTestCase {
     func testGenerateChallengeReturnsRandomBytes() throws {
-        let webAuthn = WebAuthnManager(config: .init(relyingPartyDisplayName: "123", relyingPartyID: "1", timeout: 60))
+        let webAuthn = WebAuthnManager(
+            config: .init(
+                relyingPartyDisplayName: "123",
+                relyingPartyID: "1",
+                relyingPartyOrigin: "http://localhost:8080",
+                timeout: 60
+            )
+        )
         let challenge1 = try webAuthn.generateChallengeString()
         let challenge2 = try webAuthn.generateChallengeString()
 

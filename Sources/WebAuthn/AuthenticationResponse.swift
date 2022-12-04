@@ -19,7 +19,6 @@ public struct AuthenticationResponse: Codable {
     public let rawID: String
     public let response: AuthenticatorAssertionResponse
     public let authenticatorAttachment: String?
-    /// This is the public-key
     public let type: String
 
     enum CodingKeys: String, CodingKey {

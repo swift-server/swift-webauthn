@@ -5,4 +5,9 @@ public struct SessionData {
     public let challenge: String
     /// Plain user id (not encoded)
     public let userID: String
+
+    public init(challenge: String, userID: String) {
+        self.challenge = challenge
+        self.userID = userID
+    }
 }
