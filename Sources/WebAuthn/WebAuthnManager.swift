@@ -44,7 +44,7 @@ public struct WebAuthnManager {
             challenge: challenge.base64EncodedString(),
             user: userEntity,
             relyingParty: relyingParty,
-            publicKeyCredentialParameters: PublicKeyCredentialParameters.allCases,
+            publicKeyCredentialParameters: PublicKeyCredentialParameters.supported,
             timeout: config.timeout
         )
         let sessionData = SessionData(challenge: challenge.base64URLEncodedString(), userID: user.userID)

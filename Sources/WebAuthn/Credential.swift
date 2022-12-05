@@ -18,7 +18,7 @@ import Foundation
 /// Credential contains all needed information about a WebAuthn credential for storage
 public struct Credential {
     /// base64 encoded String of the credential ID bytes
-    public let id: Data
+    public let id: String
 
     /// The public key for this certificate
     public let publicKey: P256.Signing.PublicKey
@@ -30,7 +30,7 @@ public struct Credential {
     public let authenticator: Authenticator
 
     init(
-        id: Data,
+        id: String,
         publicKey: P256.Signing.PublicKey,
         attestationType: AttestationFormat,
         authenticator: Authenticator
@@ -48,14 +48,13 @@ extension Credential {
             throw WebAuthnError.missingAttestedCredentialDataForCredentialCreateFlow
         }
 
-        self.id = data.rawID
-        self.publicKey = attestedData.publicKey as! P256.Signing.PublicKey  // TODO
+        self.id = attestedData.credentialID.base64URLEncodedString()
+        self.publicKey = try EC2PublicKeyData(from: attestedData.publicKey).key()
         self.attestationType = data.response.attestationObject.format
 
         self.authenticator = Authenticator(
             aaguid: attestedData.aaguid,
             signCount: data.response.attestationObject.authenticatorData.counter
         )
-        fatalError()  // self.publicKey = credentialCreationData.response.attestationObject
     }
 }

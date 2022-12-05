@@ -35,4 +35,6 @@ public enum WebAuthnError: Error {
     case invalidClientDataJSON
     case cborDecodingAttestationDataFailed
     case authDataInvalidOrMissing
+
+    case unsupportedCOSEAlgorithm
 }
