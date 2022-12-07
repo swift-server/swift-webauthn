@@ -21,25 +21,13 @@ public struct Credential {
     public let id: String
 
     /// The public key for this certificate
-    public let publicKey: P256.Signing.PublicKey
+    public let publicKey: String
 
     /// The attestation format used (if any) by the authenticator when creating the credential.
     public let attestationType: AttestationFormat
 
     /// The Authenticator information for a given certificate
     public let authenticator: Authenticator
-
-    init(
-        id: String,
-        publicKey: P256.Signing.PublicKey,
-        attestationType: AttestationFormat,
-        authenticator: Authenticator
-    ) {
-        self.id = id
-        self.publicKey = publicKey
-        self.attestationType = attestationType
-        self.authenticator = authenticator
-    }
 }
 
 extension Credential {
@@ -49,7 +37,8 @@ extension Credential {
         }
 
         self.id = attestedData.credentialID.base64URLEncodedString()
-        self.publicKey = try EC2PublicKeyData(from: attestedData.publicKey).key()
+        let publicKey = try PublicKeyDecoder.decode(fromPublicKeyBytes: attestedData.publicKey)
+        self.publicKey = try publicKey.getString()
         self.attestationType = data.response.attestationObject.format
 
         self.authenticator = Authenticator(

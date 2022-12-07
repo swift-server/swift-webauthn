@@ -1,16 +1,57 @@
+import Crypto
 import Foundation
 import SwiftCBOR
-import Crypto
 
-protocol PublicKeyData {
-    /// The type of key created. Should be OKP, EC2, or RSA.
-    var keyType: UInt64 { get }
-    /// A COSEAlgorithmIdentifier for the algorithm used to derive the key signature.
-    var algorithm: COSEAlgorithmIdentifier { get }
+protocol PublicKey {
+    func getString() throws -> String
 }
 
-struct EC2PublicKeyData: PublicKeyData {
-    let keyType: UInt64
+struct PublicKeyDecoder: Decodable {
+    static func decode(fromPublicKeyBytes publicKeyBytes: [UInt8]) throws -> PublicKey {
+        guard let publicKeyObject = try CBOR.decode(publicKeyBytes) else {
+            throw WebAuthnError.badRequestData
+        }
+        let publicKey = try PublicKeyData(fromPublicKeyObject: publicKeyObject)
+
+        switch publicKey.keyType {
+        case .ellipticKey:
+            return try EC2PublicKey(publicKeyObject: publicKeyObject, algorithm: publicKey.algorithm)
+        case .rsaKey:
+            return try RSAPublicKeyData(publicKeyObject: publicKeyObject, algorithm: publicKey.algorithm)
+        case .octetKey:
+            return try OKPPublicKey(publicKeyObject: publicKeyObject, algorithm: publicKey.algorithm)
+        }
+    }
+
+    struct PublicKeyData {
+        /// The type of key created. Should be OKP, EC2, or RSA.
+        let keyType: COSEKeyType
+        /// A COSEAlgorithmIdentifier for the algorithm used to derive the key signature.
+        let algorithm: COSEAlgorithmIdentifier
+
+        init(fromPublicKeyObject publicKeyObject: CBOR) throws {
+            guard let keyTypeRaw = publicKeyObject[.unsignedInt(1)],
+                case let .unsignedInt(keyTypeInt) = keyTypeRaw,
+                let keyType = COSEKeyType(rawValue: keyTypeInt) else {
+                throw WebAuthnError.badRequestData
+            }
+            self.keyType = keyType
+
+            guard let algorithmRaw = publicKeyObject[.unsignedInt(3)],
+                case let .negativeInt(algorithmNegative) = algorithmRaw else {
+                throw WebAuthnError.badRequestData
+            }
+            // https://github.com/unrelentingtech/SwiftCBOR#swiftcbor
+            // Negative integers are decoded as NegativeInt(UInt), where the actual number is -1 - i
+            guard let algorithm = COSEAlgorithmIdentifier(rawValue: -1 - Int(algorithmNegative)) else {
+                throw WebAuthnError.unsupportedCOSEAlgorithm
+            }
+            self.algorithm = algorithm
+        }
+    }
+}
+
+struct EC2PublicKey: PublicKey {
     let algorithm: COSEAlgorithmIdentifier
     /// The curve on which we derive the signature from.
     let curve: UInt64
@@ -19,48 +60,106 @@ struct EC2PublicKeyData: PublicKeyData {
     /// A byte string 32 bytes in length that holds the y coordinate of the key.
     let yCoordinate: [UInt8]
 
-    func key() throws -> P256.Signing.PublicKey {
-        switch algorithm {
-        case .algES256:
-            return try P256.Signing.PublicKey(rawRepresentation: xCoordinate + yCoordinate)
-        }
-    }
-
-    init(from bytes: [UInt8]) throws {
-        guard let publicKeyObject = try CBOR.decode(bytes) else { throw WebAuthnError.badRequestData }
-        // This is now in COSE format
-        // https://www.iana.org/assignments/cose/cose.xhtml#algorithms
-        guard let keyTypeRaw = publicKeyObject[.unsignedInt(1)], case let .unsignedInt(keyType) = keyTypeRaw else {
-            throw WebAuthnError.badRequestData
-        }
-        self.keyType = keyType
-
-        guard let algorithmRaw = publicKeyObject[.unsignedInt(3)], case let .negativeInt(algorithmNegative) = algorithmRaw else {
-            throw WebAuthnError.badRequestData
-        }
-        // https://github.com/unrelentingtech/SwiftCBOR#swiftcbor
-        // Negative integers are decoded as NegativeInt(UInt), where the actual number is -1 - i
-        guard let algorithm = COSEAlgorithmIdentifier(rawValue: -1 - Int(algorithmNegative)) else {
-            throw WebAuthnError.unsupportedCOSEAlgorithm
-        }
+    init(publicKeyObject: CBOR, algorithm: COSEAlgorithmIdentifier) throws {
         self.algorithm = algorithm
 
         // Curve is key -1 - or -0 for SwiftCBOR
         // X Coordinate is key -2, or NegativeInt 1 for SwiftCBOR
         // Y Coordinate is key -3, or NegativeInt 2 for SwiftCBOR
-
         guard let curveRaw = publicKeyObject[.negativeInt(0)], case let .unsignedInt(curve) = curveRaw else {
             throw WebAuthnError.badRequestData
         }
         self.curve = curve
 
-        guard let xCoordRaw = publicKeyObject[.negativeInt(1)], case let .byteString(xCoordinateBytes) = xCoordRaw else {
+        guard let xCoordRaw = publicKeyObject[.negativeInt(1)],
+              case let .byteString(xCoordinateBytes) = xCoordRaw else {
             throw WebAuthnError.badRequestData
         }
-        self.xCoordinate = xCoordinateBytes
-        guard let yCoordRaw = publicKeyObject[.negativeInt(2)], case let .byteString(yCoordinateBytes) = yCoordRaw else {
+        xCoordinate = xCoordinateBytes
+        guard let yCoordRaw = publicKeyObject[.negativeInt(2)],
+              case let .byteString(yCoordinateBytes) = yCoordRaw else {
             throw WebAuthnError.badRequestData
         }
-        self.yCoordinate = yCoordinateBytes
+        yCoordinate = yCoordinateBytes
+    }
+
+    func getString() throws -> String {
+        let rawRepresentation = xCoordinate + yCoordinate
+        switch algorithm {
+        case .algES256:
+            return try P256.Signing.PublicKey(rawRepresentation: rawRepresentation).pemRepresentation
+        case .algES384:
+            return try P384.Signing.PublicKey(rawRepresentation: rawRepresentation).pemRepresentation
+        case .algES512:
+            return try P521.Signing.PublicKey(rawRepresentation: rawRepresentation).pemRepresentation
+        default:
+            throw WebAuthnError.unsupportedCOSEAlgorithm
+        }
+    }
+}
+
+struct RSAPublicKeyData: PublicKey {
+    let algorithm: COSEAlgorithmIdentifier
+    // swiftlint:disable:next identifier_name
+    let n: [UInt8]
+    // swiftlint:disable:next identifier_name
+    let e: [UInt8]
+
+    init(publicKeyObject: CBOR, algorithm: COSEAlgorithmIdentifier) throws {
+        self.algorithm = algorithm
+
+        guard let nRaw = publicKeyObject[.negativeInt(0)],
+              case let .byteString(nBytes) = nRaw else {
+            throw WebAuthnError.badRequestData
+        }
+        n = nBytes
+
+        guard let eRaw = publicKeyObject[.negativeInt(1)],
+              case let .byteString(eBytes) = eRaw else {
+            throw WebAuthnError.badRequestData
+        }
+        e = eBytes
+    }
+
+    func getString() throws -> String {
+        // switch algorithm {
+        // case .algRS1:
+        //     return try RSA.
+        // case .algRS256, .algPS256:
+        //     return try
+        // case .algRS384, .algPS384:
+        //     return try
+        // case .algRS512, case .algPS512:
+        //     return try
+        // default:
+        //     throw WebAuthnError.unsupportedCOSEAlgorithm
+        // }
+        fatalError("RSA is currently not supported")
+    }
+}
+
+struct OKPPublicKey: PublicKey {
+    let algorithm: COSEAlgorithmIdentifier
+    let curve: UInt64
+    let xCoordinate: [UInt8]
+
+    init(publicKeyObject: CBOR, algorithm: COSEAlgorithmIdentifier) throws {
+        self.algorithm = algorithm
+        // Curve is key -1, or NegativeInt 0 for SwiftCBOR
+        guard let curveRaw = publicKeyObject[.negativeInt(0)], case let .unsignedInt(curve) = curveRaw else {
+            throw WebAuthnError.badRequestData
+        }
+        self.curve = curve
+        // X Coordinate is key -2, or NegativeInt 1 for SwiftCBOR
+        guard let xCoordRaw = publicKeyObject[.negativeInt(1)],
+            case let .byteString(xCoordinateBytes) = xCoordRaw else {
+            throw WebAuthnError.badRequestData
+        }
+        xCoordinate = xCoordinateBytes
+    }
+
+    func getString() throws -> String {
+        let key = try Curve25519.Signing.PublicKey(rawRepresentation: xCoordinate)
+        return String(data: key.rawRepresentation, encoding: .utf8)!
     }
 }
