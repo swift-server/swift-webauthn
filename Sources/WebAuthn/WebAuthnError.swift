@@ -38,4 +38,5 @@ public enum WebAuthnError: Error {
 
     case unsupportedCOSEAlgorithm
     case unsupportedCredentialPublicKeyAlgorithm
+    case unsupportedAttestationFormat
 }

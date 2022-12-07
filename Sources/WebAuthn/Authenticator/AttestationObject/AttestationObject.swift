@@ -36,10 +36,21 @@ struct AttestationObject {
             fatalError("Not implemented yet")
         }
 
-        if format == .iana(.none) {
-            guard attestationStatement.isEmpty else {
-                throw WebAuthnError.attestationStatementMissing
-            }
-        }
+        // Step 17. happening somewhere else (maybe we can move it here?)
+
+        // Attestation format already determined. Skipping step 19.
+
+        // Step 20.
+        // TODO: Implement case .packed first! fatalError the rest
+        // switch format {
+        // case .androidKey:
+        // case .androidSafetynet:
+        // case .apple:
+        // case .fidoU2F:
+        // case .packed:
+        // case .tpm:
+        // case .none:
+        //     guard attestationStatement.isEmpty else { throw WebAuthnError.attestationStatementMissing }
+        // }
     }
 }

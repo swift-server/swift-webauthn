@@ -84,8 +84,6 @@ public struct WebAuthnManager {
         let credentialPublicKey = try CredentialPublicKey(fromPublicKeyBytes: attestedData.publicKey)
         try credentialPublicKey.verify(supportedPublicKeyAlgorithms: supportedPublicKeyAlgorithms)
 
-        // TODO: Verify attStmt
-
         return Credential(
             id: attestedData.credentialID.base64URLEncodedString(),
             publicKey: attestedData.publicKey,

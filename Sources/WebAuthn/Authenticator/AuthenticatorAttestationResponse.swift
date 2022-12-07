@@ -37,10 +37,14 @@ struct ParsedAuthenticatorAttestationResponse {
         }
         let attestationStatement = decodedAttestationObject["attStmt"]
 
+        guard let attestationFormat = AttestationFormat(rawValue: format) else {
+            throw WebAuthnError.unsupportedAttestationFormat
+        }
+
         attestationObject = AttestationObject(
             authenticatorData: try ParsedAuthenticatorAttestationResponse.parseAuthenticatorData(authDataBytes),
             rawAuthenticatorData: authDataBytes,
-            format: AttestationFormat(rawValue: format),
+            format: attestationFormat,
             attestationStatement: [:]
         )
     }
