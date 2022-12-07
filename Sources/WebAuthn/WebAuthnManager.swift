@@ -59,7 +59,7 @@ public struct WebAuthnManager {
     ///   - sessionData: The data passed to the authenticator within the preceding registration options
     ///   - credentialCreationData: The value returned from `navigator.credentials.create()`
     ///   - requireUserVerification: Whether or not to require that the authenticator verified the user.
-    /// - Returns:  A new credential with a signed public key
+    /// - Returns:  A new `Credential` with information about the authenticator and registration
     public func finishRegistration(
         for user: User,
         sessionData: SessionData,
