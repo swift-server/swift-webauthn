@@ -52,14 +52,24 @@ public struct WebAuthnManager {
         return (options, sessionData)
     }
 
-    // Take response from authenticator and client and verify credential against the user's credentials and
-    // session data.
+    /// Take response from authenticator and client and verify credential against the user's credentials and
+    /// session data.
+    /// - Parameters:
+    ///   - user: The user to verify against the authenticator response
+    ///   - sessionData: The data passed to the authenticator within the preceding registration options
+    ///   - credentialCreationData: The value returned from `navigator.credentials.create()`
+    ///   - requireUserVerification: Whether or not to require that the authenticator verified the user.
+    /// - Returns:  A new credential with a signed public key
     public func finishRegistration(
         for user: User,
         sessionData: SessionData,
-        credentialCreationData: CredentialCreationResponse
+        credentialCreationData: CredentialCreationResponse,
+        requireUserVerification: Bool = false,
+        supportedPublicKeyAlgorithms: [PublicKeyCredentialParameters] = PublicKeyCredentialParameters.supported
     ) throws -> Credential {
-        guard user.userID == sessionData.userID else { throw WebAuthnManagerError.userIDMismatch }
+        guard user.userID == sessionData.userID else {
+            throw WebAuthnManagerError.userIDMismatch
+        }
 
         // TODO: session.UserVerification == protocol.VerificationRequired
 
@@ -67,7 +77,7 @@ public struct WebAuthnManager {
 
         try parsedData.verify(
             storedChallenge: sessionData.challenge,
-            verifyUser: false,  // TODO: Implement verifyUser
+            verifyUser: requireUserVerification,
             relyingPartyID: config.relyingPartyID,
             relyingPartyOrigin: config.relyingPartyOrigin
         )
@@ -83,7 +93,9 @@ extension WebAuthnManager {
     public func generateChallengeString() throws -> [UInt8] {
         var bytes = [UInt8](repeating: 0, count: 32)
         let status = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
-        guard status == errSecSuccess else { throw WebAuthnManagerError.challengeGenerationFailed }
+        guard status == errSecSuccess else {
+            throw WebAuthnManagerError.challengeGenerationFailed
+        }
         return bytes
     }
 }
