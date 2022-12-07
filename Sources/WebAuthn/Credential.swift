@@ -12,7 +12,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-import Crypto
 import Foundation
 
 /// Credential contains all needed information about a WebAuthn credential for storage
@@ -21,29 +20,11 @@ public struct Credential {
     public let id: String
 
     /// The public key for this certificate
-    public let publicKey: String
+    public let publicKey: [UInt8]
 
     /// The attestation format used (if any) by the authenticator when creating the credential.
     public let attestationType: AttestationFormat
 
     /// The Authenticator information for a given certificate
     public let authenticator: Authenticator
-}
-
-extension Credential {
-    init(from data: ParsedCredentialCreationResponse) throws {
-        guard let attestedData = data.response.attestationObject.authenticatorData.attestedData else {
-            throw WebAuthnError.missingAttestedCredentialDataForCredentialCreateFlow
-        }
-
-        self.id = attestedData.credentialID.base64URLEncodedString()
-        let publicKey = try PublicKeyDecoder.decode(fromPublicKeyBytes: attestedData.publicKey)
-        self.publicKey = try publicKey.getString()
-        self.attestationType = data.response.attestationObject.format
-
-        self.authenticator = Authenticator(
-            aaguid: attestedData.aaguid,
-            signCount: data.response.attestationObject.authenticatorData.counter
-        )
-    }
 }

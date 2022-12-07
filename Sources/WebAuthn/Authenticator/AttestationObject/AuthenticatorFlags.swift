@@ -27,18 +27,24 @@ struct AuthenticatorFlags {
     enum Bit: UInt8 {
         case userPresent = 0
         case userVerified = 2
+        case backupEligible = 3
+        case backupState = 4
         case attestedCredentialDataIncluded = 6
         case extensionDataIncluded = 7
     }
 
     let userPresent: Bool
     let userVerified: Bool
+    let isBackupEligible: Bool
+    let isCurrentlyBackedUp: Bool
     let attestedCredentialData: Bool
     let extensionDataIncluded: Bool
 
     init(_ byte: UInt8) {
         userPresent = Self.isFlagSet(on: byte, at: .userPresent)
         userVerified = Self.isFlagSet(on: byte, at: .userVerified)
+        isBackupEligible = Self.isFlagSet(on: byte, at: .backupEligible)
+        isCurrentlyBackedUp = Self.isFlagSet(on: byte, at: .backupState)
         attestedCredentialData = Self.isFlagSet(on: byte, at: .attestedCredentialDataIncluded)
         extensionDataIncluded = Self.isFlagSet(on: byte, at: .extensionDataIncluded)
     }

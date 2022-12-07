@@ -6,47 +6,54 @@ protocol PublicKey {
     func getString() throws -> String
 }
 
-struct PublicKeyDecoder: Decodable {
-    static func decode(fromPublicKeyBytes publicKeyBytes: [UInt8]) throws -> PublicKey {
+struct CredentialPublicKey {
+    /// The type of key created. Should be OKP, EC2, or RSA.
+    let keyType: COSEKeyType
+    /// A COSEAlgorithmIdentifier for the algorithm used to derive the key signature.
+    let algorithm: COSEAlgorithmIdentifier
+
+    private let publicKeyObject: CBOR
+
+    init(fromPublicKeyBytes publicKeyBytes: [UInt8]) throws {
         guard let publicKeyObject = try CBOR.decode(publicKeyBytes) else {
             throw WebAuthnError.badRequestData
         }
-        let publicKey = try PublicKeyData(fromPublicKeyObject: publicKeyObject)
+        self.publicKeyObject = publicKeyObject
 
-        switch publicKey.keyType {
-        case .ellipticKey:
-            return try EC2PublicKey(publicKeyObject: publicKeyObject, algorithm: publicKey.algorithm)
-        case .rsaKey:
-            return try RSAPublicKeyData(publicKeyObject: publicKeyObject, algorithm: publicKey.algorithm)
-        case .octetKey:
-            return try OKPPublicKey(publicKeyObject: publicKeyObject, algorithm: publicKey.algorithm)
+        guard let keyTypeRaw = publicKeyObject[.unsignedInt(1)],
+            case let .unsignedInt(keyTypeInt) = keyTypeRaw,
+            let keyType = COSEKeyType(rawValue: keyTypeInt) else {
+            throw WebAuthnError.badRequestData
+        }
+        self.keyType = keyType
+
+        guard let algorithmRaw = publicKeyObject[.unsignedInt(3)],
+            case let .negativeInt(algorithmNegative) = algorithmRaw else {
+            throw WebAuthnError.badRequestData
+        }
+        // https://github.com/unrelentingtech/SwiftCBOR#swiftcbor
+        // Negative integers are decoded as NegativeInt(UInt), where the actual number is -1 - i
+        guard let algorithm = COSEAlgorithmIdentifier(rawValue: -1 - Int(algorithmNegative)) else {
+            throw WebAuthnError.unsupportedCOSEAlgorithm
+        }
+        self.algorithm = algorithm
+    }
+
+    func verify(supportedPublicKeyAlgorithms: [PublicKeyCredentialParameters]) throws  {
+        // Step 17.
+        guard supportedPublicKeyAlgorithms.map(\.algorithm).contains(algorithm) else {
+            throw WebAuthnError.unsupportedCredentialPublicKeyAlgorithm
         }
     }
 
-    struct PublicKeyData {
-        /// The type of key created. Should be OKP, EC2, or RSA.
-        let keyType: COSEKeyType
-        /// A COSEAlgorithmIdentifier for the algorithm used to derive the key signature.
-        let algorithm: COSEAlgorithmIdentifier
-
-        init(fromPublicKeyObject publicKeyObject: CBOR) throws {
-            guard let keyTypeRaw = publicKeyObject[.unsignedInt(1)],
-                case let .unsignedInt(keyTypeInt) = keyTypeRaw,
-                let keyType = COSEKeyType(rawValue: keyTypeInt) else {
-                throw WebAuthnError.badRequestData
-            }
-            self.keyType = keyType
-
-            guard let algorithmRaw = publicKeyObject[.unsignedInt(3)],
-                case let .negativeInt(algorithmNegative) = algorithmRaw else {
-                throw WebAuthnError.badRequestData
-            }
-            // https://github.com/unrelentingtech/SwiftCBOR#swiftcbor
-            // Negative integers are decoded as NegativeInt(UInt), where the actual number is -1 - i
-            guard let algorithm = COSEAlgorithmIdentifier(rawValue: -1 - Int(algorithmNegative)) else {
-                throw WebAuthnError.unsupportedCOSEAlgorithm
-            }
-            self.algorithm = algorithm
+    func getPublicKey() throws -> PublicKey {
+        switch keyType {
+        case .ellipticKey:
+            return try EC2PublicKey(publicKeyObject: publicKeyObject, algorithm: algorithm)
+        case .rsaKey:
+            return try RSAPublicKeyData(publicKeyObject: publicKeyObject, algorithm: algorithm)
+        case .octetKey:
+            return try OKPPublicKey(publicKeyObject: publicKeyObject, algorithm: algorithm)
         }
     }
 }

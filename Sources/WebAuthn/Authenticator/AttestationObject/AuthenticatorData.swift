@@ -20,23 +20,4 @@ struct AuthenticatorData {
     /// For attestation signatures this value will be set. For assertion signatures not.
     let attestedData: AttestedCredentialData?
     let extData: [UInt8]?
-
-    func verify(relyingPartyIDHash: SHA256.Digest, requireUserVerification: Bool) throws {
-        // Step 12.
-        guard relyingPartyIDHash == self.relyingPartyIDHash else {
-            throw WebAuthnError.relyingPartyIDHashDoesNotMatch
-        }
-
-        // Step 13.
-        guard flags.userPresent else {
-            throw WebAuthnError.userPresentFlagNotSet
-        }
-
-        // Step 14.
-        if requireUserVerification {
-            guard flags.userVerified else {
-                throw WebAuthnError.userVerificationRequiredButFlagNotSet
-            }
-        }
-    }
 }

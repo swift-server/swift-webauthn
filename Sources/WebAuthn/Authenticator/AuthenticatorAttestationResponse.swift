@@ -7,7 +7,7 @@ import SwiftCBOR
 /// metadata that can be used by the WebAuthn Relying Party to assess the characteristics of the credential during
 /// registration.
 public struct AuthenticatorAttestationResponse: Codable {
-    let clientDataJSON: String
+    let clientDataJSON: URLEncodedBase64
     let attestationObject: String
 }
 

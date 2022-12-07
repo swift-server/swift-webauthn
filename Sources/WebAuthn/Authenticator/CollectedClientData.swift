@@ -14,8 +14,7 @@ struct CollectedClientData: Codable, Hashable {
     let origin: String
     // TODO: Token binding
 
-
-    func verify(storedChallenge: String, ceremonyType: CeremonyType, relyingPartyOrigin: String) throws {
+    func verify(storedChallenge: URLEncodedBase64, ceremonyType: CeremonyType, relyingPartyOrigin: String) throws {
         guard type == ceremonyType else { throw CollectedClientDataVerifyError.ceremonyTypeDoesNotMatch }
         guard challenge == storedChallenge else { throw CollectedClientDataVerifyError.challengeDoesNotMatch }
         guard origin == relyingPartyOrigin else { throw CollectedClientDataVerifyError.originDoesNotMatch }

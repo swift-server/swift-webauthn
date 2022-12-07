@@ -37,4 +37,5 @@ public enum WebAuthnError: Error {
     case authDataInvalidOrMissing
 
     case unsupportedCOSEAlgorithm
+    case unsupportedCredentialPublicKeyAlgorithm
 }

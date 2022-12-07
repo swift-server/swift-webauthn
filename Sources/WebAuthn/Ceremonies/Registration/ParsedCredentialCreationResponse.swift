@@ -36,11 +36,14 @@ struct ParsedCredentialCreationResponse {
         )
 
         // Step 10.
-        // guard let clientData = raw.clientDataJSON.base64URLDecodedData else {
-        //     throw WebAuthnError.hashingClientDataJSONFailed
-        // }
-        // let hash = SHA256.hash(data: clientData)
+        guard let clientData = raw.clientDataJSON.data(using: .utf8) else {
+            throw WebAuthnError.hashingClientDataJSONFailed
+        }
+        let hash = SHA256.hash(data: clientData)
 
+        // CBOR decoding happened already. Skipping Step 11.
+
+        // Step 12. - 17.
         try response.attestationObject.verify(
             relyingPartyID: relyingPartyID,
             verificationRequired: verifyUser

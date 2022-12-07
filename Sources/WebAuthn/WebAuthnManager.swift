@@ -67,14 +67,9 @@ public struct WebAuthnManager {
         requireUserVerification: Bool = false,
         supportedPublicKeyAlgorithms: [PublicKeyCredentialParameters] = PublicKeyCredentialParameters.supported
     ) throws -> Credential {
-        guard user.userID == sessionData.userID else {
-            throw WebAuthnManagerError.userIDMismatch
-        }
-
-        // TODO: session.UserVerification == protocol.VerificationRequired
+        guard user.userID == sessionData.userID else { throw WebAuthnManagerError.userIDMismatch }
 
         let parsedData = try ParsedCredentialCreationResponse(from: credentialCreationData)
-
         try parsedData.verify(
             storedChallenge: sessionData.challenge,
             verifyUser: requireUserVerification,
@@ -82,7 +77,24 @@ public struct WebAuthnManager {
             relyingPartyOrigin: config.relyingPartyOrigin
         )
 
-        return try Credential(from: parsedData)
+        guard let attestedData = parsedData.response.attestationObject.authenticatorData.attestedData else {
+            throw WebAuthnError.missingAttestedCredentialDataForCredentialCreateFlow
+        }
+
+        let credentialPublicKey = try CredentialPublicKey(fromPublicKeyBytes: attestedData.publicKey)
+        try credentialPublicKey.verify(supportedPublicKeyAlgorithms: supportedPublicKeyAlgorithms)
+
+        // TODO: Verify attStmt
+
+        return Credential(
+            id: attestedData.credentialID.base64URLEncodedString(),
+            publicKey: attestedData.publicKey,
+            attestationType: parsedData.response.attestationObject.format,
+            authenticator: Authenticator(
+                aaguid: attestedData.aaguid,
+                signCount: parsedData.response.attestationObject.authenticatorData.counter
+            )
+        )
     }
 }
 
