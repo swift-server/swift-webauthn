@@ -24,6 +24,7 @@ protocol IntegerTransform: Sequence where Element: FixedWidthInteger {
 
 extension IntegerTransform {
     func toInteger<I: FixedWidthInteger>(endian: Endian) -> I {
+        // swiftlint:disable:next identifier_name
         let f = { (accum: I, next: Element) in accum &<< next.bitWidth | I(next) }
         return endian == .big ? reduce(0, f) : reversed().reduce(0, f)
     }

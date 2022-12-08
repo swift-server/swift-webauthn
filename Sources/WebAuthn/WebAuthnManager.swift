@@ -78,7 +78,7 @@ public struct WebAuthnManager {
         )
 
         guard let attestedData = parsedData.response.attestationObject.authenticatorData.attestedData else {
-            throw WebAuthnError.missingAttestedCredentialDataForCredentialCreateFlow
+            throw WebAuthnError.missingAttestedCredentialData
         }
 
         let credentialPublicKey = try CredentialPublicKey(fromPublicKeyBytes: attestedData.publicKey)

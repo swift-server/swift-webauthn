@@ -32,13 +32,3 @@ public struct CredentialCreationResponse: Codable {
         case attestationResponse = "response"
     }
 }
-
-public struct ClientExtensionResults: Codable {
-    let wrapped: [String: Any]
-
-    public init(from decoder: Decoder) throws {
-        var container = try decoder.unkeyedContainer()
-
-        container.decode([String: Decodable].self)
-    }
-}

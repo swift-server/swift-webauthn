@@ -53,7 +53,7 @@ struct CredentialPublicKey {
         self.algorithm = algorithm
     }
 
-    func verify(supportedPublicKeyAlgorithms: [PublicKeyCredentialParameters]) throws  {
+    func verify(supportedPublicKeyAlgorithms: [PublicKeyCredentialParameters]) throws {
         // Step 17.
         guard supportedPublicKeyAlgorithms.map(\.algorithm).contains(algorithm) else {
             throw WebAuthnError.unsupportedCredentialPublicKeyAlgorithm

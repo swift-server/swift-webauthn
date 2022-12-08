@@ -28,7 +28,7 @@ public enum WebAuthnError: Error {
     case hashingClientDataJSONFailed
     case relyingPartyIDHashDoesNotMatch
     case attestationStatementMissing
-    case missingAttestedCredentialDataForCredentialCreateFlow
+    case missingAttestedCredentialData
 
     case invalidRawID
     case invalidCredentialCreationType
