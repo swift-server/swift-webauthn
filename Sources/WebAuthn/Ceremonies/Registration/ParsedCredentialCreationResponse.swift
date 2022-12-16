@@ -60,7 +60,8 @@ struct ParsedCredentialCreationResponse {
         // Step 12. - 17.
         try response.attestationObject.verify(
             relyingPartyID: relyingPartyID,
-            verificationRequired: verifyUser
+            verificationRequired: verifyUser,
+            clientDataHash: hash
         )
     }
 }

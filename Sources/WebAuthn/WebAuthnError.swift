@@ -29,6 +29,7 @@ public enum WebAuthnError: Error {
     case relyingPartyIDHashDoesNotMatch
     case attestationStatementMissing
     case missingAttestedCredentialData
+    case missingAttestationFormat
 
     case invalidRawID
     case invalidCredentialCreationType

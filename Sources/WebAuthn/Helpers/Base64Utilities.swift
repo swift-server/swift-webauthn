@@ -15,7 +15,7 @@
 import Foundation
 import Logging
 
-typealias URLEncodedBase64 = String
+public typealias URLEncodedBase64 = String
 
 extension Array where Element == UInt8 {
     /// Encodes an array of bytes into a base64url-encoded string

@@ -16,13 +16,27 @@ import Foundation
 
 /// The unprocessed response received from `navigator.credentials.create()`.
 /// Internally this will be parsed into a more readable `ParsedCredentialCreationResponse`.
-public struct CredentialCreationResponse: Codable {
-    let id: String
-    let type: String
-    let rawID: URLEncodedBase64
+public struct CredentialCreationResponse {
+    public let id: String
+    public let type: String
+    public let rawID: URLEncodedBase64
     /// Likely the wrong datatype, it should be more like [String: Any]?
-    let clientExtensionResults: [String: String]?
-    let attestationResponse: AuthenticatorAttestationResponse
+    public let clientExtensionResults: [String: String]?
+    public let attestationResponse: AuthenticatorAttestationResponse
+
+    public init(
+        id: String,
+        type: String,
+        rawID: URLEncodedBase64,
+        clientExtensionResults: [String: String]?,
+        attestationResponse: AuthenticatorAttestationResponse
+    ) {
+        self.id = id
+        self.type = type
+        self.rawID = rawID
+        self.clientExtensionResults = clientExtensionResults
+        self.attestationResponse = attestationResponse
+    }
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -31,4 +45,8 @@ public struct CredentialCreationResponse: Codable {
         case clientExtensionResults
         case attestationResponse = "response"
     }
+}
+
+extension CredentialCreationResponse: Codable {
+
 }

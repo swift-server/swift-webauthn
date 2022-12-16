@@ -49,7 +49,12 @@ struct ParsedAuthenticatorAttestationResponse {
         guard let formatCBOR = decodedAttestationObject["fmt"], case let .utf8String(format) = formatCBOR else {
             throw WebAuthnError.formatError
         }
-        let attestationStatement = decodedAttestationObject["attStmt"]
+
+        guard let attestationStatement = decodedAttestationObject["attStmt"] else {
+            throw WebAuthnError.missingAttestationFormat
+        }
+
+        // use `format` to decode attestationStatement
 
         guard let attestationFormat = AttestationFormat(rawValue: format) else {
             throw WebAuthnError.unsupportedAttestationFormat
@@ -59,8 +64,12 @@ struct ParsedAuthenticatorAttestationResponse {
             authenticatorData: try ParsedAuthenticatorAttestationResponse.parseAuthenticatorData(authDataBytes),
             rawAuthenticatorData: authDataBytes,
             format: attestationFormat,
-            attestationStatement: [:]
+            attestationStatement: attestationStatement
         )
+    }
+
+    private static func parseAttestationStatement(format: AttestationFormat, statement: CBOR) throws {
+
     }
 
     private static func parseAuthenticatorData(_ bytes: [UInt8]) throws -> AuthenticatorData {

@@ -13,14 +13,15 @@
 //===----------------------------------------------------------------------===//
 
 import Crypto
+import SwiftCBOR
 
 struct AttestationObject {
     let authenticatorData: AuthenticatorData
     let rawAuthenticatorData: [UInt8]
     let format: AttestationFormat
-    let attestationStatement: [String: Any]
+    let attestationStatement: CBOR
 
-    func verify(relyingPartyID: String, verificationRequired: Bool) throws {
+    func verify(relyingPartyID: String, verificationRequired: Bool, clientDataHash: SHA256.Digest) throws {
         let relyingPartyIDHash = SHA256.hash(data: relyingPartyID.data(using: .utf8)!)
 
         // Step 12.
@@ -40,31 +41,29 @@ struct AttestationObject {
             }
         }
 
-        // Step 15.
-        if authenticatorData.flags.isBackupEligible {
-            fatalError("Not implemented yet")
-        }
-
-        // Step 16.
-        if authenticatorData.flags.isCurrentlyBackedUp {
-            fatalError("Not implemented yet")
-        }
-
         // Step 17. happening somewhere else (maybe we can move it here?)
 
         // Attestation format already determined. Skipping step 19.
 
         // Step 20.
-        // TODO: Implement case .packed first! fatalError the rest
-        // switch format {
-        // case .androidKey:
-        // case .androidSafetynet:
-        // case .apple:
-        // case .fidoU2F:
-        // case .packed:
-        // case .tpm:
-        // case .none:
-        //     guard attestationStatement.isEmpty else { throw WebAuthnError.attestationStatementMissing }
-        // }
+        switch format {
+        case .androidKey:
+            fatalError("Not implemented")
+        case .androidSafetynet:
+            fatalError("Not implemented")
+        case .apple:
+            fatalError("Not implemented")
+        case .fidoU2F:
+            fatalError("Not implemented")
+        case .packed:
+            try AttestationStatementVerification.verifyPacked(attestationObject: self, clientDataHash: clientDataHash)
+        case .tpm:
+            fatalError("Not implemented")
+        case .none:
+            // if format is `none` statement must be empty
+            guard attestationStatement == .map([:]) else {
+                throw WebAuthnError.attestationStatementMissing
+            }
+        }
     }
 }
