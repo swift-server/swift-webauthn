@@ -43,7 +43,7 @@ extension String {
 }
 
 extension String {
-    var base64URLDecodedData: Data? {
+    public var base64URLDecodedData: Data? {
         var result = self.replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
         while result.count % 4 != 0 {
             result = result.appending("=")

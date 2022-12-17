@@ -20,7 +20,7 @@ protocol PublicKey {
     func getString() throws -> String
 }
 
-struct CredentialPublicKey {
+struct ParsedPublicKeyData {
     /// The type of key created. Should be OKP, EC2, or RSA.
     let keyType: COSEKeyType
     /// A COSEAlgorithmIdentifier for the algorithm used to derive the key signature.

@@ -16,15 +16,31 @@ import Foundation
 
 /// Credential contains all needed information about a WebAuthn credential for storage
 public struct Credential {
+    /// Value will always be "public-key" (for now)
+    public let type: String
+
     /// base64 encoded String of the credential ID bytes
     public let id: String
 
     /// The public key for this certificate
     public let publicKey: [UInt8]
 
-    /// The attestation format used (if any) by the authenticator when creating the credential.
-    public let attestationType: AttestationFormat
+    /// How often the authenticator says the credential was used
+    /// If this is not implemented by the authenticator this value will always be zero.
+    public let signCount: UInt32
 
-    /// The Authenticator information for a given certificate
-    public let authenticator: Authenticator
+    /// Wether the public key is allowed to be backed up.
+    /// If a public key is considered backup eligible it is referred to as a multi-device credential (the
+    /// opposite being single-device credential)
+    public let backupEligible: Bool
+
+    /// If the public key is currently backed up (using another authenticator than the one that generated
+    /// the credential)
+    public let isBackedUp: Bool
+
+    // MARK: Optional content
+
+    public let attestationObject: AttestationObject
+
+    public let attestationClientDataJSON: CollectedClientData
 }

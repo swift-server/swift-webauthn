@@ -47,6 +47,4 @@ public struct CredentialCreationResponse {
     }
 }
 
-extension CredentialCreationResponse: Codable {
-
-}
+extension CredentialCreationResponse: Codable {}

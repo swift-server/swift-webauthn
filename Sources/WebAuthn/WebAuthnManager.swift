@@ -81,17 +81,19 @@ public struct WebAuthnManager {
             throw WebAuthnError.missingAttestedCredentialData
         }
 
-        let credentialPublicKey = try CredentialPublicKey(fromPublicKeyBytes: attestedData.publicKey)
-        try credentialPublicKey.verify(supportedPublicKeyAlgorithms: supportedPublicKeyAlgorithms)
+        let parsedPublicKeyData = try ParsedPublicKeyData(fromPublicKeyBytes: attestedData.publicKey)
+        try parsedPublicKeyData.verify(supportedPublicKeyAlgorithms: supportedPublicKeyAlgorithms)
 
+        // Return a new credential record (based on step 25.)
         return Credential(
-            id: attestedData.credentialID.base64URLEncodedString(),
+            type: parsedData.type,
+            id: parsedData.id,
             publicKey: attestedData.publicKey,
-            attestationType: parsedData.response.attestationObject.format,
-            authenticator: Authenticator(
-                aaguid: attestedData.aaguid,
-                signCount: parsedData.response.attestationObject.authenticatorData.counter
-            )
+            signCount: parsedData.response.attestationObject.authenticatorData.counter,
+            backupEligible: parsedData.response.attestationObject.authenticatorData.flags.isBackupEligible,
+            isBackedUp: parsedData.response.attestationObject.authenticatorData.flags.isCurrentlyBackedUp,
+            attestationObject: parsedData.response.attestationObject,
+            attestationClientDataJSON: parsedData.response.clientData
         )
     }
 }

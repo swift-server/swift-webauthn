@@ -16,14 +16,17 @@ import Foundation
 
 /// https://www.w3.org/TR/webauthn/#dictionary-client-data
 /// The client data represents the contextual bindings of both the WebAuthn Relying Party and the client.
-struct CollectedClientData: Codable, Hashable {
+public struct CollectedClientData: Codable, Hashable {
     enum CollectedClientDataVerifyError: Error {
         case ceremonyTypeDoesNotMatch
         case challengeDoesNotMatch
         case originDoesNotMatch
     }
 
+    /// Contains the string "webauthn.create" when creating new credentials,
+    /// and "webauthn.get" when getting an assertion from an existing credential
     let type: CeremonyType
+    /// Contains the base64url encoding of the challenge provided by the Relying Party
     let challenge: String
     let origin: String
     // TODO: Token binding

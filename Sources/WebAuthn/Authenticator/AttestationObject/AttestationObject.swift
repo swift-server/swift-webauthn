@@ -15,7 +15,7 @@
 import Crypto
 import SwiftCBOR
 
-struct AttestationObject {
+public struct AttestationObject {
     let authenticatorData: AuthenticatorData
     let rawAuthenticatorData: [UInt8]
     let format: AttestationFormat

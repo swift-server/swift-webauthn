@@ -37,7 +37,7 @@ struct ParsedAuthenticatorAttestationResponse {
         let clientData = try JSONDecoder().decode(CollectedClientData.self, from: clientDataJSONData)
         self.clientData = clientData
 
-        // assembling attestationObject
+        // Step 11. (assembling attestationObject)
         guard let attestationData = rawResponse.attestationObject.base64URLDecodedData,
             let decodedAttestationObject = try CBOR.decode([UInt8](attestationData)) else {
             throw WebAuthnError.cborDecodingAttestationDataFailed
@@ -53,8 +53,6 @@ struct ParsedAuthenticatorAttestationResponse {
         guard let attestationStatement = decodedAttestationObject["attStmt"] else {
             throw WebAuthnError.missingAttestationFormat
         }
-
-        // use `format` to decode attestationStatement
 
         guard let attestationFormat = AttestationFormat(rawValue: format) else {
             throw WebAuthnError.unsupportedAttestationFormat
