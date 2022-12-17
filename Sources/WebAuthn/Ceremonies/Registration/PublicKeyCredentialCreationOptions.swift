@@ -18,8 +18,7 @@ import Foundation
 /// Contains a PublicKeyCredentialCreationOptions object specifying the desired attributes of the
 /// to-be-created public key credential.
 public struct PublicKeyCredentialCreationOptions: Codable {
-    /// Base64-encoded challenge string
-    public let challenge: String
+    public let challenge: EncodedBase64
     public let user: PublicKeyCredentialUserEntity
     public let relyingParty: PublicKeyCredentialRpEntity
     public let publicKeyCredentialParameters: [PublicKeyCredentialParameters]

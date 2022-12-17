@@ -30,10 +30,14 @@ struct ParsedCredentialCreationResponse {
     init(from rawResponse: CredentialCreationResponse) throws {
         id = rawResponse.id
 
-        guard let decodedRawID = rawResponse.rawID.base64URLDecodedData else { throw WebAuthnError.invalidRawID }
+        guard let decodedRawID = rawResponse.rawID.base64URLDecodedData else {
+            throw WebAuthnError.invalidRawID
+        }
         rawID = decodedRawID
 
-        guard rawResponse.type == "public-key" else { throw WebAuthnError.invalidCredentialCreationType }
+        guard rawResponse.type == "public-key" else {
+            throw WebAuthnError.invalidCredentialCreationType
+        }
         type = rawResponse.type
 
         clientExtensionResults = rawResponse.clientExtensionResults
@@ -41,7 +45,12 @@ struct ParsedCredentialCreationResponse {
         response = try ParsedAuthenticatorAttestationResponse(from: raw)
     }
 
-    func verify(storedChallenge: String, verifyUser: Bool, relyingPartyID: String, relyingPartyOrigin: String) throws {
+    func verify(
+        storedChallenge: URLEncodedBase64,
+        verifyUser: Bool,
+        relyingPartyID: String,
+        relyingPartyOrigin: String
+    ) throws {
         // Step 7. - 9.
         try response.clientData.verify(
             storedChallenge: storedChallenge,
@@ -63,5 +72,10 @@ struct ParsedCredentialCreationResponse {
             verificationRequired: verifyUser,
             clientDataHash: hash
         )
+
+        // Step 23.
+        guard rawID.count <= 1023 else {
+            throw WebAuthnError.credentialIDTooBig
+        }
     }
 }

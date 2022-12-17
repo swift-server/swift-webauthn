@@ -31,6 +31,9 @@ public enum WebAuthnError: Error {
     case missingAttestedCredentialData
     case missingAttestationFormat
 
+    case credentialIDTooBig
+    case credentialIDAlreadyExists
+
     case invalidRawID
     case invalidCredentialCreationType
     case invalidClientDataJSON

@@ -30,7 +30,7 @@ public struct WebAuthnManager {
     }
 
     /// Generate a new set of registration data to be sent to the client and authenticator.
-    public func beginRegistration(user: User) throws -> (PublicKeyCredentialCreationOptions, SessionData) {
+    public func beginRegistration(user: User) throws -> PublicKeyCredentialCreationOptions {
         guard let base64ID = user.userID.data(using: .utf8)?.base64EncodedString() else {
             throw WebAuthnManagerError.base64EncodingFailed
         }
@@ -40,38 +40,33 @@ public struct WebAuthnManager {
 
         let challenge = try generateChallengeString()
 
-        let options = PublicKeyCredentialCreationOptions(
+        return PublicKeyCredentialCreationOptions(
             challenge: challenge.base64EncodedString(),
             user: userEntity,
             relyingParty: relyingParty,
             publicKeyCredentialParameters: PublicKeyCredentialParameters.supported,
             timeout: config.timeout
         )
-        let sessionData = SessionData(challenge: challenge.base64URLEncodedString(), userID: user.userID)
-
-        return (options, sessionData)
     }
 
     /// Take response from authenticator and client and verify credential against the user's credentials and
     /// session data.
     /// - Parameters:
-    ///   - user: The user to verify against the authenticator response
-    ///   - sessionData: The data passed to the authenticator within the preceding registration options
+    ///   - challenge: The user to verify against the authenticator response. Base64 encoded.
     ///   - credentialCreationData: The value returned from `navigator.credentials.create()`
     ///   - requireUserVerification: Whether or not to require that the authenticator verified the user.
     /// - Returns:  A new `Credential` with information about the authenticator and registration
     public func finishRegistration(
-        for user: User,
-        sessionData: SessionData,
+        challenge: EncodedBase64,
         credentialCreationData: CredentialCreationResponse,
         requireUserVerification: Bool = false,
-        supportedPublicKeyAlgorithms: [PublicKeyCredentialParameters] = PublicKeyCredentialParameters.supported
-    ) throws -> Credential {
-        guard user.userID == sessionData.userID else { throw WebAuthnManagerError.userIDMismatch }
-
+        supportedPublicKeyAlgorithms: [PublicKeyCredentialParameters] = PublicKeyCredentialParameters.supported,
+        confirmCredentialIDNotRegisteredYet: (String) async throws -> Bool
+    ) async throws -> Credential {
+        // Step 3. - 16.
         let parsedData = try ParsedCredentialCreationResponse(from: credentialCreationData)
         try parsedData.verify(
-            storedChallenge: sessionData.challenge,
+            storedChallenge: String.base64URL(fromBase64: challenge),
             verifyUser: requireUserVerification,
             relyingPartyID: config.relyingPartyID,
             relyingPartyOrigin: config.relyingPartyOrigin
@@ -81,10 +76,18 @@ public struct WebAuthnManager {
             throw WebAuthnError.missingAttestedCredentialData
         }
 
+        // Step 17.
         let parsedPublicKeyData = try ParsedPublicKeyData(fromPublicKeyBytes: attestedData.publicKey)
         try parsedPublicKeyData.verify(supportedPublicKeyAlgorithms: supportedPublicKeyAlgorithms)
 
-        // Return a new credential record (based on step 25.)
+        // TODO: Step 18. -> Verify client extensions
+
+        // Step 24.
+        guard try await confirmCredentialIDNotRegisteredYet(parsedData.id) else {
+            throw WebAuthnError.credentialIDAlreadyExists
+        }
+
+        // Step 25.
         return Credential(
             type: parsedData.type,
             id: parsedData.id,
