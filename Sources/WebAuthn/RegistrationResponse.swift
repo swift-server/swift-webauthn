@@ -14,12 +14,22 @@
 
 import Foundation
 
-extension String {
-    var base64URLDecodedData: Data? {
-        var result = self.replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
-        while result.count % 4 != 0 {
-            result = result.appending("=")
-        }
-        return Data(base64Encoded: result)
+public struct RegistrationResponse: Codable {
+    public let id: String
+    let rawID: String
+    /// This is the public-key
+    let type: String
+    let response: AuthenticatorAttestationResponse
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case rawID = "rawId"
+        case type
+        case response
     }
+}
+
+public struct AuthenticatorAttestationResponse: Codable {
+    let clientDataJSON: String
+    let attestationObject: String
 }
