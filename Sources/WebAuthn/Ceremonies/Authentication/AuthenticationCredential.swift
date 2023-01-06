@@ -14,9 +14,10 @@
 
 import Foundation
 
-public struct AuthenticationResponse: Codable {
+/// The unprocessed response received from `navigator.credentials.get()`.
+public struct AuthenticationCredential: Codable {
     public let id: String
-    public let rawID: String
+    public let rawID: URLEncodedBase64
     public let response: AuthenticatorAssertionResponse
     public let authenticatorAttachment: String?
     public let type: String
@@ -28,11 +29,4 @@ public struct AuthenticationResponse: Codable {
         case authenticatorAttachment
         case type
     }
-}
-
-public struct AuthenticatorAssertionResponse: Codable {
-    let clientDataJSON: String
-    let authenticatorData: String
-    let signature: String
-    let userHandle: String?
 }

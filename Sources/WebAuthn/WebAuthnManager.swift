@@ -58,7 +58,7 @@ public struct WebAuthnManager {
     /// - Returns:  A new `Credential` with information about the authenticator and registration
     public func finishRegistration(
         challenge: EncodedBase64,
-        credentialCreationData: CredentialCreationResponse,
+        credentialCreationData: RegistrationResponse,
         requireUserVerification: Bool = false,
         supportedPublicKeyAlgorithms: [PublicKeyCredentialParameters] = PublicKeyCredentialParameters.supported,
         confirmCredentialIDNotRegisteredYet: (String) async throws -> Bool
@@ -77,8 +77,10 @@ public struct WebAuthnManager {
         }
 
         // Step 17.
-        let parsedPublicKeyData = try ParsedPublicKeyData(fromPublicKeyBytes: attestedData.publicKey)
-        try parsedPublicKeyData.verify(supportedPublicKeyAlgorithms: supportedPublicKeyAlgorithms)
+        let credentialPublicKey = try CredentialPublicKey(publicKeyBytes: attestedData.publicKey)
+        guard supportedPublicKeyAlgorithms.map(\.algorithm).contains(credentialPublicKey.key.algorithm) else {
+            throw WebAuthnError.unsupportedCredentialPublicKeyAlgorithm
+        }
 
         // TODO: Step 18. -> Verify client extensions
 
@@ -98,6 +100,76 @@ public struct WebAuthnManager {
             attestationObject: parsedData.response.attestationObject,
             attestationClientDataJSON: parsedData.response.clientData
         )
+    }
+
+    public func beginAuthentication(
+        challenge: String? = nil,
+        timeout: TimeInterval?,
+        allowCredentials: [PublicKeyCredentialDescriptor]? = nil,
+        userVerification: UserVerificationRequirement = .preferred,
+        attestation: String? = nil,
+        attestationFormats: [String]? = nil
+    ) throws -> PublicKeyCredentialRequestOptions {
+        let challenge = try challenge ?? generateChallengeString().base64EncodedString()
+        return PublicKeyCredentialRequestOptions(
+            challenge: challenge,
+            timeout: timeout,
+            rpId: config.relyingPartyID,
+            allowCredentials: allowCredentials,
+            userVerification: userVerification,
+            attestation: attestation,
+            attestationFormats: attestationFormats
+        )
+    }
+
+    public func finishAuthentication(
+        credential: AuthenticationCredential,
+        // clientExtensionResults: ,
+        expectedChallenge: URLEncodedBase64,
+        credentialPublicKey: [UInt8],
+        credentialCurrentSignCount: Int,
+        requireUserVerification: Bool = false
+    ) throws {
+        let expectedRpID = config.relyingPartyID
+        let expectedOrigin = config.relyingPartyOrigin
+        guard credential.rawID == credential.id else { throw WebAuthnError.badRequestData }
+        guard credential.type == "public-key" else { throw WebAuthnError.badRequestData }
+
+        let response = credential.response
+
+        guard let clientDataData = response.clientDataJSON.base64URLDecodedData else {
+            throw WebAuthnError.badRequestData
+        }
+        let clientData = try JSONDecoder().decode(CollectedClientData.self, from: clientDataData)
+        guard clientData.type == .assert else { throw WebAuthnError.badRequestData }
+        guard expectedChallenge == clientData.challenge else { throw WebAuthnError.badRequestData }
+        guard expectedOrigin == clientData.origin else { throw WebAuthnError.badRequestData }
+        // TODO: - Verify token binding
+
+        guard let authenticatorDataBytes = response.authenticatorData.base64URLDecodedData else {
+            throw WebAuthnError.badRequestData
+        }
+        let authenticatorData = try AuthenticatorData(bytes: authenticatorDataBytes)
+
+        guard let expectedRpIDData = expectedRpID.data(using: .utf8) else { throw WebAuthnError.badRequestData }
+        let expectedRpIDHash = SHA256.hash(data: expectedRpIDData)
+        guard expectedRpIDHash == authenticatorData.relyingPartyIDHash else { throw WebAuthnError.badRequestData }
+
+        guard authenticatorData.flags.userPresent else { throw WebAuthnError.badRequestData }
+        if requireUserVerification {
+            guard authenticatorData.flags.userVerified else { throw WebAuthnError.badRequestData }
+        }
+
+        if authenticatorData.counter > 0 || credentialCurrentSignCount > 0 {
+            guard authenticatorData.counter > credentialCurrentSignCount else { throw WebAuthnError.badRequestData }
+        }
+
+        let clientDataHash = SHA256.hash(data: clientDataData)
+        let signatureBase = authenticatorDataBytes + clientDataHash
+
+        let credentialPublicKey = try CredentialPublicKey(publicKeyBytes: credentialPublicKey)
+        guard let signatureData = response.signature.base64URLDecodedData else { throw WebAuthnError.badRequestData }
+        try credentialPublicKey.verify(signature: signatureData, data: signatureBase)
     }
 }
 

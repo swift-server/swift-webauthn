@@ -27,7 +27,7 @@ public struct CollectedClientData: Codable, Hashable {
     /// and "webauthn.get" when getting an assertion from an existing credential
     let type: CeremonyType
     /// Contains the base64url encoding of the challenge provided by the Relying Party
-    let challenge: String
+    let challenge: URLEncodedBase64
     let origin: String
     // TODO: Token binding
 

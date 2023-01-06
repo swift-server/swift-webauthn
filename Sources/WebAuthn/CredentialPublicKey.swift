@@ -17,29 +17,37 @@ import Foundation
 import SwiftCBOR
 
 protocol PublicKey {
+    var algorithm: COSEAlgorithmIdentifier { get }
     func getString() throws -> String
+    func verify(signature: Data, data: Data) throws
 }
 
-struct ParsedPublicKeyData {
-    /// The type of key created. Should be OKP, EC2, or RSA.
-    let keyType: COSEKeyType
-    /// A COSEAlgorithmIdentifier for the algorithm used to derive the key signature.
-    let algorithm: COSEAlgorithmIdentifier
+enum CredentialPublicKey {
+    case okp(OKPPublicKey)
+    case ec2(EC2PublicKey)
+    case rsa(RSAPublicKeyData)
 
-    private let publicKeyObject: CBOR
+    var key: PublicKey {
+        switch self {
+        case let .okp(key):
+            return key
+        case let .ec2(key):
+            return key
+        case let .rsa(key):
+            return key
+        }
+    }
 
-    init(fromPublicKeyBytes publicKeyBytes: [UInt8]) throws {
+    init(publicKeyBytes: [UInt8]) throws {
         guard let publicKeyObject = try CBOR.decode(publicKeyBytes) else {
             throw WebAuthnError.badRequestData
         }
-        self.publicKeyObject = publicKeyObject
 
         guard let keyTypeRaw = publicKeyObject[.unsignedInt(1)],
             case let .unsignedInt(keyTypeInt) = keyTypeRaw,
             let keyType = COSEKeyType(rawValue: keyTypeInt) else {
             throw WebAuthnError.badRequestData
         }
-        self.keyType = keyType
 
         guard let algorithmRaw = publicKeyObject[.unsignedInt(3)],
             case let .negativeInt(algorithmNegative) = algorithmRaw else {
@@ -50,25 +58,20 @@ struct ParsedPublicKeyData {
         guard let algorithm = COSEAlgorithmIdentifier(rawValue: -1 - Int(algorithmNegative)) else {
             throw WebAuthnError.unsupportedCOSEAlgorithm
         }
-        self.algorithm = algorithm
-    }
 
-    func verify(supportedPublicKeyAlgorithms: [PublicKeyCredentialParameters]) throws {
-        // Step 17.
-        guard supportedPublicKeyAlgorithms.map(\.algorithm).contains(algorithm) else {
-            throw WebAuthnError.unsupportedCredentialPublicKeyAlgorithm
-        }
-    }
-
-    func getPublicKey() throws -> PublicKey {
         switch keyType {
         case .ellipticKey:
-            return try EC2PublicKey(publicKeyObject: publicKeyObject, algorithm: algorithm)
+            self = try .ec2(EC2PublicKey(publicKeyObject: publicKeyObject, algorithm: algorithm))
         case .rsaKey:
-            return try RSAPublicKeyData(publicKeyObject: publicKeyObject, algorithm: algorithm)
+            self = try .rsa(RSAPublicKeyData(publicKeyObject: publicKeyObject, algorithm: algorithm))
         case .octetKey:
-            return try OKPPublicKey(publicKeyObject: publicKeyObject, algorithm: algorithm)
+            self = try .okp(OKPPublicKey(publicKeyObject: publicKeyObject, algorithm: algorithm))
         }
+    }
+
+    /// Verify a signature was signed with the private key corresponding to the provided public key.
+    func verify(signature: Data, data: Data) throws {
+        try key.verify(signature: signature, data: data)
     }
 }
 
@@ -117,6 +120,10 @@ struct EC2PublicKey: PublicKey {
             throw WebAuthnError.unsupportedCOSEAlgorithm
         }
     }
+
+    func verify(signature: Data, data: Data) throws {
+        fatalError("Not implemented")
+    }
 }
 
 struct RSAPublicKeyData: PublicKey {
@@ -157,6 +164,10 @@ struct RSAPublicKeyData: PublicKey {
         // }
         fatalError("RSA is currently not supported")
     }
+
+    func verify(signature: Data, data: Data) throws {
+        fatalError("Not implemented")
+    }
 }
 
 struct OKPPublicKey: PublicKey {
@@ -182,5 +193,9 @@ struct OKPPublicKey: PublicKey {
     func getString() throws -> String {
         let key = try Curve25519.Signing.PublicKey(rawRepresentation: xCoordinate)
         return String(data: key.rawRepresentation, encoding: .utf8)!
+    }
+
+    func verify(signature: Data, data: Data) throws {
+        fatalError("Not implemented")
     }
 }

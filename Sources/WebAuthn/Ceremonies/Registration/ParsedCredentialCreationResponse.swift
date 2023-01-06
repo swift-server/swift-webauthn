@@ -27,7 +27,7 @@ struct ParsedCredentialCreationResponse {
     let response: ParsedAuthenticatorAttestationResponse
 
     /// Create a `ParsedCredentialCreationResponse` from a raw `CredentialCreationResponse`.
-    init(from rawResponse: CredentialCreationResponse) throws {
+    init(from rawResponse: RegistrationResponse) throws {
         id = rawResponse.id
 
         guard let decodedRawID = rawResponse.rawID.base64URLDecodedData else {

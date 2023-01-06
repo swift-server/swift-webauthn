@@ -16,7 +16,7 @@ import Foundation
 
 /// The unprocessed response received from `navigator.credentials.create()`.
 /// Internally this will be parsed into a more readable `ParsedCredentialCreationResponse`.
-public struct CredentialCreationResponse {
+public struct RegistrationResponse {
     public let id: String
     public let type: String
     public let rawID: URLEncodedBase64
@@ -47,4 +47,4 @@ public struct CredentialCreationResponse {
     }
 }
 
-extension CredentialCreationResponse: Codable {}
+extension RegistrationResponse: Codable {}

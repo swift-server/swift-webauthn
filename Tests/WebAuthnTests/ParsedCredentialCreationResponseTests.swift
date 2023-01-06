@@ -4,7 +4,7 @@ import XCTest
 final class ParsedCredentialCreationResponseTests: XCTestCase {
     func testParsingSucceeds() throws {
         // swiftlint:disable line_length
-        let response = CredentialCreationResponse(
+        let response = RegistrationResponse(
             id: "Oj7lbcq6vsDvL0t_DuKOETF8LPf_lygwRA1j_Lqn4ms",
             type: "public-key",
             rawID: "Oj7lbcq6vsDvL0t_DuKOETF8LPf_lygwRA1j_Lqn4ms",
