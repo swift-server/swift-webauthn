@@ -84,6 +84,8 @@ struct EC2PublicKey: PublicKey {
     /// A byte string 32 bytes in length that holds the y coordinate of the key.
     let yCoordinate: [UInt8]
 
+    var rawRepresentation: [UInt8] { xCoordinate + yCoordinate }
+
     init(publicKeyObject: CBOR, algorithm: COSEAlgorithmIdentifier) throws {
         self.algorithm = algorithm
 
@@ -108,7 +110,6 @@ struct EC2PublicKey: PublicKey {
     }
 
     func getString() throws -> String {
-        let rawRepresentation = xCoordinate + yCoordinate
         switch algorithm {
         case .algES256:
             return try P256.Signing.PublicKey(rawRepresentation: rawRepresentation).pemRepresentation
@@ -122,7 +123,28 @@ struct EC2PublicKey: PublicKey {
     }
 
     func verify(signature: Data, data: Data) throws {
-        fatalError("Not implemented")
+        switch algorithm {
+        case .algES256:
+            let ecdsaSignature = try P256.Signing.ECDSASignature(derRepresentation: signature)
+            guard try P256.Signing.PublicKey(rawRepresentation: rawRepresentation)
+                .isValidSignature(ecdsaSignature, for: data) else {
+                throw WebAuthnError.badRequestData
+            }
+        case .algES384:
+            let ecdsaSignature = try P384.Signing.ECDSASignature(derRepresentation: signature)
+            guard try P384.Signing.PublicKey(rawRepresentation: rawRepresentation)
+                .isValidSignature(ecdsaSignature, for: data) else {
+                throw WebAuthnError.badRequestData
+            }
+        case .algES512:
+            let ecdsaSignature = try P521.Signing.ECDSASignature(derRepresentation: signature)
+            guard try P521.Signing.PublicKey(rawRepresentation: rawRepresentation)
+                .isValidSignature(ecdsaSignature, for: data) else {
+                throw WebAuthnError.badRequestData
+            }
+        default:
+            throw WebAuthnError.unsupportedCOSEAlgorithm
+        }
     }
 }
 
