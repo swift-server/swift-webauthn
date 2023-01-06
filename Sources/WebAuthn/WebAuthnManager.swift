@@ -131,7 +131,6 @@ public struct WebAuthnManager {
         requireUserVerification: Bool = false
     ) throws -> VerifiedAuthentication {
         let expectedRpID = config.relyingPartyID
-        let expectedOrigin = config.relyingPartyOrigin
         guard credential.type == "public-key" else { throw WebAuthnError.badRequestData }
 
         let response = credential.response
@@ -140,9 +139,11 @@ public struct WebAuthnManager {
             throw WebAuthnError.badRequestData
         }
         let clientData = try JSONDecoder().decode(CollectedClientData.self, from: clientDataData)
-        guard clientData.type == .assert else { throw WebAuthnError.badRequestData }
-        guard expectedChallenge == clientData.challenge else { throw WebAuthnError.badRequestData }
-        guard expectedOrigin == clientData.origin else { throw WebAuthnError.badRequestData }
+        try clientData.verify(
+            storedChallenge: expectedChallenge,
+            ceremonyType: .assert,
+            relyingPartyOrigin: config.relyingPartyOrigin
+        )
         // TODO: - Verify token binding
 
         guard let authenticatorDataBytes = response.authenticatorData.base64URLDecodedData else {
