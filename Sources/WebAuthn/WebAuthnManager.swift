@@ -129,10 +129,9 @@ public struct WebAuthnManager {
         credentialPublicKey: [UInt8],
         credentialCurrentSignCount: Int,
         requireUserVerification: Bool = false
-    ) throws {
+    ) throws -> VerifiedAuthentication {
         let expectedRpID = config.relyingPartyID
         let expectedOrigin = config.relyingPartyOrigin
-        guard credential.rawID == credential.id else { throw WebAuthnError.badRequestData }
         guard credential.type == "public-key" else { throw WebAuthnError.badRequestData }
 
         let response = credential.response
@@ -170,6 +169,13 @@ public struct WebAuthnManager {
         let credentialPublicKey = try CredentialPublicKey(publicKeyBytes: credentialPublicKey)
         guard let signatureData = response.signature.base64URLDecodedData else { throw WebAuthnError.badRequestData }
         try credentialPublicKey.verify(signature: signatureData, data: signatureBase)
+
+        return VerifiedAuthentication(
+            credentialID: credential.id,
+            newSignCount: authenticatorData.counter,
+            credentialDeviceType: authenticatorData.flags.isBackupEligible ? .multiDevice : .singleDevice,
+            credentialBackedUp: authenticatorData.flags.isCurrentlyBackedUp
+        )
     }
 }
 

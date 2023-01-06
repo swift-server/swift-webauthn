@@ -33,6 +33,14 @@ extension Array where Element == UInt8 {
     }
 }
 
+extension Data {
+    /// Encodes data into a base64url-encoded string
+    /// - Returns: A base64url-encoded string
+    public func base64URLEncodedString() -> String {
+        return [UInt8](self).base64URLEncodedString()
+    }
+}
+
 extension String {
     /// Decode a base64url-encoded `String` to a base64 `String`
     /// - Returns: A base64-encoded `String`
