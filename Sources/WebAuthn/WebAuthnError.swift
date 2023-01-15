@@ -13,36 +13,56 @@
 //===----------------------------------------------------------------------===//
 
 public enum WebAuthnError: Error {
-    case authDataTooShort
-    case extensionDataMissing
-    case leftOverBytes
-
-    case attestedCredentialFlagNotSet
-    case userPresentFlagNotSet
-    case userVerificationRequiredButFlagNotSet
-
+    // MARK: Shared
+    case invalidClientDataJSON
     case attestedCredentialDataMissing
-    case badRequestData
-    case validationError
-    case formatError
-    case hashingClientDataJSONFailed
     case relyingPartyIDHashDoesNotMatch
+    case userPresentFlagNotSet
+    case invalidSignature
+
+    // MARK: AttestationObject
+    case userVerificationRequiredButFlagNotSet
     case attestationStatementMissing
-    case missingAttestedCredentialData
-    case missingAttestationFormat
+    case attestationVerificationNotSupported
 
-    case credentialIDTooBig
+    // MARK: WebAuthnManager
+    case invalidUserID
+    case unsupportedCredentialPublicKeyAlgorithm
     case credentialIDAlreadyExists
+    case invalidAuthenticatorData
+    case invalidRelyingPartyID
+    case userVerifiedFlagNotSet
+    case potentialReplayAttack
+    case invalidAssertionCredentialType
 
+    // MARK: ParsedAuthenticatorAttestationResponse
+    case invalidAttestationData
+    case invalidAuthData
+    case invalidFmt
+    case invalidAttStmt
+    case attestationFormatNotSupported
+
+    // MARK: ParsedCredentialCreationResponse
     case invalidRawID
     case invalidCredentialCreationType
-    case invalidClientDataJSON
-    case cborDecodingAttestationDataFailed
-    case authDataInvalidOrMissing
+    case credentialRawIDTooBig
 
+    // MARK: AuthenticatorData
+    case authDataTooShort
+    case attestedCredentialFlagNotSet
+    case extensionDataMissing
+    case leftOverBytesInAuthenticatorData
+
+    // MARK: CredentialPublicKey
+    case badPublicKeyBytes
+    case invalidKeyType
+    case invalidAlgorithm
+    case invalidCurve
+    case invalidXCoordinate
+    case invalidYCoordinate
     case unsupportedCOSEAlgorithm
-    case unsupportedCredentialPublicKeyAlgorithm
-    case unsupportedAttestationFormat
-
-    case attestationVerificationNotSupported
+    case unsupportedCOSEAlgorithmForEC2PublicKey
+    case invalidModulus
+    case invalidExponent
+    case unsupportedCOSEAlgorithmForRSAPublicKey
 }

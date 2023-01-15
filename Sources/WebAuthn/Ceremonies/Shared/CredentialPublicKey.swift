@@ -40,7 +40,7 @@ enum CredentialPublicKey {
 
     init(publicKeyBytes: [UInt8]) throws {
         guard let publicKeyObject = try CBOR.decode(publicKeyBytes) else {
-            throw WebAuthnError.badRequestData
+            throw WebAuthnError.badPublicKeyBytes
         }
 
         // A leading 0x04 means we got a public key from an old U2F security key.
@@ -58,12 +58,12 @@ enum CredentialPublicKey {
         guard let keyTypeRaw = publicKeyObject[COSEKey.kty.cbor],
             case let .unsignedInt(keyTypeInt) = keyTypeRaw,
             let keyType = COSEKeyType(rawValue: keyTypeInt) else {
-            throw WebAuthnError.badRequestData
+            throw WebAuthnError.invalidKeyType
         }
 
         guard let algorithmRaw = publicKeyObject[COSEKey.alg.cbor],
             case let .negativeInt(algorithmNegative) = algorithmRaw else {
-            throw WebAuthnError.badRequestData
+            throw WebAuthnError.invalidAlgorithm
         }
         // https://github.com/unrelentingtech/SwiftCBOR#swiftcbor
         // Negative integers are decoded as NegativeInt(UInt), where the actual number is -1 - i
@@ -114,18 +114,18 @@ struct EC2PublicKey: PublicKey {
         guard let curveRaw = publicKeyObject[COSEKey.crv.cbor],
             case let .unsignedInt(curve) = curveRaw,
             let coseCurve = COSECurve(rawValue: curve) else {
-            throw WebAuthnError.badRequestData
+            throw WebAuthnError.invalidCurve
         }
         self.curve = coseCurve
 
         guard let xCoordRaw = publicKeyObject[COSEKey.x.cbor],
               case let .byteString(xCoordinateBytes) = xCoordRaw else {
-            throw WebAuthnError.badRequestData
+            throw WebAuthnError.invalidXCoordinate
         }
         xCoordinate = xCoordinateBytes
         guard let yCoordRaw = publicKeyObject[COSEKey.y.cbor],
               case let .byteString(yCoordinateBytes) = yCoordRaw else {
-            throw WebAuthnError.badRequestData
+            throw WebAuthnError.invalidYCoordinate
         }
         yCoordinate = yCoordinateBytes
     }
@@ -136,22 +136,22 @@ struct EC2PublicKey: PublicKey {
             let ecdsaSignature = try P256.Signing.ECDSASignature(derRepresentation: signature)
             guard try P256.Signing.PublicKey(rawRepresentation: rawRepresentation)
                 .isValidSignature(ecdsaSignature, for: data) else {
-                throw WebAuthnError.badRequestData
+                throw WebAuthnError.invalidSignature
             }
         case .algES384:
             let ecdsaSignature = try P384.Signing.ECDSASignature(derRepresentation: signature)
             guard try P384.Signing.PublicKey(rawRepresentation: rawRepresentation)
                 .isValidSignature(ecdsaSignature, for: data) else {
-                throw WebAuthnError.badRequestData
+                throw WebAuthnError.invalidSignature
             }
         case .algES512:
             let ecdsaSignature = try P521.Signing.ECDSASignature(derRepresentation: signature)
             guard try P521.Signing.PublicKey(rawRepresentation: rawRepresentation)
                 .isValidSignature(ecdsaSignature, for: data) else {
-                throw WebAuthnError.badRequestData
+                throw WebAuthnError.invalidSignature
             }
         default:
-            throw WebAuthnError.unsupportedCOSEAlgorithm
+            throw WebAuthnError.unsupportedCOSEAlgorithmForEC2PublicKey
         }
     }
 }
@@ -170,13 +170,13 @@ struct RSAPublicKeyData: PublicKey {
 
         guard let nRaw = publicKeyObject[COSEKey.n.cbor],
               case let .byteString(nBytes) = nRaw else {
-            throw WebAuthnError.badRequestData
+            throw WebAuthnError.invalidModulus
         }
         n = nBytes
 
         guard let eRaw = publicKeyObject[COSEKey.e.cbor],
               case let .byteString(eBytes) = eRaw else {
-            throw WebAuthnError.badRequestData
+            throw WebAuthnError.invalidExponent
         }
         e = eBytes
     }
@@ -191,7 +191,7 @@ struct RSAPublicKeyData: PublicKey {
         case .algPS256, .algPS384, .algPS512:
             rsaPadding = .PSS
         default:
-            throw WebAuthnError.badRequestData
+            throw WebAuthnError.unsupportedCOSEAlgorithmForRSAPublicKey
         }
 
         guard try _RSA.Signing.PublicKey(derRepresentation: rawRepresentation).isValidSignature(
@@ -199,7 +199,7 @@ struct RSAPublicKeyData: PublicKey {
             for: data,
             padding: rsaPadding
         ) else {
-            throw WebAuthnError.badRequestData
+            throw WebAuthnError.invalidSignature
         }
     }
 }
@@ -213,13 +213,13 @@ struct OKPPublicKey: PublicKey {
         self.algorithm = algorithm
         // Curve is key -1, or NegativeInt 0 for SwiftCBOR
         guard let curveRaw = publicKeyObject[.negativeInt(0)], case let .unsignedInt(curve) = curveRaw else {
-            throw WebAuthnError.badRequestData
+            throw WebAuthnError.invalidCurve
         }
         self.curve = curve
         // X Coordinate is key -2, or NegativeInt 1 for SwiftCBOR
         guard let xCoordRaw = publicKeyObject[.negativeInt(1)],
             case let .byteString(xCoordinateBytes) = xCoordRaw else {
-            throw WebAuthnError.badRequestData
+            throw WebAuthnError.invalidXCoordinate
         }
         xCoordinate = xCoordinateBytes
     }

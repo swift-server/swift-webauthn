@@ -27,7 +27,7 @@ public struct WebAuthnManager {
     /// Generate a new set of registration data to be sent to the client and authenticator.
     public func beginRegistration(user: User) throws -> PublicKeyCredentialCreationOptions {
         guard let base64ID = user.userID.data(using: .utf8)?.base64EncodedString() else {
-            throw WebAuthnError.badRequestData
+            throw WebAuthnError.invalidUserID
         }
 
         let userEntity = PublicKeyCredentialUserEntity(name: user.name, id: base64ID, displayName: user.displayName)
@@ -68,7 +68,7 @@ public struct WebAuthnManager {
         )
 
         guard let attestedData = parsedData.response.attestationObject.authenticatorData.attestedData else {
-            throw WebAuthnError.missingAttestedCredentialData
+            throw WebAuthnError.attestedCredentialDataMissing
         }
 
         // Step 17.
@@ -126,12 +126,12 @@ public struct WebAuthnManager {
         requireUserVerification: Bool = false
     ) throws -> VerifiedAuthentication {
         let expectedRpID = config.relyingPartyID
-        guard credential.type == "public-key" else { throw WebAuthnError.badRequestData }
+        guard credential.type == "public-key" else { throw WebAuthnError.invalidAssertionCredentialType }
 
         let response = credential.response
 
         guard let clientDataData = response.clientDataJSON.base64URLDecodedData else {
-            throw WebAuthnError.badRequestData
+            throw WebAuthnError.invalidClientDataJSON
         }
         let clientData = try JSONDecoder().decode(CollectedClientData.self, from: clientDataData)
         try clientData.verify(
@@ -142,24 +142,26 @@ public struct WebAuthnManager {
         // TODO: - Verify token binding
 
         guard let authenticatorDataBytes = response.authenticatorData.base64URLDecodedData else {
-            throw WebAuthnError.badRequestData
+            throw WebAuthnError.invalidAuthenticatorData
         }
         let authenticatorData = try AuthenticatorData(bytes: authenticatorDataBytes)
 
-        guard let expectedRpIDData = expectedRpID.data(using: .utf8) else { throw WebAuthnError.badRequestData }
+        guard let expectedRpIDData = expectedRpID.data(using: .utf8) else { throw WebAuthnError.invalidRelyingPartyID }
         let expectedRpIDHash = SHA256.hash(data: expectedRpIDData)
-        guard expectedRpIDHash == authenticatorData.relyingPartyIDHash else { throw WebAuthnError.badRequestData }
+        guard expectedRpIDHash == authenticatorData.relyingPartyIDHash else {
+            throw WebAuthnError.relyingPartyIDHashDoesNotMatch
+        }
 
-        guard authenticatorData.flags.userPresent else { throw WebAuthnError.badRequestData }
+        guard authenticatorData.flags.userPresent else { throw WebAuthnError.userPresentFlagNotSet }
         if requireUserVerification {
-            guard authenticatorData.flags.userVerified else { throw WebAuthnError.badRequestData }
+            guard authenticatorData.flags.userVerified else { throw WebAuthnError.userVerifiedFlagNotSet }
         }
 
         if authenticatorData.counter > 0 || credentialCurrentSignCount > 0 {
             guard authenticatorData.counter > credentialCurrentSignCount else {
                 // This is a signal that the authenticator may be cloned, i.e. at least two copies of the credential
                 // private key may exist and are being used in parallel.
-                throw WebAuthnError.badRequestData
+                throw WebAuthnError.potentialReplayAttack
             }
         }
 
@@ -167,7 +169,7 @@ public struct WebAuthnManager {
         let signatureBase = authenticatorDataBytes + clientDataHash
 
         let credentialPublicKey = try CredentialPublicKey(publicKeyBytes: credentialPublicKey)
-        guard let signatureData = response.signature.base64URLDecodedData else { throw WebAuthnError.badRequestData }
+        guard let signatureData = response.signature.base64URLDecodedData else { throw WebAuthnError.invalidSignature }
         try credentialPublicKey.verify(signature: signatureData, data: signatureBase)
 
         return VerifiedAuthentication(

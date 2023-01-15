@@ -66,7 +66,7 @@ extension AuthenticatorData {
         }
 
         guard remainingCount == 0 else {
-            throw WebAuthnError.leftOverBytes
+            throw WebAuthnError.leftOverBytesInAuthenticatorData
         }
 
         self.relyingPartyIDHash = relyingPartyIDHash

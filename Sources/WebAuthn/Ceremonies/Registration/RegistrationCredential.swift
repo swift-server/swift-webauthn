@@ -73,7 +73,7 @@ struct ParsedCredentialCreationResponse {
 
         // Step 10.
         guard let clientData = raw.clientDataJSON.data(using: .utf8) else {
-            throw WebAuthnError.hashingClientDataJSONFailed
+            throw WebAuthnError.invalidClientDataJSON
         }
         let hash = SHA256.hash(data: clientData)
 
@@ -88,7 +88,7 @@ struct ParsedCredentialCreationResponse {
 
         // Step 23.
         guard rawID.count <= 1023 else {
-            throw WebAuthnError.credentialIDTooBig
+            throw WebAuthnError.credentialRawIDTooBig
         }
     }
 }

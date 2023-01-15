@@ -37,22 +37,21 @@ struct ParsedAuthenticatorAttestationResponse {
         // Step 11. (assembling attestationObject)
         guard let attestationData = rawResponse.attestationObject.base64URLDecodedData,
             let decodedAttestationObject = try CBOR.decode([UInt8](attestationData)) else {
-            throw WebAuthnError.cborDecodingAttestationDataFailed
+            throw WebAuthnError.invalidAttestationData
         }
 
-        guard let authData = decodedAttestationObject["authData"], case let .byteString(authDataBytes) = authData else {
-            throw WebAuthnError.authDataInvalidOrMissing
+        guard let authData = decodedAttestationObject["authData"],
+            case let .byteString(authDataBytes) = authData else {
+            throw WebAuthnError.invalidAuthData
         }
-        guard let formatCBOR = decodedAttestationObject["fmt"], case let .utf8String(format) = formatCBOR else {
-            throw WebAuthnError.formatError
+        guard let formatCBOR = decodedAttestationObject["fmt"],
+            case let .utf8String(format) = formatCBOR,
+            let attestationFormat = AttestationFormat(rawValue: format) else {
+            throw WebAuthnError.invalidFmt
         }
 
         guard let attestationStatement = decodedAttestationObject["attStmt"] else {
-            throw WebAuthnError.missingAttestationFormat
-        }
-
-        guard let attestationFormat = AttestationFormat(rawValue: format) else {
-            throw WebAuthnError.unsupportedAttestationFormat
+            throw WebAuthnError.invalidAttStmt
         }
 
         attestationObject = AttestationObject(
