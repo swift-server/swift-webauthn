@@ -53,6 +53,10 @@ extension String {
             .replacingOccurrences(of: "/", with: "_")
             .replacingOccurrences(of: "=", with: "")
     }
+
+    func toBase64() -> String {
+        return Data(self.utf8).base64EncodedString()
+    }
 }
 
 extension String {

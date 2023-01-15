@@ -20,12 +20,18 @@ import SwiftCBOR
 public struct WebAuthnManager {
     private let config: WebAuthnConfig
 
-    public init(config: WebAuthnConfig) {
+    private let challengeGenerator: ChallengeGenerator
+
+    public init(config: WebAuthnConfig, challengeGenerator: ChallengeGenerator = .live) {
         self.config = config
+        self.challengeGenerator = challengeGenerator
     }
 
     /// Generate a new set of registration data to be sent to the client and authenticator.
-    public func beginRegistration(user: User) throws -> PublicKeyCredentialCreationOptions {
+    public func beginRegistration(
+        user: User,
+        publicKeyCredentialParameters: [PublicKeyCredentialParameters] = PublicKeyCredentialParameters.supported
+    ) throws -> PublicKeyCredentialCreationOptions {
         guard let base64ID = user.userID.data(using: .utf8)?.base64EncodedString() else {
             throw WebAuthnError.invalidUserID
         }
@@ -33,13 +39,13 @@ public struct WebAuthnManager {
         let userEntity = PublicKeyCredentialUserEntity(name: user.name, id: base64ID, displayName: user.displayName)
         let relyingParty = PublicKeyCredentialRpEntity(name: config.relyingPartyDisplayName, id: config.relyingPartyID)
 
-        let challenge = try generateChallengeString()
+        let challenge = challengeGenerator.generate()
 
         return PublicKeyCredentialCreationOptions(
             challenge: challenge.base64EncodedString(),
             user: userEntity,
             relyingParty: relyingParty,
-            publicKeyCredentialParameters: PublicKeyCredentialParameters.supported,
+            publicKeyCredentialParameters: publicKeyCredentialParameters,
             timeout: config.timeout
         )
     }
@@ -105,7 +111,7 @@ public struct WebAuthnManager {
         attestation: String? = nil,
         attestationFormats: [String]? = nil
     ) throws -> PublicKeyCredentialRequestOptions {
-        let challenge = try challenge ?? generateChallengeString().base64EncodedString()
+        let challenge = challenge ?? challengeGenerator.generate().base64EncodedString()
         return PublicKeyCredentialRequestOptions(
             challenge: challenge,
             timeout: timeout,
@@ -178,14 +184,5 @@ public struct WebAuthnManager {
             credentialDeviceType: authenticatorData.flags.isBackupEligible ? .multiDevice : .singleDevice,
             credentialBackedUp: authenticatorData.flags.isCurrentlyBackedUp
         )
-    }
-}
-
-extension WebAuthnManager {
-    /// Generate a suitably random value to be used as an attestation or assertion challenge
-    /// - Throws: An error if something went wrong while generating random byte
-    /// - Returns: 32 bytes
-    public func generateChallengeString() throws -> [UInt8] {
-        [UInt8].random(count: 32)
     }
 }

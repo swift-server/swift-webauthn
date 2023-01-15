@@ -25,7 +25,7 @@ public struct PublicKeyCredentialCreationOptions: Codable {
 
 // MARK: - Credential parameters
 
-public struct PublicKeyCredentialParameters: Codable {
+public struct PublicKeyCredentialParameters: Equatable, Codable {
     public let type: String
     public let algorithm: COSEAlgorithmIdentifier
 
