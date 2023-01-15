@@ -16,6 +16,10 @@ import Foundation
 
 public struct WebAuthnConfig {
     public let relyingPartyDisplayName: String
+    /// The relying party id is based on the host's domain.
+    /// It does not include a scheme or port (like the `relyingPartyOrigin`).
+    /// For example, if the origin is https://login.example.com:1337, then _login.example.com_ or _example.com_ are
+    /// valid ids, but not _m.login.example.com_ and not _com_.
     public let relyingPartyID: String
     public let relyingPartyOrigin: String
     public let timeout: TimeInterval

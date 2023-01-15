@@ -14,7 +14,8 @@
 
 import Foundation
 
-/// Credential contains all needed information about a WebAuthn credential for storage
+/// After a successful registration ceremony we pass this data back to the relying party. It contains all needed
+/// information about a WebAuthn credential for storage in e.g. a database.
 public struct Credential {
     /// Value will always be "public-key" (for now)
     public let type: String

@@ -14,9 +14,7 @@
 
 import Foundation
 
-/// From §5.4. (https://www.w3.org/TR/webauthn/#dictionary-makecredentialoptions)
-/// Contains a PublicKeyCredentialCreationOptions object specifying the desired attributes of the
-/// to-be-created public key credential.
+/// The `PublicKeyCredentialCreationOptions` gets passed to the WebAuthn API (`navigator.credentials.create()`)
 public struct PublicKeyCredentialCreationOptions: Codable {
     public let challenge: EncodedBase64
     public let user: PublicKeyCredentialUserEntity
@@ -28,13 +26,18 @@ public struct PublicKeyCredentialCreationOptions: Codable {
 // MARK: - Credential parameters
 
 public struct PublicKeyCredentialParameters: Codable {
-    let type: String
-    let algorithm: COSEAlgorithmIdentifier
+    public let type: String
+    public let algorithm: COSEAlgorithmIdentifier
 
     public static var supported: [Self] {
         COSEAlgorithmIdentifier.allCases.map {
             PublicKeyCredentialParameters.init(type: "public-key", algorithm: $0)
         }
+    }
+
+    public init(type: String = "public-key", algorithm: COSEAlgorithmIdentifier) {
+        self.type = type
+        self.algorithm = algorithm
     }
 }
 

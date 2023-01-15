@@ -12,9 +12,24 @@
 //
 //===----------------------------------------------------------------------===//
 
-import SwiftCBOR
 import Foundation
 import Crypto
+
+/// The unprocessed response received from `navigator.credentials.create()`.
+/// Internally this will be parsed into a more readable `ParsedCredentialCreationResponse`.
+public struct RegistrationCredential: Codable {
+    public let id: String
+    public let type: String
+    public let rawID: URLEncodedBase64
+    public let attestationResponse: AuthenticatorAttestationResponse
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case type
+        case rawID = "rawId"
+        case attestationResponse = "response"
+    }
+}
 
 /// The processed response received from `navigator.credentials.create()`.
 struct ParsedCredentialCreationResponse {
@@ -22,12 +37,11 @@ struct ParsedCredentialCreationResponse {
     let rawID: Data
     /// Value will always be "public-key" (for now)
     let type: String
-    let clientExtensionResults: [String: String]?
     let raw: AuthenticatorAttestationResponse
     let response: ParsedAuthenticatorAttestationResponse
 
     /// Create a `ParsedCredentialCreationResponse` from a raw `CredentialCreationResponse`.
-    init(from rawResponse: RegistrationResponse) throws {
+    init(from rawResponse: RegistrationCredential) throws {
         id = rawResponse.id
 
         guard let decodedRawID = rawResponse.rawID.base64URLDecodedData else {
@@ -40,7 +54,6 @@ struct ParsedCredentialCreationResponse {
         }
         type = rawResponse.type
 
-        clientExtensionResults = rawResponse.clientExtensionResults
         raw = rawResponse.attestationResponse
         response = try ParsedAuthenticatorAttestationResponse(from: raw)
     }

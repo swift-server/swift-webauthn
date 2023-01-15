@@ -13,12 +13,12 @@
 //===----------------------------------------------------------------------===//
 
 import Crypto
+import _CryptoExtras
 import Foundation
 import SwiftCBOR
 
 protocol PublicKey {
     var algorithm: COSEAlgorithmIdentifier { get }
-    func getString() throws -> String
     func verify(signature: Data, data: Data) throws
 }
 
@@ -43,13 +43,25 @@ enum CredentialPublicKey {
             throw WebAuthnError.badRequestData
         }
 
-        guard let keyTypeRaw = publicKeyObject[.unsignedInt(1)],
+        // A leading 0x04 means we got a public key from an old U2F security key.
+        // https://fidoalliance.org/specs/fido-v2.0-id-20180227/fido-registry-v2.0-id-20180227.html#public-key-representation-formats
+        guard publicKeyBytes[0] != 0x04 else {
+            self = .ec2(EC2PublicKey(
+                algorithm: .algRS1,
+                curve: .p256,
+                xCoordinate: Array(publicKeyBytes[1...33]),
+                yCoordinate: Array(publicKeyBytes[33...65])
+            ))
+            return
+        }
+
+        guard let keyTypeRaw = publicKeyObject[COSEKey.kty.cbor],
             case let .unsignedInt(keyTypeInt) = keyTypeRaw,
             let keyType = COSEKeyType(rawValue: keyTypeInt) else {
             throw WebAuthnError.badRequestData
         }
 
-        guard let algorithmRaw = publicKeyObject[.unsignedInt(3)],
+        guard let algorithmRaw = publicKeyObject[COSEKey.alg.cbor],
             case let .negativeInt(algorithmNegative) = algorithmRaw else {
             throw WebAuthnError.badRequestData
         }
@@ -78,7 +90,7 @@ enum CredentialPublicKey {
 struct EC2PublicKey: PublicKey {
     let algorithm: COSEAlgorithmIdentifier
     /// The curve on which we derive the signature from.
-    let curve: UInt64
+    let curve: COSECurve
     /// A byte string 32 bytes in length that holds the x coordinate of the key.
     let xCoordinate: [UInt8]
     /// A byte string 32 bytes in length that holds the y coordinate of the key.
@@ -86,40 +98,36 @@ struct EC2PublicKey: PublicKey {
 
     var rawRepresentation: [UInt8] { xCoordinate + yCoordinate }
 
+    init(algorithm: COSEAlgorithmIdentifier, curve: COSECurve, xCoordinate: [UInt8], yCoordinate: [UInt8]) {
+        self.algorithm = algorithm
+        self.curve = curve
+        self.xCoordinate = xCoordinate
+        self.yCoordinate = yCoordinate
+    }
+
     init(publicKeyObject: CBOR, algorithm: COSEAlgorithmIdentifier) throws {
         self.algorithm = algorithm
 
         // Curve is key -1 - or -0 for SwiftCBOR
         // X Coordinate is key -2, or NegativeInt 1 for SwiftCBOR
         // Y Coordinate is key -3, or NegativeInt 2 for SwiftCBOR
-        guard let curveRaw = publicKeyObject[.negativeInt(0)], case let .unsignedInt(curve) = curveRaw else {
+        guard let curveRaw = publicKeyObject[COSEKey.crv.cbor],
+            case let .unsignedInt(curve) = curveRaw,
+            let coseCurve = COSECurve(rawValue: curve) else {
             throw WebAuthnError.badRequestData
         }
-        self.curve = curve
+        self.curve = coseCurve
 
-        guard let xCoordRaw = publicKeyObject[.negativeInt(1)],
+        guard let xCoordRaw = publicKeyObject[COSEKey.x.cbor],
               case let .byteString(xCoordinateBytes) = xCoordRaw else {
             throw WebAuthnError.badRequestData
         }
         xCoordinate = xCoordinateBytes
-        guard let yCoordRaw = publicKeyObject[.negativeInt(2)],
+        guard let yCoordRaw = publicKeyObject[COSEKey.y.cbor],
               case let .byteString(yCoordinateBytes) = yCoordRaw else {
             throw WebAuthnError.badRequestData
         }
         yCoordinate = yCoordinateBytes
-    }
-
-    func getString() throws -> String {
-        switch algorithm {
-        case .algES256:
-            return try P256.Signing.PublicKey(rawRepresentation: rawRepresentation).pemRepresentation
-        case .algES384:
-            return try P384.Signing.PublicKey(rawRepresentation: rawRepresentation).pemRepresentation
-        case .algES512:
-            return try P521.Signing.PublicKey(rawRepresentation: rawRepresentation).pemRepresentation
-        default:
-            throw WebAuthnError.unsupportedCOSEAlgorithm
-        }
     }
 
     func verify(signature: Data, data: Data) throws {
@@ -155,40 +163,44 @@ struct RSAPublicKeyData: PublicKey {
     // swiftlint:disable:next identifier_name
     let e: [UInt8]
 
+    var rawRepresentation: [UInt8] { n + e }
+
     init(publicKeyObject: CBOR, algorithm: COSEAlgorithmIdentifier) throws {
         self.algorithm = algorithm
 
-        guard let nRaw = publicKeyObject[.negativeInt(0)],
+        guard let nRaw = publicKeyObject[COSEKey.n.cbor],
               case let .byteString(nBytes) = nRaw else {
             throw WebAuthnError.badRequestData
         }
         n = nBytes
 
-        guard let eRaw = publicKeyObject[.negativeInt(1)],
+        guard let eRaw = publicKeyObject[COSEKey.e.cbor],
               case let .byteString(eBytes) = eRaw else {
             throw WebAuthnError.badRequestData
         }
         e = eBytes
     }
 
-    func getString() throws -> String {
-        // switch algorithm {
-        // case .algRS1:
-        //     return try RSA.
-        // case .algRS256, .algPS256:
-        //     return try
-        // case .algRS384, .algPS384:
-        //     return try
-        // case .algRS512, case .algPS512:
-        //     return try
-        // default:
-        //     throw WebAuthnError.unsupportedCOSEAlgorithm
-        // }
-        fatalError("RSA is currently not supported")
-    }
-
     func verify(signature: Data, data: Data) throws {
-        fatalError("Not implemented")
+        let rsaSignature = _RSA.Signing.RSASignature(rawRepresentation: signature)
+
+        var rsaPadding: _RSA.Signing.Padding
+        switch algorithm {
+        case .algRS1, .algRS256, .algRS384, .algRS512:
+            rsaPadding = .insecurePKCS1v1_5
+        case .algPS256, .algPS384, .algPS512:
+            rsaPadding = .PSS
+        default:
+            throw WebAuthnError.badRequestData
+        }
+
+        guard try _RSA.Signing.PublicKey(derRepresentation: rawRepresentation).isValidSignature(
+            rsaSignature,
+            for: data,
+            padding: rsaPadding
+        ) else {
+            throw WebAuthnError.badRequestData
+        }
     }
 }
 
@@ -212,12 +224,7 @@ struct OKPPublicKey: PublicKey {
         xCoordinate = xCoordinateBytes
     }
 
-    func getString() throws -> String {
-        let key = try Curve25519.Signing.PublicKey(rawRepresentation: xCoordinate)
-        return String(data: key.rawRepresentation, encoding: .utf8)!
-    }
-
     func verify(signature: Data, data: Data) throws {
-        fatalError("Not implemented")
+        fatalError("OKPPublicKey not implemented yet")
     }
 }

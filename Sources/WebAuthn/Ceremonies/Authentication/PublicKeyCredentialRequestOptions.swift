@@ -14,6 +14,7 @@
 
 import Foundation
 
+/// The `PublicKeyCredentialRequestOptions` gets passed to the WebAuthn API (`navigator.credentials.get()`)
 public struct PublicKeyCredentialRequestOptions: Codable {
     public let challenge: String
     public let timeout: TimeInterval?
@@ -26,6 +27,18 @@ public struct PublicKeyCredentialRequestOptions: Codable {
 }
 
 public struct PublicKeyCredentialDescriptor: Codable {
+    public enum AuthenticatorTransport: String, Codable {
+        case usb
+        case nfc
+        case ble
+        case hybrid
+        case `internal`
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case type, id, transports
+    }
+
     public let type: String
     public let id: [UInt8]
     public let transports: [AuthenticatorTransport]
@@ -36,10 +49,6 @@ public struct PublicKeyCredentialDescriptor: Codable {
         self.transports = transports
     }
 
-    enum CodingKeys: String, CodingKey {
-        case type, id, transports
-    }
-
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
 
@@ -47,4 +56,10 @@ public struct PublicKeyCredentialDescriptor: Codable {
         try container.encode(id.base64EncodedString(), forKey: .id)
         try container.encode(transports, forKey: .transports)
     }
+}
+
+public enum UserVerificationRequirement: String, Codable {
+    case required
+    case preferred
+    case discouraged
 }

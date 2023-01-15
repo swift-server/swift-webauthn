@@ -12,27 +12,20 @@
 //
 //===----------------------------------------------------------------------===//
 
-/// From §5.2.2
-/// The AuthenticatorAssertionResponse interface represents an authenticator's response to a client’s request for
-/// generation of a new authentication assertion given the WebAuthn Relying Party's challenge and OPTIONAL list of
-/// credentials it is aware of. This response contains a cryptographic signature proving possession of the credential
-/// private key, and optionally evidence of user consent to a specific transaction.
-public struct AuthenticatorAssertionResponse: AuthenticatorResponse, Codable {
+/// This is what the authenticator device returned after we requested it to authenticate a user.
+public struct AuthenticatorAssertionResponse: Codable {
+    /// Representation of what we passed to `navigator.credentials.get()`
     public let clientDataJSON: URLEncodedBase64
     /// Contains the authenticator data returned by the authenticator.
     public let authenticatorData: URLEncodedBase64
     /// Contains the raw signature returned from the authenticator
-    public let signature: String
+    public let signature: URLEncodedBase64
     /// Contains the user handle returned from the authenticator, or null if the authenticator did not return
-    /// a user handle.
+    /// a user handle. Used by to give scope to credentials.
     public let userHandle: String?
     /// Contains an attestation object, if the authenticator supports attestation in assertions.
     /// The attestation object, if present, includes an attestation statement. Unlike the attestationObject
     /// in an AuthenticatorAttestationResponse, it does not contain an authData key because the authenticator
     /// data is provided directly in an AuthenticatorAssertionResponse structure.
     public let attestationObject: String?
-}
-
-public struct ParsedAuthenticatorAssertionResponse {
-
 }

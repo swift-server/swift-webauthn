@@ -14,13 +14,18 @@
 
 import Foundation
 
-/// https://www.w3.org/TR/webauthn/#dictionary-client-data
-/// The client data represents the contextual bindings of both the WebAuthn Relying Party and the client.
+/// A parsed version of the `clientDataJSON` received from the authenticator. The `clientDataJSON` is a
+/// representation of the options we passed to the WebAuthn API (`.get()`/ `.create()`).
 public struct CollectedClientData: Codable, Hashable {
     enum CollectedClientDataVerifyError: Error {
         case ceremonyTypeDoesNotMatch
         case challengeDoesNotMatch
         case originDoesNotMatch
+    }
+
+    enum CeremonyType: String, Codable {
+        case create = "webauthn.create"
+        case assert = "webauthn.get"
     }
 
     /// Contains the string "webauthn.create" when creating new credentials,

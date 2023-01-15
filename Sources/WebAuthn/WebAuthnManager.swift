@@ -18,11 +18,6 @@ import Logging
 import SwiftCBOR
 
 public struct WebAuthnManager {
-    enum WebAuthnManagerError: Error {
-        case base64EncodingFailed
-        case challengeGenerationFailed
-        case userIDMismatch
-    }
     private let config: WebAuthnConfig
 
     public init(config: WebAuthnConfig) {
@@ -32,7 +27,7 @@ public struct WebAuthnManager {
     /// Generate a new set of registration data to be sent to the client and authenticator.
     public func beginRegistration(user: User) throws -> PublicKeyCredentialCreationOptions {
         guard let base64ID = user.userID.data(using: .utf8)?.base64EncodedString() else {
-            throw WebAuthnManagerError.base64EncodingFailed
+            throw WebAuthnError.badRequestData
         }
 
         let userEntity = PublicKeyCredentialUserEntity(name: user.name, id: base64ID, displayName: user.displayName)
@@ -58,7 +53,7 @@ public struct WebAuthnManager {
     /// - Returns:  A new `Credential` with information about the authenticator and registration
     public func finishRegistration(
         challenge: EncodedBase64,
-        credentialCreationData: RegistrationResponse,
+        credentialCreationData: RegistrationCredential,
         requireUserVerification: Bool = false,
         supportedPublicKeyAlgorithms: [PublicKeyCredentialParameters] = PublicKeyCredentialParameters.supported,
         confirmCredentialIDNotRegisteredYet: (String) async throws -> Bool
@@ -161,7 +156,11 @@ public struct WebAuthnManager {
         }
 
         if authenticatorData.counter > 0 || credentialCurrentSignCount > 0 {
-            guard authenticatorData.counter > credentialCurrentSignCount else { throw WebAuthnError.badRequestData }
+            guard authenticatorData.counter > credentialCurrentSignCount else {
+                // This is a signal that the authenticator may be cloned, i.e. at least two copies of the credential
+                // private key may exist and are being used in parallel.
+                throw WebAuthnError.badRequestData
+            }
         }
 
         let clientDataHash = SHA256.hash(data: clientDataData)

@@ -14,7 +14,11 @@
 
 /// Protocol to interact with a user throughout the registration ceremony
 public protocol User {
+    /// A unique identifier for the user. For privacy reasons it should NOT be something like an email address.
     var userID: String { get }
+    /// A value that will help the user identify which account this credential is associated with.
+    /// Can be an email address, etc...
     var name: String { get }
+    /// A user-friendly representation of their account. Can be a full name ,etc...
     var displayName: String { get }
 }

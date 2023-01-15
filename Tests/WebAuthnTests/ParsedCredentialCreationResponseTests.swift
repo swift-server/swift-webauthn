@@ -4,11 +4,10 @@ import XCTest
 final class ParsedCredentialCreationResponseTests: XCTestCase {
     func testParsingSucceeds() throws {
         // swiftlint:disable line_length
-        let response = RegistrationResponse(
+        let response = RegistrationCredential(
             id: "Oj7lbcq6vsDvL0t_DuKOETF8LPf_lygwRA1j_Lqn4ms",
             type: "public-key",
             rawID: "Oj7lbcq6vsDvL0t_DuKOETF8LPf_lygwRA1j_Lqn4ms",
-            clientExtensionResults: nil,
             attestationResponse: AuthenticatorAttestationResponse(
                 clientDataJSON: "eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlbmdlIjoiY21GdVpHOXRVM1J5YVc1blJuSnZiVk5sY25abGNnIiwib3JpZ2luIjoiaHR0cDovL2xvY2FsaG9zdDo4MDgwIiwiY3Jvc3NPcmlnaW4iOmZhbHNlLCJvdGhlcl9rZXlzX2Nhbl9iZV9hZGRlZF9oZXJlIjoiZG8gbm90IGNvbXBhcmUgY2xpZW50RGF0YUpTT04gYWdhaW5zdCBhIHRlbXBsYXRlLiBTZWUgaHR0cHM6Ly9nb28uZ2wveWFiUGV4In0",
                 attestationObject: "o2NmbXRmcGFja2VkZ2F0dFN0bXSiY2FsZyZjc2lnWEcwRQIgNTRtpI_SOOZVzU1pN_4cX-osqUPiHMOW48qqq91DXfUCIQC-MHiaIxt2OdIxgqYnyUDHceevNOMfPibenabQGvXgjGhhdXRoRGF0YVikSZYN5YgOjGh0NBcPZHZgW4_krrmihjLHmVzzuoMdl2NFAAAAAK3OAAI1vMYKZIsLJfHwVQMAIDo-5W3Kur7A7y9Lfw7ijhExfCz3_5coMEQNY_y6p-JrpQECAyYgASFYIJr_yLoYbYWgcf7aQcd7pcjUj-3o8biafWQH28WijQSvIlggPI2KqqRQ26KKuFaJ0yH7nouCBrzHu8qRONW-CPa9VDM"
@@ -25,7 +24,6 @@ final class ParsedCredentialCreationResponseTests: XCTestCase {
         XCTAssertEqual(parsedResponse.id, "Oj7lbcq6vsDvL0t_DuKOETF8LPf_lygwRA1j_Lqn4ms")
         XCTAssertEqual(parsedResponse.type, "public-key")
         XCTAssertEqual(parsedResponse.rawID, Data(bytes: expectedRawID, count: expectedRawID.count))
-        XCTAssertEqual(parsedResponse.clientExtensionResults, nil)
         // XCTAssertEqual(parsedResponse.response, nil)
 
         // swiftlint:enable line_length

@@ -15,6 +15,7 @@
 import Crypto
 import SwiftCBOR
 
+/// Contains the cryptographic attestation that a new key pair was created by that authenticator.
 public struct AttestationObject {
     let authenticatorData: AuthenticatorData
     let rawAuthenticatorData: [UInt8]
@@ -24,46 +25,28 @@ public struct AttestationObject {
     func verify(relyingPartyID: String, verificationRequired: Bool, clientDataHash: SHA256.Digest) throws {
         let relyingPartyIDHash = SHA256.hash(data: relyingPartyID.data(using: .utf8)!)
 
-        // Step 12.
         guard relyingPartyIDHash == authenticatorData.relyingPartyIDHash else {
             throw WebAuthnError.relyingPartyIDHashDoesNotMatch
         }
 
-        // Step 13.
         guard authenticatorData.flags.userPresent else {
             throw WebAuthnError.userPresentFlagNotSet
         }
 
-        // Step 14.
         if verificationRequired {
             guard authenticatorData.flags.userVerified else {
                 throw WebAuthnError.userVerificationRequiredButFlagNotSet
             }
         }
 
-        // Step 17. happening somewhere else (maybe we can move it here?)
-
-        // Attestation format already determined. Skipping step 19.
-
-        // Step 20.
         switch format {
-        case .androidKey:
-            fatalError("Not implemented")
-        case .androidSafetynet:
-            fatalError("Not implemented")
-        case .apple:
-            fatalError("Not implemented")
-        case .fidoU2F:
-            fatalError("Not implemented")
-        case .packed:
-            try AttestationStatementVerification.verifyPacked(attestationObject: self, clientDataHash: clientDataHash)
-        case .tpm:
-            fatalError("Not implemented")
         case .none:
             // if format is `none` statement must be empty
             guard attestationStatement == .map([:]) else {
                 throw WebAuthnError.attestationStatementMissing
             }
+        default:
+            throw WebAuthnError.attestationVerificationNotSupported
         }
     }
 }

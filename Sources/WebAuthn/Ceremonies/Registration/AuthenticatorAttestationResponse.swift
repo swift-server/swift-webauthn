@@ -15,16 +15,13 @@
 import Foundation
 import SwiftCBOR
 
-/// From $ 5.2.1 (https://w3c.github.io/webauthn/#authenticatorattestationresponse)
-/// The unprocessed response from the authenticator for the creation of a new public key credential.
-/// It contains information about the new credential that can be used to identify it for later use, and
-/// metadata that can be used by the WebAuthn Relying Party to assess the characteristics of the credential during
-/// registration.
-public struct AuthenticatorAttestationResponse: AuthenticatorResponse, Codable {
+/// The response from the authenticator device for the creation of a new public key credential.
+public struct AuthenticatorAttestationResponse: Codable {
     public let clientDataJSON: URLEncodedBase64
     public let attestationObject: String
 }
 
+/// A parsed version of `AuthenticatorAttestationResponse`
 struct ParsedAuthenticatorAttestationResponse {
     let clientData: CollectedClientData
     let attestationObject: AttestationObject
@@ -64,9 +61,5 @@ struct ParsedAuthenticatorAttestationResponse {
             format: attestationFormat,
             attestationStatement: attestationStatement
         )
-    }
-
-    private static func parseAttestationStatement(format: AttestationFormat, statement: CBOR) throws {
-
     }
 }
