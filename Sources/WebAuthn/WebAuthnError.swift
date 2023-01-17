@@ -36,10 +36,10 @@ public enum WebAuthnError: Error {
     case invalidAssertionCredentialType
 
     // MARK: ParsedAuthenticatorAttestationResponse
-    case invalidAttestationData
+    case invalidAttestationObject
     case invalidAuthData
     case invalidFmt
-    case invalidAttStmt
+    case missingAttStmt
     case attestationFormatNotSupported
 
     // MARK: ParsedCredentialCreationResponse

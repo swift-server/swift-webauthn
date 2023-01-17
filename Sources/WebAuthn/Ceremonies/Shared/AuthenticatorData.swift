@@ -17,7 +17,7 @@ import Crypto
 
 /// Data created and/ or used by the authenticator during authentication/ registration.
 /// The data contains, for example, whether a user was present or verified.
-struct AuthenticatorData {
+struct AuthenticatorData: Equatable {
     let relyingPartyIDHash: [UInt8]
     let flags: AuthenticatorFlags
     let counter: UInt32
