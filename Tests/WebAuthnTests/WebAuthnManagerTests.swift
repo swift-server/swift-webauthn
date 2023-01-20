@@ -54,7 +54,7 @@ final class WebAuthnManagerTests: XCTestCase {
 
     func testFinishRegistrationFailsWithInvalidRawID() async throws {
         do {
-            _ = try await finishRegistration(rawID: "_")
+            _ = try await finishRegistration(rawID: "%")
             XCTFail("Should not succeed")
         } catch {
             XCTAssertEqual(error as! WebAuthnError, .invalidRawID)
