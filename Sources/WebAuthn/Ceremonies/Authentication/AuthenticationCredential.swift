@@ -12,8 +12,19 @@
 //
 //===----------------------------------------------------------------------===//
 
-struct AttestedCredentialData {
-    let aaguid: [UInt8]
-    let credentialID: [UInt8]
-    let publicKey: [UInt8]
+import Foundation
+
+/// The unprocessed response received from `navigator.credentials.get()`.
+public struct AuthenticationCredential: Codable {
+    public let id: URLEncodedBase64
+    public let response: AuthenticatorAssertionResponse
+    public let authenticatorAttachment: String?
+    public let type: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case response
+        case authenticatorAttachment
+        case type
+    }
 }

@@ -12,24 +12,12 @@
 //
 //===----------------------------------------------------------------------===//
 
-import Foundation
-
-public struct RegistrationResponse: Codable {
-    public let id: String
-    let rawID: String
-    /// This is the public-key
-    let type: String
-    let response: AuthenticatorAttestationResponse
-
-    enum CodingKeys: String, CodingKey {
-        case id
-        case rawID = "rawId"
-        case type
-        case response
-    }
-}
-
-public struct AuthenticatorAttestationResponse: Codable {
-    let clientDataJSON: String
-    let attestationObject: String
+public enum AttestationFormat: String, RawRepresentable {
+    case packed
+    case tpm
+    case androidKey = "android-key"
+    case androidSafetynet = "android-safetynet"
+    case fidoU2F = "fido-u2f"
+    case apple
+    case none
 }

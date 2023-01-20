@@ -13,11 +13,56 @@
 //===----------------------------------------------------------------------===//
 
 public enum WebAuthnError: Error {
-    case authDataTooShort
-    case extensionDataMissing
-    case leftOverBytes
-    case attestedCredentialFlagNotSet
+    // MARK: Shared
+    case invalidClientDataJSON
     case attestedCredentialDataMissing
-    case badRequestData
-    case validationError
+    case relyingPartyIDHashDoesNotMatch
+    case userPresentFlagNotSet
+    case invalidSignature
+
+    // MARK: AttestationObject
+    case userVerificationRequiredButFlagNotSet
+    case attestationStatementMissing
+    case attestationVerificationNotSupported
+
+    // MARK: WebAuthnManager
+    case invalidUserID
+    case unsupportedCredentialPublicKeyAlgorithm
+    case credentialIDAlreadyExists
+    case invalidAuthenticatorData
+    case invalidRelyingPartyID
+    case userVerifiedFlagNotSet
+    case potentialReplayAttack
+    case invalidAssertionCredentialType
+
+    // MARK: ParsedAuthenticatorAttestationResponse
+    case invalidAttestationData
+    case invalidAuthData
+    case invalidFmt
+    case invalidAttStmt
+    case attestationFormatNotSupported
+
+    // MARK: ParsedCredentialCreationResponse
+    case invalidRawID
+    case invalidCredentialCreationType
+    case credentialRawIDTooBig
+
+    // MARK: AuthenticatorData
+    case authDataTooShort
+    case attestedCredentialFlagNotSet
+    case extensionDataMissing
+    case leftOverBytesInAuthenticatorData
+
+    // MARK: CredentialPublicKey
+    case badPublicKeyBytes
+    case invalidKeyType
+    case invalidAlgorithm
+    case invalidCurve
+    case invalidXCoordinate
+    case invalidYCoordinate
+    case unsupportedCOSEAlgorithm
+    case unsupportedCOSEAlgorithmForEC2PublicKey
+    case invalidModulus
+    case invalidExponent
+    case unsupportedCOSEAlgorithmForRSAPublicKey
 }

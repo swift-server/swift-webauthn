@@ -12,10 +12,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-import Foundation
-
-struct ClientDataObject: Codable {
-    let challenge: String
-    let origin: String
-    let type: String
+// Contains the new public key created by the authenticator.
+struct AttestedCredentialData: Codable {
+    let aaguid: [UInt8]
+    let credentialID: [UInt8]
+    let publicKey: [UInt8]
 }

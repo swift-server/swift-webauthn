@@ -13,12 +13,13 @@
 //===----------------------------------------------------------------------===//
 
 import Foundation
-import Crypto
 
-public struct Credential {
-    /// base64 encoded String of the credential ID bytes
-    public let credentialID: String
-
-    /// The public key for this certificate
-    public let publicKey: P256.Signing.PublicKey
+/// The Key Type derived from the IANA COSE AuthData
+enum COSEKeyType: UInt64, RawRepresentable, Codable {
+    /// OctetKey is an Octet Key
+	case octetKey = 1
+	/// EllipticKey is an Elliptic Curve Public Key
+	case ellipticKey = 2
+	/// RSAKey is an RSA Public Key
+	case rsaKey = 3
 }

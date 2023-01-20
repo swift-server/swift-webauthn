@@ -21,12 +21,12 @@ let package = Package(
         .macOS(.v12)
     ],
     products: [
-        .library(name: "WebAuthn", targets: ["WebAuthn"]),
+        .library(name: "WebAuthn", targets: ["WebAuthn"])
     ],
     dependencies: [
         .package(url: "https://github.com/unrelentingtech/SwiftCBOR.git", from: "0.4.5"),
         .package(url: "https://github.com/apple/swift-crypto.git", from: "2.0.0"),
-        .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
+        .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0")
     ],
     targets: [
         .target(
@@ -34,11 +34,12 @@ let package = Package(
             dependencies: [
                 "SwiftCBOR",
                 .product(name: "Crypto", package: "swift-crypto"),
-                .product(name: "Logging", package: "swift-log"),
+                .product(name: "_CryptoExtras", package: "swift-crypto"),
+                .product(name: "Logging", package: "swift-log")
             ]
         ),
         .testTarget(name: "WebAuthnTests", dependencies: [
-            .target(name: "WebAuthn"),
+            .target(name: "WebAuthn")
         ])
     ]
 )
