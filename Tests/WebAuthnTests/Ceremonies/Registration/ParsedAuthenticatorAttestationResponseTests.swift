@@ -11,7 +11,7 @@ final class ParsedAuthenticatorAttestationResponseTests: XCTestCase {
 
     func testInitFromRawResponseFailsWithInvalidClientDataJSON() throws {
         XCTAssertThrowsError(try parseResponse(
-            clientDataJSON: "a", // this isn't base64 decodable, so parsing should fail
+            clientDataJSON: "%%%", // this isn't base64 decodable, so parsing should fail
             attestationObject: ""
         )) { error in
             XCTAssertEqual(error as? WebAuthnError, .invalidClientDataJSON)
@@ -30,7 +30,7 @@ final class ParsedAuthenticatorAttestationResponseTests: XCTestCase {
     func testInitFromRawResponseFailsIfAttestationObjectIsNotBase64() throws {
         XCTAssertThrowsError(try parseResponse(
             clientDataJSON: realClientDataJSON,
-            attestationObject: "a"
+            attestationObject: "%%%"
         )) { error in
             XCTAssertEqual(error as? WebAuthnError, .invalidAttestationObject)
         }
