@@ -89,6 +89,9 @@ extension AuthenticatorData {
         let idLength: UInt16 = idLengthData.toInteger(endian: .big)
         let credentialIDEndIndex = Int(idLength) + 55
 
+        guard data.count >= credentialIDEndIndex else {
+            throw WebAuthnError.credentialIDTooShort
+        }
         let credentialID = data[55..<credentialIDEndIndex]
         let publicKeyBytes = data[credentialIDEndIndex...]
 

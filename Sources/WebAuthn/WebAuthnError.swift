@@ -52,6 +52,7 @@ public enum WebAuthnError: Error {
     case attestedCredentialFlagNotSet
     case extensionDataMissing
     case leftOverBytesInAuthenticatorData
+    case credentialIDTooShort
 
     // MARK: CredentialPublicKey
     case badPublicKeyBytes
