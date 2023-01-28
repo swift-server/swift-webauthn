@@ -149,13 +149,89 @@ final class WebAuthnManagerTests: XCTestCase {
         )
     }
 
+    func testFinishRegistrationFailsIfCeremonyTypeDoesNotMatch() async throws {
+        let clientDataJSONWrongCeremonyType: URLEncodedBase64 = "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiY21GdVpHOXRVM1J5YVc1blJuSnZiVk5sY25abGNnIiwib3JpZ2luIjoiaHR0cDovL2xvY2FsaG9zdDo4MDgwIiwiY3Jvc3NPcmlnaW4iOmZhbHNlLCJvdGhlcl9rZXlzX2Nhbl9iZV9hZGRlZF9oZXJlIjoiZG8gbm90IGNvbXBhcmUgY2xpZW50RGF0YUpTT04gYWdhaW5zdCBhIHRlbXBsYXRlLiBTZWUgaHR0cHM6Ly9nb28uZ2wveWFiUGV4In0"
+        try await assertThrowsError(
+            await finishRegistration(clientDataJSON: clientDataJSONWrongCeremonyType),
+            expect: CollectedClientData.CollectedClientDataVerifyError.ceremonyTypeDoesNotMatch
+        )
+    }
+
+    func testFinishRegistrationFailsIfChallengeDoesNotMatch() async throws {
+        let clientDataJSONWrongChallenge: URLEncodedBase64 = "eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlbmdlIjoiY21GdVpHOXRVM1J5YVc1blJuSnZiVk5sY25abGNnIiwib3JpZ2luIjoiaHR0cDovL2xvY2FsaG9zdDo4MDgwIiwiY3Jvc3NPcmlnaW4iOmZhbHNlLCJvdGhlcl9rZXlzX2Nhbl9iZV9hZGRlZF9oZXJlIjoiZG8gbm90IGNvbXBhcmUgY2xpZW50RGF0YUpTT04gYWdhaW5zdCBhIHRlbXBsYXRlLiBTZWUgaHR0cHM6Ly9nb28uZ2wveWFiUGV4In0"
+        try await assertThrowsError(
+            await finishRegistration(
+                challenge: "definitelyAnotherChallenge",
+                clientDataJSON: clientDataJSONWrongChallenge
+            ),
+            expect: CollectedClientData.CollectedClientDataVerifyError.challengeDoesNotMatch
+        )
+    }
+
+    func testFinishRegistrationFailsIfOriginDoesNotMatch() async throws {
+        // origin = http://johndoe.com
+        let clientDataJSONWrongOrigin: URLEncodedBase64 = "eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlbmdlIjoiY21GdVpHOXRVM1J5YVc1blJuSnZiVk5sY25abGNnIiwib3JpZ2luIjoiaHR0cDovL2pvaG5kb2UuY29tIiwiY3Jvc3NPcmlnaW4iOmZhbHNlLCJvdGhlcl9rZXlzX2Nhbl9iZV9hZGRlZF9oZXJlIjoiZG8gbm90IGNvbXBhcmUgY2xpZW50RGF0YUpTT04gYWdhaW5zdCBhIHRlbXBsYXRlLiBTZWUgaHR0cHM6Ly9nb28uZ2wveWFiUGV4In0"
+
+        // `webAuthnManager` is configured with origin = https://example.com
+        try await assertThrowsError(
+            await finishRegistration(
+                challenge: "cmFuZG9tU3RyaW5nRnJvbVNlcnZlcg",
+                clientDataJSON: clientDataJSONWrongOrigin
+            ),
+            expect: CollectedClientData.CollectedClientDataVerifyError.originDoesNotMatch
+        )
+    }
+
+    func testFinishRegistrationFailsIfClientDataJSONIsInvalid() async throws {
+        try await assertThrowsError(
+            await finishRegistration(clientDataJSON: "%"),
+            expect: WebAuthnError.invalidClientDataJSON
+        )
+    }
+
+    func testFinishRegistrationFailsIfRelyingPartyIDHashDoesNotMatch() async throws {
+        let hexAttestationObjectMismatchingRpId: URLEncodedBase64 = "o2NmbXRmcGFja2VkZ2F0dFN0bXSiY2FsZyZjc2lnWEcwRQIgNTRtpI_SOOZVzU1pN_4cX-osqUPiHMOW48qqq91DXfUCIQC-MHiaIxt2OdIxgqYnyUDHceevNOMfPibenabQGvXgjGhhdXRoRGF0YVg4SZYN5YgOjGh0NBcPZHZgW4_krrmihjLHmVzzuoMdl2NFAAAAAK3OAAI1vMYKZIsLJfHwVQMAATo"
+        try await assertThrowsError(
+            await finishRegistration(attestationObject: hexAttestationObjectMismatchingRpId),
+            expect: WebAuthnError.relyingPartyIDHashDoesNotMatch
+        )
+    }
+
+    func testFinishRegistrationFailsIfUserPresentFlagIsNotSet() async throws {
+        let hexAttestationObjectMismatchingRpId: URLEncodedBase64 = "o2NmbXRmcGFja2VkZ2F0dFN0bXSiY2FsZyZjc2lnWEcwRQIgNTRtpI_SOOZVzU1pN_4cX-osqUPiHMOW48qqq91DXfUCIQC-MHiaIxt2OdIxgqYnyUDHceevNOMfPibenabQGvXgjGhhdXRoRGF0YVg4o3mm9u6vuaVeN4wRgDTidR5oL6ufLTCrE9ISVYbOGUdAAAAAAK3OAAI1vMYKZIsLJfHwVQMAATo"
+        try await assertThrowsError(
+            await finishRegistration(attestationObject: hexAttestationObjectMismatchingRpId),
+            expect: WebAuthnError.userPresentFlagNotSet
+        )
+    }
+
+    func testFinishRegistrationFailsIfUserVerificationFlagIsNotSetButRequired() async throws {
+        let hexAttestationObjectUVFlagNotSet: URLEncodedBase64 = "o2NmbXRmcGFja2VkZ2F0dFN0bXSiY2FsZyZjc2lnWEcwRQIgNTRtpI_SOOZVzU1pN_4cX-osqUPiHMOW48qqq91DXfUCIQC-MHiaIxt2OdIxgqYnyUDHceevNOMfPibenabQGvXgjGhhdXRoRGF0YVg4o3mm9u6vuaVeN4wRgDTidR5oL6ufLTCrE9ISVYbOGUdBAAAAAK3OAAI1vMYKZIsLJfHwVQMAATo"
+        try await assertThrowsError(
+            await finishRegistration(
+                attestationObject: hexAttestationObjectUVFlagNotSet,
+                requireUserVerification: true
+            ),
+            expect: WebAuthnError.userVerificationRequiredButFlagNotSet
+        )
+    }
+
+    func testFinishRegistrationFailsIfAttFmtIsNoneButAttStmtIsIncluded() async throws {
+        let hexAttestationObjectAttStmtNoneWithAttStmt: URLEncodedBase64 = "o2NmbXRkbm9uZWdhdHRTdG10oWVoZWxsb2V3b3JsZGhhdXRoRGF0YVg5o3mm9u6vuaVeN4wRgDTidR5oL6ufLTCrE9ISVYbOGUdBAAAAAKN5pvbur7mlXjeMEYA04nUAAQAA"
+        try await assertThrowsError(
+            await finishRegistration(attestationObject: hexAttestationObjectAttStmtNoneWithAttStmt),
+            expect: WebAuthnError.attestationStatementMustBeEmpty
+        )
+    }
+
     private func finishRegistration(
-        challenge: EncodedBase64 = "xxi54jsOKKj7GrikECpuQyenfMC31FADtT6/fE9+fMY=",
+        challenge: EncodedBase64 = "cmFuZG9tU3RyaW5nRnJvbVNlcnZlcg",
         id: EncodedBase64 = "4PrJNQUJ9xdI2DeCzK9rTBRixhXHDiVdoTROQIh8j80",
         type: String = "public-key",
         rawID: EncodedBase64 = "4PrJNQUJ9xdI2DeCzK9rTBRixhXHDiVdoTROQIh8j80",
-        clientDataJSON: String = "eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlbmdlIjoiY21GdVpHOXRVM1J5YVc1blJuSnZiVk5sY25abGNnIiwib3JpZ2luIjoiaHR0cDovL2xvY2FsaG9zdDo4MDgwIiwiY3Jvc3NPcmlnaW4iOmZhbHNlLCJvdGhlcl9rZXlzX2Nhbl9iZV9hZGRlZF9oZXJlIjoiZG8gbm90IGNvbXBhcmUgY2xpZW50RGF0YUpTT04gYWdhaW5zdCBhIHRlbXBsYXRlLiBTZWUgaHR0cHM6Ly9nb28uZ2wveWFiUGV4In0",
+        clientDataJSON: String = "eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlbmdlIjoiY21GdVpHOXRVM1J5YVc1blJuSnZiVk5sY25abGNnIiwib3JpZ2luIjoiaHR0cHM6Ly9leGFtcGxlLmNvbSIsImNyb3NzT3JpZ2luIjpmYWxzZSwib3RoZXJfa2V5c19jYW5fYmVfYWRkZWRfaGVyZSI6ImRvIG5vdCBjb21wYXJlIGNsaWVudERhdGFKU09OIGFnYWluc3QgYSB0ZW1wbGF0ZS4gU2VlIGh0dHBzOi8vZ29vLmdsL3lhYlBleCJ9",
         attestationObject: String = "o2NmbXRmcGFja2VkZ2F0dFN0bXSiY2FsZyZjc2lnWEcwRQIgNTRtpI_SOOZVzU1pN_4cX-osqUPiHMOW48qqq91DXfUCIQC-MHiaIxt2OdIxgqYnyUDHceevNOMfPibenabQGvXgjGhhdXRoRGF0YVikSZYN5YgOjGh0NBcPZHZgW4_krrmihjLHmVzzuoMdl2NFAAAAAK3OAAI1vMYKZIsLJfHwVQMAIDo-5W3Kur7A7y9Lfw7ijhExfCz3_5coMEQNY_y6p-JrpQECAyYgASFYIJr_yLoYbYWgcf7aQcd7pcjUj-3o8biafWQH28WijQSvIlggPI2KqqRQ26KKuFaJ0yH7nouCBrzHu8qRONW-CPa9VDM",
+        requireUserVerification: Bool = false,
         confirmCredentialIDNotRegisteredYet: (String) async throws -> Bool = { _ in true }
     ) async throws -> Credential {
         try await webAuthnManager.finishRegistration(
@@ -169,6 +245,7 @@ final class WebAuthnManagerTests: XCTestCase {
                     attestationObject: attestationObject
                 )
             ),
+            requireUserVerification: requireUserVerification,
             confirmCredentialIDNotRegisteredYet: confirmCredentialIDNotRegisteredYet
         )
     }

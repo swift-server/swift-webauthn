@@ -13,7 +13,11 @@ func assertThrowsError<T, E: Error>(
         XCTFail(message(), file: file, line: line)
     } catch {
         guard let error = error as? E else {
-            XCTFail("Error was thrown, but didn't match expected type '\(E.self)'. Got: '\(type(of: error))'")
+            XCTFail("""
+            Error was thrown, but didn't match expected type '\(E.self)'.
+            Got error of type '\(type(of: error))'.
+            Error: \(error)
+            """)
             return
         }
         errorHandler(error)

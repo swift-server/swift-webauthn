@@ -43,7 +43,7 @@ public struct AttestationObject: Equatable {
         case .none:
             // if format is `none` statement must be empty
             guard attestationStatement == .map([:]) else {
-                throw WebAuthnError.attestationStatementMissing
+                throw WebAuthnError.attestationStatementMustBeEmpty
             }
         default:
             throw WebAuthnError.attestationVerificationNotSupported

@@ -22,7 +22,7 @@ public enum WebAuthnError: Error, Equatable {
 
     // MARK: AttestationObject
     case userVerificationRequiredButFlagNotSet
-    case attestationStatementMissing
+    case attestationStatementMustBeEmpty
     case attestationVerificationNotSupported
 
     // MARK: WebAuthnManager
