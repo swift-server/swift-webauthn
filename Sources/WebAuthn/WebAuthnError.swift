@@ -12,7 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-public enum WebAuthnError: Error {
+public enum WebAuthnError: Error, Equatable {
     // MARK: Shared
     case invalidClientDataJSON
     case attestedCredentialDataMissing
