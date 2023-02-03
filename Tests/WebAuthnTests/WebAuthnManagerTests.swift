@@ -224,13 +224,20 @@ final class WebAuthnManagerTests: XCTestCase {
         )
     }
 
+    func testFinishRegistrationFailsIfRawIDIsTooLong() async throws {
+        try await assertThrowsError(
+            await finishRegistration(rawID: [UInt8](repeating: 0, count: 1024).base64EncodedString()),
+            expect: WebAuthnError.credentialRawIDTooLong
+        )
+    }
+
     private func finishRegistration(
         challenge: EncodedBase64 = "cmFuZG9tU3RyaW5nRnJvbVNlcnZlcg",
         id: EncodedBase64 = "4PrJNQUJ9xdI2DeCzK9rTBRixhXHDiVdoTROQIh8j80",
         type: String = "public-key",
         rawID: EncodedBase64 = "4PrJNQUJ9xdI2DeCzK9rTBRixhXHDiVdoTROQIh8j80",
         clientDataJSON: String = "eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlbmdlIjoiY21GdVpHOXRVM1J5YVc1blJuSnZiVk5sY25abGNnIiwib3JpZ2luIjoiaHR0cHM6Ly9leGFtcGxlLmNvbSIsImNyb3NzT3JpZ2luIjpmYWxzZSwib3RoZXJfa2V5c19jYW5fYmVfYWRkZWRfaGVyZSI6ImRvIG5vdCBjb21wYXJlIGNsaWVudERhdGFKU09OIGFnYWluc3QgYSB0ZW1wbGF0ZS4gU2VlIGh0dHBzOi8vZ29vLmdsL3lhYlBleCJ9",
-        attestationObject: String = "o2NmbXRmcGFja2VkZ2F0dFN0bXSiY2FsZyZjc2lnWEcwRQIgNTRtpI_SOOZVzU1pN_4cX-osqUPiHMOW48qqq91DXfUCIQC-MHiaIxt2OdIxgqYnyUDHceevNOMfPibenabQGvXgjGhhdXRoRGF0YVikSZYN5YgOjGh0NBcPZHZgW4_krrmihjLHmVzzuoMdl2NFAAAAAK3OAAI1vMYKZIsLJfHwVQMAIDo-5W3Kur7A7y9Lfw7ijhExfCz3_5coMEQNY_y6p-JrpQECAyYgASFYIJr_yLoYbYWgcf7aQcd7pcjUj-3o8biafWQH28WijQSvIlggPI2KqqRQ26KKuFaJ0yH7nouCBrzHu8qRONW-CPa9VDM",
+        attestationObject: String = "o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVg5o3mm9u6vuaVeN4wRgDTidR5oL6ufLTCrE9ISVYbOGUdBAAAAAKN5pvbur7mlXjeMEYA04nUAAQAA",
         requireUserVerification: Bool = false,
         confirmCredentialIDNotRegisteredYet: (String) async throws -> Bool = { _ in true }
     ) async throws -> Credential {

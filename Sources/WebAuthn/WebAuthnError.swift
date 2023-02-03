@@ -45,7 +45,7 @@ public enum WebAuthnError: Error, Equatable {
     // MARK: ParsedCredentialCreationResponse
     case invalidRawID
     case invalidCredentialCreationType
-    case credentialRawIDTooBig
+    case credentialRawIDTooLong
 
     // MARK: AuthenticatorData
     case authDataTooShort
