@@ -29,17 +29,20 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0")
     ],
     targets: [
+        .target(name: "CJWTKitBoringSSL"),
         .target(
             name: "WebAuthn",
             dependencies: [
-                "SwiftCBOR",
+                .product(name: "SwiftCBOR", package: "SwiftCBOR"),
                 .product(name: "Crypto", package: "swift-crypto"),
                 .product(name: "_CryptoExtras", package: "swift-crypto"),
-                .product(name: "Logging", package: "swift-log")
+                .product(name: "Logging", package: "swift-log"),
+                .target(name: "CJWTKitBoringSSL")
             ]
         ),
         .testTarget(name: "WebAuthnTests", dependencies: [
             .target(name: "WebAuthn")
         ])
-    ]
+    ],
+    cxxLanguageStandard: .cxx11
 )

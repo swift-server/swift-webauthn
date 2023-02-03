@@ -45,6 +45,8 @@ public struct AttestationObject: Equatable {
             guard attestationStatement == .map([:]) else {
                 throw WebAuthnError.attestationStatementMustBeEmpty
             }
+        case .packed:
+            fatalError()
         default:
             throw WebAuthnError.attestationVerificationNotSupported
         }
