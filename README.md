@@ -49,25 +49,78 @@ interface with a webpage that will handle calling the WebAuthn API:
 
 #### Setup
 
+Configure your backend with a `WebAuthnManager` instance:
+
+```swift
+app.webAuthn = WebAuthnManager(
+    config: WebAuthnConfig(
+        relyingPartyDisplayName: "My Fancy Web App",
+        relyingPartyID: "example.com",
+        relyingPartyOrigin: "https://example.com",
+        timeout: 600
+    )
+)
+```
 
 #### Registration
 
-1. A user wants to signup on a website using WebAuthn. The client makes a request to the backend which implements this
-   library. On request the backend calls the `beginRegistration(user:)` method and sends the returned
-   `PublicKeyCredentialCreationOptions` back to the client.
+Scenario: A user wants to signup on a website using WebAuthn.
 
-2. The client passes the received `PublicKeyCredentialCreationOptions` via the WebAuthn API to
-   `navigator.credentials.create()`. This in turn will prompt the user to create a new credential using an
-   authenticator of their choice (TouchID, security keys, ...). The response must then be send back to the backend.
+##### Explanation
 
-3. On request the backend calls the `finishRegistration(challenge:credentialCreationData:)` method with the previously
-   generated challenge and the received authenticator response (from `navigator.credentials.create()`). If
-   `finishRegistration` succeeds a new `Credential` object will be returned. This object should be persisted somewhere
-   (e.g. a database) and linked to the user from step 1.
+1. When tapping the "Register" button the client sends a request to
+   the backend. The backend responds to this request with a call to `begingRegistration(user:)` which then returns a
+   new `PublicKeyCredentialRequestOptions`. This must be send back to the client so it can pass it to
+   `navigator.credentials.create()`.
+
+2. Whatever `navigator.credentials.create()` returns will be send back to the backend, parsing it into
+   `RegistrationCredential`.
+    ```swift
+    let registrationCredential = try req.content.decode(RegistrationCredential.self)
+    ```
+
+3. Next the backend calls `finishRegistration(challenge:credentialCreationData:)` with the previously
+   generated challenge and the received `RegistrationCredential`. If `finishRegistration` succeeds a new `Credential`
+   object will be returned. This object contains information about the new credential, including an id and the generated public-key. Persist this data in e.g. a database and link the entry to the user.
+
+##### Example implementation
+
+```swift
+authSessionRoutes.get("makeCredential") { req -> PublicKeyCredentialCreationOptions in
+    let user = try req.auth.require(User.self)
+    let options = try req.webAuthn.beginRegistration(user: user)
+    req.session.data["challenge"] = options.challenge
+    return options
+}
+
+authSessionRoutes.post("makeCredential") { req -> HTTPStatus in
+    let user = try req.auth.require(User.self)
+    guard let challenge = req.session.data["challenge"] else { throw Abort(.unauthorized) }
+    let registrationCredential = try req.content.decode(RegistrationCredential.self)
+
+    let credential = try await req.webAuthn.finishRegistration(
+        challenge: challenge,
+        credentialCreationData: registrationCredential,
+        // this is likely to be removed soon
+        confirmCredentialIDNotRegisteredYet: { credentialID in
+            try await queryCredentialWithUser(id: credentialID) == nil
+        }
+    )
+
+    try await WebAuthnCredential(from: credential, userID: user.requireID())
+        .save(on: req.db)
+
+    return .ok
+}
+```
 
 #### Authentication
 
-1. A user wants to log in on a website using WebAuthn. When tapping the "Login" button the client send a request to
+Scenario: A user wants to log in on a website using WebAuthn.
+
+##### Explanation
+
+1. When tapping the "Login" button the client sends a request to
    the backend. The backend responds to this request with a call to `beginAuthentication()` which then in turn
    returns a new `PublicKeyCredentialRequestOptions`. This must be send back to the client so it can pass it to
    `navigator.credentials.get()`.
@@ -80,11 +133,53 @@ interface with a webpage that will handle calling the WebAuthn API:
    `finishAuthentication(credential:expectedChallenge:credentialPublicKey:credentialCurrentSignCount:)`.
     - The `credential` parameter expects the decoded `AuthenticationCredential`
     - The `expectedChallenge` parameter expects the challenge previously generated
-      from `beginAuthentication()` (e.g. through a session).
-    - Query the persisted credential from [Registration](####registration) using the credential id from the decoded
+      from `beginAuthentication()` (obtained e.g. through a session).
+    - Query the persisted credential from [Registration](#registration) using the credential id from the decoded
       `AuthenticationCredential`. Pass this credential in the `credentialPublicKey` parameter and it's sign count to
       `credentialCurrentSignCount`.
 
 4. If `finishAuthentication` succeeds you can safely login the user linked to the credential! `finishAuthentication`
-   will return a `VerifiedAuthentication` with the updated sign count and a few other information. Use this to
-   update the credential in the database.
+   will return a `VerifiedAuthentication` with the updated sign count and a few other information meant to be persisted.
+   Use this to update the credential in the database.
+
+##### Implementation example
+
+```swift
+// this endpoint will be called on clicking "Login"
+authSessionRoutes.get("authenticate") { req -> PublicKeyCredentialRequestOptions in
+    let options = try req.webAuthn.beginAuthentication()
+    req.session.data["challenge"] = String.base64URL(fromBase64: options.challenge)
+    return options
+}
+
+// this endpoint will be called after the user used e.g. TouchID.
+authSessionRoutes.post("authenticate") { req -> HTTPStatus in
+    guard let challenge = req.session.data["challenge"] else { throw Abort(.unauthorized) }
+    let data = try req.content.decode(AuthenticationCredential.self)
+    guard let credential = try await queryCredentialWithUser(id: data.id) else {
+        throw Abort(.unauthorized)
+    }
+
+    let verifiedAuthentication = try req.webAuthn.finishAuthentication(
+        credential: data,
+        expectedChallenge: challenge,
+        credentialPublicKey: [UInt8](credential.publicKey.base64URLDecodedData!),
+        credentialCurrentSignCount: 0
+    )
+
+    req.auth.login(credential.user)
+
+    return .ok
+}
+```
+
+## Credits
+
+Swift WebAuthn is heavily inspired by existing WebAuthn libraries like [py_webauthn](https://github.com/duo-labs/py_webauthn) and [go-webauthn](https://github.com/go-webauthn/webauthn).
+
+## Links
+
+- [WebAuthn.io](https://webauthn.io/)
+- [WebAuthn guide](https://webauthn.guide/)
+- [WebAuthn Spec](https://w3c.github.io/webauthn/)
+- [CBOR.me](https://cbor.me/)
