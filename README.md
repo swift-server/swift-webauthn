@@ -45,9 +45,7 @@ interface with a webpage that will handle calling the WebAuthn API:
    - `public typealias URLEncodedBase64 = String`
    - `public typealias EncodedBase64 = String`
 
-### Example flow:
-
-#### Setup
+### Setup
 
 Configure your backend with a `WebAuthnManager` instance:
 
@@ -62,11 +60,11 @@ app.webAuthn = WebAuthnManager(
 )
 ```
 
-#### Registration
+### Registration
 
 Scenario: A user wants to signup on a website using WebAuthn.
 
-##### Explanation
+#### Explanation
 
 1. When tapping the "Register" button the client sends a request to
    the backend. The backend responds to this request with a call to `begingRegistration(user:)` which then returns a
@@ -83,7 +81,7 @@ Scenario: A user wants to signup on a website using WebAuthn.
    generated challenge and the received `RegistrationCredential`. If `finishRegistration` succeeds a new `Credential`
    object will be returned. This object contains information about the new credential, including an id and the generated public-key. Persist this data in e.g. a database and link the entry to the user.
 
-##### Example implementation
+#### Example implementation
 
 ```swift
 authSessionRoutes.get("makeCredential") { req -> PublicKeyCredentialCreationOptions in
@@ -114,11 +112,11 @@ authSessionRoutes.post("makeCredential") { req -> HTTPStatus in
 }
 ```
 
-#### Authentication
+### Authentication
 
 Scenario: A user wants to log in on a website using WebAuthn.
 
-##### Explanation
+#### Explanation
 
 1. When tapping the "Login" button the client sends a request to
    the backend. The backend responds to this request with a call to `beginAuthentication()` which then in turn
@@ -142,7 +140,7 @@ Scenario: A user wants to log in on a website using WebAuthn.
    will return a `VerifiedAuthentication` with the updated sign count and a few other information meant to be persisted.
    Use this to update the credential in the database.
 
-##### Implementation example
+#### Example implementation
 
 ```swift
 // this endpoint will be called on clicking "Login"
