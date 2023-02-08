@@ -88,7 +88,7 @@ struct ParsedCredentialCreationResponse {
 
         // Step 23.
         guard rawID.count <= 1023 else {
-            throw WebAuthnError.credentialRawIDTooBig
+            throw WebAuthnError.credentialRawIDTooLong
         }
     }
 }

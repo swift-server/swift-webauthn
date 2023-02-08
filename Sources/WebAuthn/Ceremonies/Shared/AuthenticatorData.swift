@@ -17,7 +17,7 @@ import Crypto
 
 /// Data created and/ or used by the authenticator during authentication/ registration.
 /// The data contains, for example, whether a user was present or verified.
-struct AuthenticatorData {
+struct AuthenticatorData: Equatable {
     let relyingPartyIDHash: [UInt8]
     let flags: AuthenticatorFlags
     let counter: UInt32
@@ -89,6 +89,9 @@ extension AuthenticatorData {
         let idLength: UInt16 = idLengthData.toInteger(endian: .big)
         let credentialIDEndIndex = Int(idLength) + 55
 
+        guard data.count >= credentialIDEndIndex else {
+            throw WebAuthnError.credentialIDTooShort
+        }
         let credentialID = data[55..<credentialIDEndIndex]
         let publicKeyBytes = data[credentialIDEndIndex...]
 

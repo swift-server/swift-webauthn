@@ -12,7 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-struct AuthenticatorFlags {
+struct AuthenticatorFlags: Equatable {
 
     /**
      Taken from https://w3c.github.io/webauthn/#sctn-authenticator-data
@@ -40,6 +40,12 @@ struct AuthenticatorFlags {
     let attestedCredentialData: Bool
     let extensionDataIncluded: Bool
 
+    static func isFlagSet(on byte: UInt8, at position: Bit) -> Bool {
+        (byte & (1 << position.rawValue)) != 0
+    }
+}
+
+extension AuthenticatorFlags {
     init(_ byte: UInt8) {
         userPresent = Self.isFlagSet(on: byte, at: .userPresent)
         userVerified = Self.isFlagSet(on: byte, at: .userVerified)
@@ -47,9 +53,5 @@ struct AuthenticatorFlags {
         isCurrentlyBackedUp = Self.isFlagSet(on: byte, at: .backupState)
         attestedCredentialData = Self.isFlagSet(on: byte, at: .attestedCredentialDataIncluded)
         extensionDataIncluded = Self.isFlagSet(on: byte, at: .extensionDataIncluded)
-    }
-
-    static func isFlagSet(on byte: UInt8, at position: Bit) -> Bool {
-        (byte & (1 << position.rawValue)) != 0
     }
 }

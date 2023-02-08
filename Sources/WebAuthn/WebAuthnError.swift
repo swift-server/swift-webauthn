@@ -12,7 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-public enum WebAuthnError: Error {
+public enum WebAuthnError: Error, Equatable {
     // MARK: Shared
     case invalidClientDataJSON
     case attestedCredentialDataMissing
@@ -22,7 +22,7 @@ public enum WebAuthnError: Error {
 
     // MARK: AttestationObject
     case userVerificationRequiredButFlagNotSet
-    case attestationStatementMissing
+    case attestationStatementMustBeEmpty
     case attestationVerificationNotSupported
 
     // MARK: WebAuthnManager
@@ -36,22 +36,23 @@ public enum WebAuthnError: Error {
     case invalidAssertionCredentialType
 
     // MARK: ParsedAuthenticatorAttestationResponse
-    case invalidAttestationData
+    case invalidAttestationObject
     case invalidAuthData
     case invalidFmt
-    case invalidAttStmt
+    case missingAttStmt
     case attestationFormatNotSupported
 
     // MARK: ParsedCredentialCreationResponse
     case invalidRawID
     case invalidCredentialCreationType
-    case credentialRawIDTooBig
+    case credentialRawIDTooLong
 
     // MARK: AuthenticatorData
     case authDataTooShort
     case attestedCredentialFlagNotSet
     case extensionDataMissing
     case leftOverBytesInAuthenticatorData
+    case credentialIDTooShort
 
     // MARK: CredentialPublicKey
     case badPublicKeyBytes

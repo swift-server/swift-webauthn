@@ -18,7 +18,7 @@ import SwiftCBOR
 /// The response from the authenticator device for the creation of a new public key credential.
 public struct AuthenticatorAttestationResponse: Codable {
     public let clientDataJSON: URLEncodedBase64
-    public let attestationObject: String
+    public let attestationObject: URLEncodedBase64
 }
 
 /// A parsed version of `AuthenticatorAttestationResponse`
@@ -35,9 +35,9 @@ struct ParsedAuthenticatorAttestationResponse {
         self.clientData = clientData
 
         // Step 11. (assembling attestationObject)
-        guard let attestationData = rawResponse.attestationObject.base64URLDecodedData,
-            let decodedAttestationObject = try CBOR.decode([UInt8](attestationData)) else {
-            throw WebAuthnError.invalidAttestationData
+        guard let attestationObjectData = rawResponse.attestationObject.base64URLDecodedData,
+            let decodedAttestationObject = try CBOR.decode([UInt8](attestationObjectData)) else {
+            throw WebAuthnError.invalidAttestationObject
         }
 
         guard let authData = decodedAttestationObject["authData"],
@@ -51,7 +51,7 @@ struct ParsedAuthenticatorAttestationResponse {
         }
 
         guard let attestationStatement = decodedAttestationObject["attStmt"] else {
-            throw WebAuthnError.invalidAttStmt
+            throw WebAuthnError.missingAttStmt
         }
 
         attestationObject = AttestationObject(

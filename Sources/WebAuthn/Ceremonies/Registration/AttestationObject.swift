@@ -16,7 +16,7 @@ import Crypto
 import SwiftCBOR
 
 /// Contains the cryptographic attestation that a new key pair was created by that authenticator.
-public struct AttestationObject {
+public struct AttestationObject: Equatable {
     let authenticatorData: AuthenticatorData
     let rawAuthenticatorData: [UInt8]
     let format: AttestationFormat
@@ -43,7 +43,7 @@ public struct AttestationObject {
         case .none:
             // if format is `none` statement must be empty
             guard attestationStatement == .map([:]) else {
-                throw WebAuthnError.attestationStatementMissing
+                throw WebAuthnError.attestationStatementMustBeEmpty
             }
         default:
             throw WebAuthnError.attestationVerificationNotSupported
