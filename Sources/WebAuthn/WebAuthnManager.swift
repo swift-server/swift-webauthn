@@ -145,7 +145,6 @@ public struct WebAuthnManager {
             ceremonyType: .assert,
             relyingPartyOrigin: config.relyingPartyOrigin
         )
-        // TODO: - Verify token binding
 
         guard let authenticatorDataBytes = response.authenticatorData.base64URLDecodedData else {
             throw WebAuthnError.invalidAuthenticatorData
