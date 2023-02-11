@@ -26,9 +26,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/unrelentingtech/SwiftCBOR.git", from: "0.4.5"),
         .package(url: "https://github.com/apple/swift-crypto.git", from: "2.0.0"),
-        .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
-        // using main because: https://github.com/realm/SwiftLint/issues/4746#issuecomment-1423343798
-        .package(url: "https://github.com/realm/SwiftLint.git", branch: "main")
+        .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0")
     ],
     targets: [
         .target(
@@ -38,8 +36,7 @@ let package = Package(
                 .product(name: "Crypto", package: "swift-crypto"),
                 .product(name: "_CryptoExtras", package: "swift-crypto"),
                 .product(name: "Logging", package: "swift-log")
-            ],
-            plugins: [.plugin(name: "SwiftLintPlugin", package: "SwiftLint")]
+            ]
         ),
         .testTarget(name: "WebAuthnTests", dependencies: [
             .target(name: "WebAuthn")

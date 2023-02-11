@@ -34,7 +34,6 @@ public struct CollectedClientData: Codable, Hashable {
     /// Contains the base64url encoding of the challenge provided by the Relying Party
     let challenge: URLEncodedBase64
     let origin: String
-    // TODO: Token binding
 
     func verify(storedChallenge: URLEncodedBase64, ceremonyType: CeremonyType, relyingPartyOrigin: String) throws {
         guard type == ceremonyType else { throw CollectedClientDataVerifyError.ceremonyTypeDoesNotMatch }

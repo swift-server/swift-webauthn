@@ -58,6 +58,7 @@ struct ParsedCredentialCreationResponse {
         response = try ParsedAuthenticatorAttestationResponse(from: raw)
     }
 
+    // swiftlint:disable:next function_parameter_count
     func verify(
         storedChallenge: URLEncodedBase64,
         verifyUser: Bool,

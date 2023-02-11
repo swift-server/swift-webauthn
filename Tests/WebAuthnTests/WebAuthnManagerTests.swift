@@ -17,6 +17,7 @@ import XCTest
 import SwiftCBOR
 
 // swiftlint:disable line_length
+// swiftlint:disable identifier_name
 
 final class WebAuthnManagerTests: XCTestCase {
     var webAuthnManager: WebAuthnManager!
@@ -74,7 +75,7 @@ final class WebAuthnManagerTests: XCTestCase {
     }
 
     func testFinishRegistrationFailsIfClientDataJSONDecodingFails() async throws {
-        try await assertThrowsError(await finishRegistration(clientDataJSON: "abc")) { (error: DecodingError) in
+        try await assertThrowsError(await finishRegistration(clientDataJSON: "abc")) { (_: DecodingError) in
             return
         }
     }
@@ -336,7 +337,6 @@ final class WebAuthnManagerTests: XCTestCase {
             expect: WebAuthnError.credentialRawIDTooLong
         )
     }
-
 
     // decoded clientDataJSON:
     // {

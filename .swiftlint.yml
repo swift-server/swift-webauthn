@@ -2,3 +2,11 @@ disabled_rules:
   - comment_spacing
 excluded:
   - .build
+
+
+identifier_name:
+  excluded:
+    - id
+
+line_length:
+  ignores_comments: true
