@@ -1,4 +1,4 @@
 disabled_rules:
- - comment_spacing
+  - comment_spacing
 excluded:
- - .build
+  - .build
