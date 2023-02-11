@@ -62,26 +62,18 @@ public struct WebAuthnManager {
         credentialCreationData: RegistrationCredential,
         requireUserVerification: Bool = false,
         supportedPublicKeyAlgorithms: [PublicKeyCredentialParameters] = PublicKeyCredentialParameters.supported,
+        pemRootCertificatesByFormat: [AttestationFormat: [Data]] = [:],
         confirmCredentialIDNotRegisteredYet: (String) async throws -> Bool
     ) async throws -> Credential {
-        // Step 3. - 16.
         let parsedData = try ParsedCredentialCreationResponse(from: credentialCreationData)
-        try parsedData.verify(
+        let attestedCredentialData = try parsedData.verify(
             storedChallenge: String.base64URL(fromBase64: challenge),
             verifyUser: requireUserVerification,
             relyingPartyID: config.relyingPartyID,
-            relyingPartyOrigin: config.relyingPartyOrigin
+            relyingPartyOrigin: config.relyingPartyOrigin,
+            supportedPublicKeyAlgorithms: supportedPublicKeyAlgorithms,
+            pemRootCertificatesByFormat: pemRootCertificatesByFormat
         )
-
-        guard let attestedData = parsedData.response.attestationObject.authenticatorData.attestedData else {
-            throw WebAuthnError.attestedCredentialDataMissing
-        }
-
-        // Step 17.
-        let credentialPublicKey = try CredentialPublicKey(publicKeyBytes: attestedData.publicKey)
-        guard supportedPublicKeyAlgorithms.map(\.algorithm).contains(credentialPublicKey.key.algorithm) else {
-            throw WebAuthnError.unsupportedCredentialPublicKeyAlgorithm
-        }
 
         // TODO: Step 18. -> Verify client extensions
 
@@ -94,7 +86,7 @@ public struct WebAuthnManager {
         return Credential(
             type: parsedData.type,
             id: parsedData.id,
-            publicKey: attestedData.publicKey,
+            publicKey: attestedCredentialData.publicKey,
             signCount: parsedData.response.attestationObject.authenticatorData.counter,
             backupEligible: parsedData.response.attestationObject.authenticatorData.flags.isBackupEligible,
             isBackedUp: parsedData.response.attestationObject.authenticatorData.flags.isCurrentlyBackedUp,

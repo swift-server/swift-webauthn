@@ -19,6 +19,7 @@ import SwiftCBOR
 
 protocol PublicKey {
     var algorithm: COSEAlgorithmIdentifier { get }
+    /// Verify a signature was signed with the private key corresponding to the public key.
     func verify(signature: Data, data: Data) throws
 }
 

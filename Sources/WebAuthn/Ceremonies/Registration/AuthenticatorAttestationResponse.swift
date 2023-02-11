@@ -56,7 +56,7 @@ struct ParsedAuthenticatorAttestationResponse {
 
         attestationObject = AttestationObject(
             authenticatorData: try AuthenticatorData(bytes: Data(authDataBytes)),
-            rawAuthenticatorData: authDataBytes,
+            rawAuthenticatorData: Data(authDataBytes),
             format: attestationFormat,
             attestationStatement: attestationStatement
         )

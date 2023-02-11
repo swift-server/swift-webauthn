@@ -23,7 +23,7 @@ final class WebAuthnManagerTests: XCTestCase {
 
     let challenge: [UInt8] = [1, 0, 1]
     let relyingPartyDisplayName = "Testy test"
-    let relyingPartyID = "example.com"
+    let relyingPartyID = "webauthn.io"
     let relyingPartyOrigin = "https://example.com"
     let timeout: TimeInterval = 6000
 
@@ -290,14 +290,11 @@ final class WebAuthnManagerTests: XCTestCase {
 
     func testFinishRegistrationFailsIfUserPresentFlagIsNotSet() async throws {
         // {
-        //   "fmt": "packed",
-        //   "attStmt": {
-        //     "alg": -7,
-        //     "sig": h'3045022035346DA48FD238E655CD4D6937FE1C5FEA2CA943E21CC396E3CAAAABDD435DF5022100BE30789A231B7639D23182A627C940C771E7AF34E31F3E26DE9DA6D01AF5E08C'
-        //   },
-        //   "authData": h'A379A6F6EEAFB9A55E378C118034E2751E682FAB9F2D30AB13D2125586CE19474000000000ADCE000235BCC60A648B0B25F1F0550300013A'
+        //   "fmt": "none",
+        //   "attStmt": {},
+        //   "authData": h'74a6ea9213c99c2f74b22492b320cf40262a94c1a950a0397f29250b60841ef04400000000adce000235bcc60a648b0b25f1f055030020508b5e92512a9c9d89ea977d04e6f4f6db35e9f6c841661173e6eb177f817d58a501020326200121582088c51237af0c14c157fe71d2e0a57f693d432b9945c1ec60bf0a17378cca83a2225820f968b5de6d8dd1c71ebc229b86895639e7801a0767a30b57b585a542eef7638e'
         // }
-        let hexAttestationObjectUPFlagNotSet: URLEncodedBase64 = "o2NmbXRmcGFja2VkZ2F0dFN0bXSiY2FsZyZjc2lnWEcwRQIgNTRtpI_SOOZVzU1pN_4cX-osqUPiHMOW48qqq91DXfUCIQC-MHiaIxt2OdIxgqYnyUDHceevNOMfPibenabQGvXgjGhhdXRoRGF0YVg4o3mm9u6vuaVeN4wRgDTidR5oL6ufLTCrE9ISVYbOGUdAAAAAAK3OAAI1vMYKZIsLJfHwVQMAATo"
+        let hexAttestationObjectUPFlagNotSet: URLEncodedBase64 = "o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVikdKbqkhPJnC90siSSsyDPQCYqlMGpUKA5fyklC2CEHvBEAAAAAK3OAAI1vMYKZIsLJfHwVQMAIFCLXpJRKpydieqXfQTm9PbbNen2yEFmEXPm6xd_gX1YpQECAyYgASFYIIjFEjevDBTBV_5x0uClf2k9QyuZRcHsYL8KFzeMyoOiIlgg-Wi13m2N0ccevCKbholWOeeAGgdnowtXtYWlQu73Y44"
         try await assertThrowsError(
             await finishRegistration(attestationObject: hexAttestationObjectUPFlagNotSet),
             expect: WebAuthnError.userPresentFlagNotSet
@@ -306,14 +303,11 @@ final class WebAuthnManagerTests: XCTestCase {
 
     func testFinishRegistrationFailsIfUserVerificationFlagIsNotSetButRequired() async throws {
         // {
-        //   "fmt": "packed",
-        //   "attStmt": {
-        //     "alg": -7,
-        //     "sig": h'3045022035346DA48FD238E655CD4D6937FE1C5FEA2CA943E21CC396E3CAAAABDD435DF5022100BE30789A231B7639D23182A627C940C771E7AF34E31F3E26DE9DA6D01AF5E08C'
-        //   },
-        //   "authData": h'A379A6F6EEAFB9A55E378C118034E2751E682FAB9F2D30AB13D2125586CE19474100000000ADCE000235BCC60A648B0B25F1F0550300013A'
+        //   "fmt": "none",
+        //   "attStmt": {},
+        //   "authData": h'74a6ea9213c99c2f74b22492b320cf40262a94c1a950a0397f29250b60841ef04100000000adce000235bcc60a648b0b25f1f055030020508b5e92512a9c9d89ea977d04e6f4f6db35e9f6c841661173e6eb177f817d58a501020326200121582088c51237af0c14c157fe71d2e0a57f693d432b9945c1ec60bf0a17378cca83a2225820f968b5de6d8dd1c71ebc229b86895639e7801a0767a30b57b585a542eef7638e'
         // }
-        let hexAttestationObjectUVFlagNotSet: URLEncodedBase64 = "o2NmbXRmcGFja2VkZ2F0dFN0bXSiY2FsZyZjc2lnWEcwRQIgNTRtpI_SOOZVzU1pN_4cX-osqUPiHMOW48qqq91DXfUCIQC-MHiaIxt2OdIxgqYnyUDHceevNOMfPibenabQGvXgjGhhdXRoRGF0YVg4o3mm9u6vuaVeN4wRgDTidR5oL6ufLTCrE9ISVYbOGUdBAAAAAK3OAAI1vMYKZIsLJfHwVQMAATo"
+        let hexAttestationObjectUVFlagNotSet: URLEncodedBase64 = "o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVikdKbqkhPJnC90siSSsyDPQCYqlMGpUKA5fyklC2CEHvBBAAAAAK3OAAI1vMYKZIsLJfHwVQMAIFCLXpJRKpydieqXfQTm9PbbNen2yEFmEXPm6xd_gX1YpQECAyYgASFYIIjFEjevDBTBV_5x0uClf2k9QyuZRcHsYL8KFzeMyoOiIlgg-Wi13m2N0ccevCKbholWOeeAGgdnowtXtYWlQu73Y44"
         try await assertThrowsError(
             await finishRegistration(
                 attestationObject: hexAttestationObjectUVFlagNotSet,
@@ -326,12 +320,10 @@ final class WebAuthnManagerTests: XCTestCase {
     func testFinishRegistrationFailsIfAttFmtIsNoneButAttStmtIsIncluded() async throws {
         // {
         //   "fmt": "none",
-        //   "attStmt": {
-        //     "hello": "world"
-        //   },
-        //   "authData": h'A379A6F6EEAFB9A55E378C118034E2751E682FAB9F2D30AB13D2125586CE19474100000000A379A6F6EEAFB9A55E378C118034E27500010000'
+        //   "attStmt": { "hello": "world" },
+        //   "authData": h'74A6EA9213C99C2F74B22492B320CF40262A94C1A950A0397F29250B60841EF04500000000ADCE000235BCC60A648B0B25F1F055030020508B5E92512A9C9D89EA977D04E6F4F6DB35E9F6C841661173E6EB177F817D58A501020326200121582088C51237AF0C14C157FE71D2E0A57F693D432B9945C1EC60BF0A17378CCA83A2225820F968B5DE6D8DD1C71EBC229B86895639E7801A0767A30B57B585A542EEF7638E'
         // }
-        let hexAttestationObjectAttStmtNoneWithAttStmt: URLEncodedBase64 = "o2NmbXRkbm9uZWdhdHRTdG10oWVoZWxsb2V3b3JsZGhhdXRoRGF0YVg5o3mm9u6vuaVeN4wRgDTidR5oL6ufLTCrE9ISVYbOGUdBAAAAAKN5pvbur7mlXjeMEYA04nUAAQAA"
+        let hexAttestationObjectAttStmtNoneWithAttStmt: URLEncodedBase64 = "o2NmbXRkbm9uZWdhdHRTdG10oWVoZWxsb2V3b3JsZGhhdXRoRGF0YVikdKbqkhPJnC90siSSsyDPQCYqlMGpUKA5fyklC2CEHvBFAAAAAK3OAAI1vMYKZIsLJfHwVQMAIFCLXpJRKpydieqXfQTm9PbbNen2yEFmEXPm6xd_gX1YpQECAyYgASFYIIjFEjevDBTBV_5x0uClf2k9QyuZRcHsYL8KFzeMyoOiIlgg-Wi13m2N0ccevCKbholWOeeAGgdnowtXtYWlQu73Y44"
         try await assertThrowsError(
             await finishRegistration(attestationObject: hexAttestationObjectAttStmtNoneWithAttStmt),
             expect: WebAuthnError.attestationStatementMustBeEmpty
@@ -345,13 +337,29 @@ final class WebAuthnManagerTests: XCTestCase {
         )
     }
 
+
+    // decoded clientDataJSON:
+    // {
+    //   "type": "webauthn.create",
+    //   "challenge": "cmFuZG9tU3RyaW5nRnJvbVNlcnZlcg",
+    //   "origin": "https://example.com",
+    //   "crossOrigin": false,
+    //   "other_keys_can_be_added_here": "do not compare clientDataJSON against a template. See https://goo.gl/yabPex"
+    // }
+    //
+    // decoded attestationObject:
+    // {
+    //   "fmt": "none",
+    //   "attStmt": {},
+    //   "authData": h'74A6EA9213C99C2F74B22492B320CF40262A94C1A950A0397F29250B60841EF04500000000ADCE000235BCC60A648B0B25F1F055030020508B5E92512A9C9D89EA977D04E6F4F6DB35E9F6C841661173E6EB177F817D58A501020326200121582088C51237AF0C14C157FE71D2E0A57F693D432B9945C1EC60BF0A17378CCA83A2225820F968B5DE6D8DD1C71EBC229B86895639E7801A0767A30B57B585A542EEF7638E'
+    // }
     private func finishRegistration(
-        challenge: EncodedBase64 = "cmFuZG9tU3RyaW5nRnJvbVNlcnZlcg",
+        challenge: EncodedBase64 = "cmFuZG9tU3RyaW5nRnJvbVNlcnZlcg", // "randomStringFromServer"
         id: EncodedBase64 = "4PrJNQUJ9xdI2DeCzK9rTBRixhXHDiVdoTROQIh8j80",
         type: String = "public-key",
         rawID: EncodedBase64 = "4PrJNQUJ9xdI2DeCzK9rTBRixhXHDiVdoTROQIh8j80",
         clientDataJSON: String = "eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlbmdlIjoiY21GdVpHOXRVM1J5YVc1blJuSnZiVk5sY25abGNnIiwib3JpZ2luIjoiaHR0cHM6Ly9leGFtcGxlLmNvbSIsImNyb3NzT3JpZ2luIjpmYWxzZSwib3RoZXJfa2V5c19jYW5fYmVfYWRkZWRfaGVyZSI6ImRvIG5vdCBjb21wYXJlIGNsaWVudERhdGFKU09OIGFnYWluc3QgYSB0ZW1wbGF0ZS4gU2VlIGh0dHBzOi8vZ29vLmdsL3lhYlBleCJ9",
-        attestationObject: String = "o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVg5o3mm9u6vuaVeN4wRgDTidR5oL6ufLTCrE9ISVYbOGUdBAAAAAKN5pvbur7mlXjeMEYA04nUAAQAA",
+        attestationObject: String = "o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVikdKbqkhPJnC90siSSsyDPQCYqlMGpUKA5fyklC2CEHvBFAAAAAK3OAAI1vMYKZIsLJfHwVQMAIFCLXpJRKpydieqXfQTm9PbbNen2yEFmEXPm6xd_gX1YpQECAyYgASFYIIjFEjevDBTBV_5x0uClf2k9QyuZRcHsYL8KFzeMyoOiIlgg-Wi13m2N0ccevCKbholWOeeAGgdnowtXtYWlQu73Y44",
         requireUserVerification: Bool = false,
         confirmCredentialIDNotRegisteredYet: (String) async throws -> Bool = { _ in true }
     ) async throws -> Credential {
