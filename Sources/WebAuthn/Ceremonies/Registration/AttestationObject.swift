@@ -72,6 +72,15 @@ public struct AttestationObject {
                 credentialPublicKey: credentialPublicKey,
                 pemRootCertificates: pemRootCertificates
             )
+        case .tpm:
+            try TPMAttestation.verify(
+                attStmt: attestationStatement,
+                authenticatorData: rawAuthenticatorData,
+                attestedCredentialData: attestedCredentialData,
+                clientDataHash: Data(clientDataHash),
+                credentialPublicKey: credentialPublicKey,
+                pemRootCertificates: pemRootCertificates
+            )
         default:
             throw WebAuthnError.attestationVerificationNotSupported
         }

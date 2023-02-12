@@ -11,11 +11,6 @@ struct PackedAttestation {
         case missingAttestedCredential
         case notImplemented
     }
-    struct PackedAttestationStatement: Codable {
-        let alg: COSEAlgorithmIdentifier
-        let sig: Data
-        let x5c: [Data]
-    }
 
     static func verify(
         attStmt: CBOR,
