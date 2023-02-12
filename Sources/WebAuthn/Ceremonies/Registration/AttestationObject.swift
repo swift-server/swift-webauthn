@@ -52,7 +52,7 @@ public struct AttestationObject {
 
         // Step 17.
         let credentialPublicKey = try CredentialPublicKey(publicKeyBytes: attestedCredentialData.publicKey)
-        guard supportedPublicKeyAlgorithms.map(\.algorithm).contains(credentialPublicKey.key.algorithm) else {
+        guard supportedPublicKeyAlgorithms.map(\.alg).contains(credentialPublicKey.key.algorithm) else {
             throw WebAuthnError.unsupportedCredentialPublicKeyAlgorithm
         }
 

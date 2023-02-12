@@ -44,8 +44,8 @@ public struct WebAuthnManager {
         return PublicKeyCredentialCreationOptions(
             challenge: challenge.base64EncodedString(),
             user: userEntity,
-            relyingParty: relyingParty,
-            publicKeyCredentialParameters: publicKeyCredentialParameters,
+            rp: relyingParty,
+            pubKeyCredParams: publicKeyCredentialParameters,
             timeout: config.timeout
         )
     }
@@ -123,57 +123,23 @@ public struct WebAuthnManager {
         credentialCurrentSignCount: Int,
         requireUserVerification: Bool = false
     ) throws -> VerifiedAuthentication {
-        let expectedRpID = config.relyingPartyID
         guard credential.type == "public-key" else { throw WebAuthnError.invalidAssertionCredentialType }
 
-        let response = credential.response
-
-        guard let clientDataData = response.clientDataJSON.base64URLDecodedData else {
-            throw WebAuthnError.invalidClientDataJSON
-        }
-        let clientData = try JSONDecoder().decode(CollectedClientData.self, from: clientDataData)
-        try clientData.verify(
-            storedChallenge: expectedChallenge,
-            ceremonyType: .assert,
-            relyingPartyOrigin: config.relyingPartyOrigin
+        let parsedAssertion = try ParsedAuthenticatorAssertionResponse(from: credential.response)
+        try parsedAssertion.verify(
+            expectedChallenge: expectedChallenge,
+            relyingPartyOrigin: config.relyingPartyOrigin,
+            relyingPartyID: config.relyingPartyID,
+            requireUserVerification: requireUserVerification,
+            credentialPublicKey: credentialPublicKey,
+            credentialCurrentSignCount: credentialCurrentSignCount
         )
-
-        guard let authenticatorDataBytes = response.authenticatorData.base64URLDecodedData else {
-            throw WebAuthnError.invalidAuthenticatorData
-        }
-        let authenticatorData = try AuthenticatorData(bytes: authenticatorDataBytes)
-
-        guard let expectedRpIDData = expectedRpID.data(using: .utf8) else { throw WebAuthnError.invalidRelyingPartyID }
-        let expectedRpIDHash = SHA256.hash(data: expectedRpIDData)
-        guard expectedRpIDHash == authenticatorData.relyingPartyIDHash else {
-            throw WebAuthnError.relyingPartyIDHashDoesNotMatch
-        }
-
-        guard authenticatorData.flags.userPresent else { throw WebAuthnError.userPresentFlagNotSet }
-        if requireUserVerification {
-            guard authenticatorData.flags.userVerified else { throw WebAuthnError.userVerifiedFlagNotSet }
-        }
-
-        if authenticatorData.counter > 0 || credentialCurrentSignCount > 0 {
-            guard authenticatorData.counter > credentialCurrentSignCount else {
-                // This is a signal that the authenticator may be cloned, i.e. at least two copies of the credential
-                // private key may exist and are being used in parallel.
-                throw WebAuthnError.potentialReplayAttack
-            }
-        }
-
-        let clientDataHash = SHA256.hash(data: clientDataData)
-        let signatureBase = authenticatorDataBytes + clientDataHash
-
-        let credentialPublicKey = try CredentialPublicKey(publicKeyBytes: credentialPublicKey)
-        guard let signatureData = response.signature.base64URLDecodedData else { throw WebAuthnError.invalidSignature }
-        try credentialPublicKey.verify(signature: signatureData, data: signatureBase)
 
         return VerifiedAuthentication(
             credentialID: credential.id,
-            newSignCount: authenticatorData.counter,
-            credentialDeviceType: authenticatorData.flags.isBackupEligible ? .multiDevice : .singleDevice,
-            credentialBackedUp: authenticatorData.flags.isCurrentlyBackedUp
+            newSignCount: parsedAssertion.authenticatorData.counter,
+            credentialDeviceType: parsedAssertion.authenticatorData.flags.deviceType,
+            credentialBackedUp: parsedAssertion.authenticatorData.flags.isCurrentlyBackedUp
         )
     }
 }

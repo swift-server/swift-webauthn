@@ -18,8 +18,9 @@ import Foundation
 public struct PublicKeyCredentialCreationOptions: Codable {
     public let challenge: EncodedBase64
     public let user: PublicKeyCredentialUserEntity
-    public let relyingParty: PublicKeyCredentialRpEntity
-    public let publicKeyCredentialParameters: [PublicKeyCredentialParameters]
+    // swiftlint:disable:next identifier_name
+    public let rp: PublicKeyCredentialRpEntity
+    public let pubKeyCredParams: [PublicKeyCredentialParameters]
     public let timeout: TimeInterval
 }
 
@@ -27,17 +28,17 @@ public struct PublicKeyCredentialCreationOptions: Codable {
 
 public struct PublicKeyCredentialParameters: Equatable, Codable {
     public let type: String
-    public let algorithm: COSEAlgorithmIdentifier
+    public let alg: COSEAlgorithmIdentifier
 
     public static var supported: [Self] {
         COSEAlgorithmIdentifier.allCases.map {
-            PublicKeyCredentialParameters.init(type: "public-key", algorithm: $0)
+            PublicKeyCredentialParameters.init(type: "public-key", alg: $0)
         }
     }
 
-    public init(type: String = "public-key", algorithm: COSEAlgorithmIdentifier) {
+    public init(type: String = "public-key", alg: COSEAlgorithmIdentifier) {
         self.type = type
-        self.algorithm = algorithm
+        self.alg = alg
     }
 }
 
