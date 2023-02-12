@@ -40,20 +40,20 @@ final class WebAuthnManagerTests: XCTestCase {
 
     func testBeginRegistrationReturns() throws {
         let user = MockUser()
-        let publicKeyCredentialParameter = PublicKeyCredentialParameters(type: "public-key", algorithm: .algPS384)
+        let publicKeyCredentialParameter = PublicKeyCredentialParameters(type: "public-key", alg: .algPS384)
         let options = try webAuthnManager.beginRegistration(
             user: user,
             publicKeyCredentialParameters: [publicKeyCredentialParameter]
         )
 
         XCTAssertEqual(options.challenge, challenge.base64EncodedString())
-        XCTAssertEqual(options.relyingParty.id, relyingPartyID)
-        XCTAssertEqual(options.relyingParty.name, relyingPartyDisplayName)
+        XCTAssertEqual(options.rp.id, relyingPartyID)
+        XCTAssertEqual(options.rp.name, relyingPartyDisplayName)
         XCTAssertEqual(options.timeout, timeout)
         XCTAssertEqual(options.user.id, user.userID.toBase64())
         XCTAssertEqual(options.user.displayName, user.displayName)
         XCTAssertEqual(options.user.name, user.name)
-        XCTAssertEqual(options.publicKeyCredentialParameters, [publicKeyCredentialParameter])
+        XCTAssertEqual(options.pubKeyCredParams, [publicKeyCredentialParameter])
     }
 
     func testFinishRegistrationFailsWithInvalidRawID() async throws {

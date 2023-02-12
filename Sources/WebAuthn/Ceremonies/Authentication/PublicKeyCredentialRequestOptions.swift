@@ -26,8 +26,8 @@ public struct PublicKeyCredentialRequestOptions: Codable {
     // let extensions: [String: Any]
 }
 
-public struct PublicKeyCredentialDescriptor: Codable {
-    public enum AuthenticatorTransport: String, Codable {
+public struct PublicKeyCredentialDescriptor: Codable, Equatable {
+    public enum AuthenticatorTransport: String, Codable, Equatable {
         case usb
         case nfc
         case ble
