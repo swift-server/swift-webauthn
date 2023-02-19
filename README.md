@@ -23,7 +23,7 @@ and `WebAuthn` dependency to your target:
 
 ## Usage
 
-The library exposes just four core methods through the `WebAuthnManager` struct:
+The library exposes just four core methods through the `WebAuthnManager` type:
 
 - `WebAuthnManager.beginRegistration()`
 - `WebAuthnManager.finishRegistration()`
@@ -31,16 +31,16 @@ The library exposes just four core methods through the `WebAuthnManager` struct:
 - `WebAuthnManager.finishAuthentication()`
 
 Generally, the library makes the following assumptions about how a Relying Party implementing this library will
-interface with a webpage that will handle calling the WebAuthn API:
+interface with a client that will handle calling the WebAuthn API:
 
 1. JSON is the preferred data type for transmitting registration and authentication options from the server to
-   the webpage to feed to `navigator.credentials.create()` and `navigator.credentials.get()` respectively.
+   the client to feed to `navigator.credentials.create()` and `navigator.credentials.get()` respectively.
 
-2. JSON is the preferred data type for transmitting WebAuthn responses from the browser to the Relying Party.
+2. JSON is the preferred data type for transmitting WebAuthn responses from the client to the Relying Party.
 
 3. Bytes are not directly transmittable in either direction as JSON, and so should be encoded to and decoded
-   from base64url. To make life a little bit easier there are two typealiases indicating whether something is expected,
-   or returned, as base64/base64url:
+   using Base64 URL encoding. To make life a little bit easier there are two typealiases indicating whether
+   something is expected, or returned, as base64/base64url:
 
    - `public typealias URLEncodedBase64 = String`
    - `public typealias EncodedBase64 = String`
@@ -81,7 +81,7 @@ Scenario: A user wants to signup on a website using WebAuthn.
    generated challenge and the received `RegistrationCredential`. If `finishRegistration` succeeds a new `Credential`
    object will be returned. This object contains information about the new credential, including an id and the generated public-key. Persist this data in e.g. a database and link the entry to the user.
 
-#### Example implementation
+##### Example implementation (using Vapor)
 
 ```swift
 authSessionRoutes.get("makeCredential") { req -> PublicKeyCredentialCreationOptions in
@@ -120,9 +120,9 @@ Scenario: A user wants to log in on a website using WebAuthn.
 
 1. When tapping the "Login" button the client sends a request to
    the backend. The backend responds to this request with a call to `beginAuthentication()` which then in turn
-   returns a new `PublicKeyCredentialRequestOptions`. This must be send back to the client so it can pass it to
+   returns a new `PublicKeyCredentialRequestOptions`. This must be sent back to the client so it can pass it to
    `navigator.credentials.get()`.
-2. Whatever `navigator.credentials.get()` returns will be send back to the backend, parsing it into
+2. Whatever `navigator.credentials.get()` returns will be sent back to the backend, parsing it into
    `AuthenticationCredential`.
    ```swift
    let authenticationCredential = try req.content.decode(AuthenticationCredential.self)
@@ -137,8 +137,8 @@ Scenario: A user wants to log in on a website using WebAuthn.
       `credentialCurrentSignCount`.
 
 4. If `finishAuthentication` succeeds you can safely login the user linked to the credential! `finishAuthentication`
-   will return a `VerifiedAuthentication` with the updated sign count and a few other information meant to be persisted.
-   Use this to update the credential in the database.
+   will return a `VerifiedAuthentication` with the updated sign count and a few other pieces of information to be
+   persisted. Use this to update the credential in the database.
 
 #### Example implementation
 
@@ -173,7 +173,8 @@ authSessionRoutes.post("authenticate") { req -> HTTPStatus in
 
 ## Credits
 
-Swift WebAuthn is heavily inspired by existing WebAuthn libraries like [py_webauthn](https://github.com/duo-labs/py_webauthn) and [go-webauthn](https://github.com/go-webauthn/webauthn).
+Swift WebAuthn is heavily inspired by existing WebAuthn libraries like
+[py_webauthn](https://github.com/duo-labs/py_webauthn) and [go-webauthn](https://github.com/go-webauthn/webauthn).
 
 ## Links
 
