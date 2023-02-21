@@ -338,6 +338,19 @@ final class WebAuthnManagerTests: XCTestCase {
         )
     }
 
+    // Swift CBOR library currently crashes when running this test. WE NEED TO FIX THIS
+    // TODO: Fix this test
+    // func testFinishRegistrationFuzzying() async throws {
+    //     for _ in 1...50 {
+    //         let length = Int.random(in: 1...10_000_000)
+    //         let randomAttestationObject: URLEncodedBase64 = Data(
+    //             [UInt8](repeating: UInt8.random(), count: length)
+    //         ).base64URLEncodedString()
+    //         let shouldBeNil = try? await finishRegistration(attestationObject: randomAttestationObject)
+    //         XCTAssertNil(shouldBeNil)
+    //     }
+    // }
+
     // decoded clientDataJSON:
     // {
     //   "type": "webauthn.create",
