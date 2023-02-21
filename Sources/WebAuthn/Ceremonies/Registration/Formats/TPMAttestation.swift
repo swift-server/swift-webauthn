@@ -38,8 +38,7 @@ struct TPMAttestation {
             throw TPMAttestationError.invalidAlg
         }
 
-        let attToBeSignedHash = alg.matchWithSHAAndHash(data: attToBeSigned)
-        guard parsedCertInfo.extraData == attToBeSignedHash else {
+        guard alg.hashAndCompare(data: attToBeSigned, to: parsedCertInfo.extraData) else {
             throw TPMAttestationError.extraDataDoesNotMatchAttToBeSignedHash
         }
     }
@@ -127,6 +126,54 @@ extension TPMAttestation {
             }
 
             throw CertInfoError.tpmImplementationIsWIP
+        }
+    }
+
+    enum PubAreaParameters {
+        case rsa(PubAreaParametersRSA)
+        case ecc (PubAreaParametersECC)
+    }
+
+    struct PubArea {
+        let type: Data
+        let nameAlg: Data
+        let objectAttributes: Data
+        let authPolicy: Data
+        let parameters: PubAreaParameters
+
+        let mappedType: TPMAlg
+
+        init?(from data: Data) {
+            var pointer = 0
+
+            guard let type = data.safeSlice(length: 2, using: &pointer),
+                let mappedType = TPMAlg(from: type),
+                let nameAlg = data.safeSlice(length: 2, using: &pointer),
+                let objectAttributes = data.safeSlice(length: 4, using: &pointer),
+                let authPolicyLength: Int = data.safeSlice(length: 2, using: &pointer)?.toInteger(endian: .big),
+                let authPolicy = data.safeSlice(length: authPolicyLength, using: &pointer) else {
+                return nil
+            }
+
+            self.type = type
+            self.nameAlg = nameAlg
+            self.objectAttributes = objectAttributes
+            self.authPolicy = authPolicy
+
+            self.mappedType = mappedType
+
+            switch mappedType {
+            case .rsa:
+                guard let rsa = data.safeSlice(length: 10, using: &pointer),
+                    let parameters = PubAreaParametersRSA(from: rsa) else { return nil }
+                self.parameters = .rsa(parameters)
+            case .ecc:
+                guard let ecc = data.safeSlice(length: 8, using: &pointer),
+                    let parameters = PubAreaParametersECC(from: ecc) else { return nil }
+                self.parameters = .ecc(parameters)
+            default:
+                return nil
+            }
         }
     }
 }

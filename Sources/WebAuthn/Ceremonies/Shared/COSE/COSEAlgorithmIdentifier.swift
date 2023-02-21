@@ -17,9 +17,7 @@ import Crypto
 
 /// COSEAlgorithmIdentifier From §5.10.5. A number identifying a cryptographic algorithm. The algorithm
 /// identifiers SHOULD be values registered in the IANA COSE Algorithms registry
-/// [https://www.w3.org/TR/webauthn/#biblio-iana-cose-algs-reg], for instance, -7 for "ES256"
-///
-///	and -257 for "RS256".
+/// [https://www.w3.org/TR/webauthn/#biblio-iana-cose-algs-reg], for instance, -7 for "ES256" and -257 for "RS256".
 public enum COSEAlgorithmIdentifier: Int, RawRepresentable, Codable, CaseIterable {
     /// AlgES256 ECDSA with SHA-256
 	case algES256 = -7
@@ -44,16 +42,16 @@ public enum COSEAlgorithmIdentifier: Int, RawRepresentable, Codable, CaseIterabl
 	// // AlgEdDSA EdDSA
 	// case algEdDSA = -8
 
-	func matchWithSHAAndHash(data: Data) -> any Digest {
+	func hashAndCompare(data: Data, to compareHash: Data) -> Bool {
 		switch self {
 		case .algES256, .algRS256, .algPS256:
-			return SHA256.hash(data: data)
+			return SHA256.hash(data: data) == compareHash
 		case .algES384, .algPS384, .algRS384:
-			return SHA384.hash(data: data)
+			return SHA384.hash(data: data) == compareHash
 		case .algES512, .algPS512, .algRS512:
-			return SHA512.hash(data: data)
+			return SHA512.hash(data: data) == compareHash
 		case .algRS1:
-			return Insecure.SHA1.hash(data: data)
+			return Insecure.SHA1.hash(data: data) == compareHash
 		}
 	}
 }
