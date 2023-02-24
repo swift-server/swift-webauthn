@@ -30,6 +30,7 @@ public struct WebAuthnManager {
     /// Generate a new set of registration data to be sent to the client and authenticator.
     public func beginRegistration(
         user: User,
+        attestation: AttestationConveyancePreference = .none,
         publicKeyCredentialParameters: [PublicKeyCredentialParameters] = PublicKeyCredentialParameters.supported
     ) throws -> PublicKeyCredentialCreationOptions {
         guard let base64ID = user.userID.data(using: .utf8)?.base64EncodedString() else {
@@ -46,7 +47,8 @@ public struct WebAuthnManager {
             user: userEntity,
             rp: relyingParty,
             pubKeyCredParams: publicKeyCredentialParameters,
-            timeout: config.timeout
+            timeout: config.timeout,
+            attestation: attestation
         )
     }
 

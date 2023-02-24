@@ -22,6 +22,7 @@ public struct PublicKeyCredentialCreationOptions: Codable {
     public let rp: PublicKeyCredentialRpEntity
     public let pubKeyCredParams: [PublicKeyCredentialParameters]
     public let timeout: TimeInterval
+    public let attestation: AttestationConveyancePreference
 }
 
 // MARK: - Credential parameters
