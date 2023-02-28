@@ -49,7 +49,7 @@ final class WebAuthnManagerTests: XCTestCase {
         XCTAssertEqual(options.relyingParty.id, relyingPartyID)
         XCTAssertEqual(options.relyingParty.name, relyingPartyDisplayName)
         XCTAssertEqual(options.timeout, timeout)
-        XCTAssertEqual(options.user.id, user.userID.toBase64())
+        XCTAssertEqual(options.user.id, user.userID.toBase64().asString())
         XCTAssertEqual(options.user.displayName, user.displayName)
         XCTAssertEqual(options.user.name, user.name)
         XCTAssertEqual(options.publicKeyCredentialParameters, [publicKeyCredentialParameter])
@@ -211,7 +211,7 @@ final class WebAuthnManagerTests: XCTestCase {
     }
 
     func testFinishRegistrationFailsIfCeremonyTypeDoesNotMatch() async throws {
-        let clientDataJSONWrongCeremonyType = String.base64URL(fromBase64: """
+        let clientDataJSONWrongCeremonyType = """
         {
             "type": "webauthn.get",
             "challenge": "cmFuZG9tU3RyaW5nRnJvbVNlcnZlcg",
@@ -219,7 +219,7 @@ final class WebAuthnManagerTests: XCTestCase {
             "crossOrigin": false,
             "other_keys_can_be_added_here": "do not compare clientDataJSON against a template. See https://goo.gl/yabPex"
         }
-        """.toBase64())
+        """.toBase64().urlEncoded
         try await assertThrowsError(
             await finishRegistration(clientDataJSON: clientDataJSONWrongCeremonyType),
             expect: CollectedClientData.CollectedClientDataVerifyError.ceremonyTypeDoesNotMatch
@@ -227,7 +227,7 @@ final class WebAuthnManagerTests: XCTestCase {
     }
 
     func testFinishRegistrationFailsIfChallengeDoesNotMatch() async throws {
-        let clientDataJSONWrongChallenge = String.base64URL(fromBase64: """
+        let clientDataJSONWrongChallenge = """
         {
             "type": "webauthn.create",
             "challenge": "cmFuZG9tU3RyaW5nRnJvbVNlcnZlcg",
@@ -235,7 +235,7 @@ final class WebAuthnManagerTests: XCTestCase {
             "crossOrigin": false,
             "other_keys_can_be_added_here": "do not compare clientDataJSON against a template. See https://goo.gl/yabPex"
         }
-        """.toBase64())
+        """.toBase64().urlEncoded
         try await assertThrowsError(
             await finishRegistration(
                 challenge: "definitelyAnotherChallenge",
@@ -246,7 +246,7 @@ final class WebAuthnManagerTests: XCTestCase {
     }
 
     func testFinishRegistrationFailsIfOriginDoesNotMatch() async throws {
-        let clientDataJSONWrongOrigin: URLEncodedBase64 = String.base64URL(fromBase64: """
+        let clientDataJSONWrongOrigin: URLEncodedBase64 = """
         {
             "type": "webauthn.create",
             "challenge": "cmFuZG9tU3RyaW5nRnJvbVNlcnZlcg",
@@ -254,7 +254,7 @@ final class WebAuthnManagerTests: XCTestCase {
             "crossOrigin": false,
             "other_keys_can_be_added_here": "do not compare clientDataJSON against a template. See https://goo.gl/yabPex"
         }
-        """.toBase64())
+        """.toBase64().urlEncoded
         // `webAuthnManager` is configured with origin = https://example.com
         try await assertThrowsError(
             await finishRegistration(
@@ -340,18 +340,18 @@ final class WebAuthnManagerTests: XCTestCase {
 
     func testFinishRegistrationFailsIfRawIDIsTooLong() async throws {
         try await assertThrowsError(
-            await finishRegistration(rawID: [UInt8](repeating: 0, count: 1024).base64EncodedString()),
+            await finishRegistration(rawID: [UInt8](repeating: 0, count: 1024).base64EncodedString().urlEncoded),
             expect: WebAuthnError.credentialRawIDTooLong
         )
     }
 
     private func finishRegistration(
         challenge: EncodedBase64 = "cmFuZG9tU3RyaW5nRnJvbVNlcnZlcg",
-        id: EncodedBase64 = "4PrJNQUJ9xdI2DeCzK9rTBRixhXHDiVdoTROQIh8j80",
+        id: String = "4PrJNQUJ9xdI2DeCzK9rTBRixhXHDiVdoTROQIh8j80",
         type: String = "public-key",
-        rawID: EncodedBase64 = "4PrJNQUJ9xdI2DeCzK9rTBRixhXHDiVdoTROQIh8j80",
-        clientDataJSON: String = "eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlbmdlIjoiY21GdVpHOXRVM1J5YVc1blJuSnZiVk5sY25abGNnIiwib3JpZ2luIjoiaHR0cHM6Ly9leGFtcGxlLmNvbSIsImNyb3NzT3JpZ2luIjpmYWxzZSwib3RoZXJfa2V5c19jYW5fYmVfYWRkZWRfaGVyZSI6ImRvIG5vdCBjb21wYXJlIGNsaWVudERhdGFKU09OIGFnYWluc3QgYSB0ZW1wbGF0ZS4gU2VlIGh0dHBzOi8vZ29vLmdsL3lhYlBleCJ9",
-        attestationObject: String = "o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVg5o3mm9u6vuaVeN4wRgDTidR5oL6ufLTCrE9ISVYbOGUdBAAAAAKN5pvbur7mlXjeMEYA04nUAAQAA",
+        rawID: URLEncodedBase64 = "4PrJNQUJ9xdI2DeCzK9rTBRixhXHDiVdoTROQIh8j80",
+        clientDataJSON: URLEncodedBase64 = "eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlbmdlIjoiY21GdVpHOXRVM1J5YVc1blJuSnZiVk5sY25abGNnIiwib3JpZ2luIjoiaHR0cHM6Ly9leGFtcGxlLmNvbSIsImNyb3NzT3JpZ2luIjpmYWxzZSwib3RoZXJfa2V5c19jYW5fYmVfYWRkZWRfaGVyZSI6ImRvIG5vdCBjb21wYXJlIGNsaWVudERhdGFKU09OIGFnYWluc3QgYSB0ZW1wbGF0ZS4gU2VlIGh0dHBzOi8vZ29vLmdsL3lhYlBleCJ9",
+        attestationObject: URLEncodedBase64 = "o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVg5o3mm9u6vuaVeN4wRgDTidR5oL6ufLTCrE9ISVYbOGUdBAAAAAKN5pvbur7mlXjeMEYA04nUAAQAA",
         requireUserVerification: Bool = false,
         confirmCredentialIDNotRegisteredYet: (String) async throws -> Bool = { _ in true }
     ) async throws -> Credential {

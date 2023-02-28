@@ -67,7 +67,7 @@ public struct WebAuthnManager {
         // Step 3. - 16.
         let parsedData = try ParsedCredentialCreationResponse(from: credentialCreationData)
         try parsedData.verify(
-            storedChallenge: String.base64URL(fromBase64: challenge),
+            storedChallenge: challenge.urlEncoded,
             verifyUser: requireUserVerification,
             relyingPartyID: config.relyingPartyID,
             relyingPartyOrigin: config.relyingPartyOrigin
@@ -104,7 +104,7 @@ public struct WebAuthnManager {
     }
 
     public func beginAuthentication(
-        challenge: String? = nil,
+        challenge: EncodedBase64? = nil,
         timeout: TimeInterval?,
         allowCredentials: [PublicKeyCredentialDescriptor]? = nil,
         userVerification: UserVerificationRequirement = .preferred,
@@ -136,7 +136,7 @@ public struct WebAuthnManager {
 
         let response = credential.response
 
-        guard let clientDataData = response.clientDataJSON.base64URLDecodedData else {
+        guard let clientDataData = response.clientDataJSON.urlDecoded.decoded else {
             throw WebAuthnError.invalidClientDataJSON
         }
         let clientData = try JSONDecoder().decode(CollectedClientData.self, from: clientDataData)
@@ -147,7 +147,7 @@ public struct WebAuthnManager {
         )
         // TODO: - Verify token binding
 
-        guard let authenticatorDataBytes = response.authenticatorData.base64URLDecodedData else {
+        guard let authenticatorDataBytes = response.authenticatorData.urlDecoded.decoded else {
             throw WebAuthnError.invalidAuthenticatorData
         }
         let authenticatorData = try AuthenticatorData(bytes: authenticatorDataBytes)
@@ -175,7 +175,7 @@ public struct WebAuthnManager {
         let signatureBase = authenticatorDataBytes + clientDataHash
 
         let credentialPublicKey = try CredentialPublicKey(publicKeyBytes: credentialPublicKey)
-        guard let signatureData = response.signature.base64URLDecodedData else { throw WebAuthnError.invalidSignature }
+        guard let signatureData = response.signature.urlDecoded.decoded else { throw WebAuthnError.invalidSignature }
         try credentialPublicKey.verify(signature: signatureData, data: signatureBase)
 
         return VerifiedAuthentication(

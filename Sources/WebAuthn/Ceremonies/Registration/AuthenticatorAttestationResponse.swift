@@ -28,14 +28,14 @@ struct ParsedAuthenticatorAttestationResponse {
 
     init(from rawResponse: AuthenticatorAttestationResponse) throws {
         // assembling clientData
-        guard let clientDataJSONData = rawResponse.clientDataJSON.base64URLDecodedData else {
+        guard let clientDataJSONData = rawResponse.clientDataJSON.urlDecoded.decoded else {
             throw WebAuthnError.invalidClientDataJSON
         }
         let clientData = try JSONDecoder().decode(CollectedClientData.self, from: clientDataJSONData)
         self.clientData = clientData
 
         // Step 11. (assembling attestationObject)
-        guard let attestationObjectData = rawResponse.attestationObject.base64URLDecodedData,
+        guard let attestationObjectData = rawResponse.attestationObject.urlDecoded.decoded,
             let decodedAttestationObject = try CBOR.decode([UInt8](attestationObjectData)) else {
             throw WebAuthnError.invalidAttestationObject
         }
