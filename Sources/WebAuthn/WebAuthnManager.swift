@@ -104,7 +104,7 @@ public struct WebAuthnManager {
     }
 
     public func beginAuthentication(
-        challenge: String? = nil,
+        challenge: EncodedBase64? = nil,
         timeout: TimeInterval?,
         allowCredentials: [PublicKeyCredentialDescriptor]? = nil,
         userVerification: UserVerificationRequirement = .preferred,

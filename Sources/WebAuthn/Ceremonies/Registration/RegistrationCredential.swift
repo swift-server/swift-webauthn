@@ -72,7 +72,7 @@ struct ParsedCredentialCreationResponse {
         )
 
         // Step 10.
-        guard let clientData = raw.clientDataJSON.data(using: .utf8) else {
+        guard let clientData = raw.clientDataJSON.string.data(using: .utf8) else {
             throw WebAuthnError.invalidClientDataJSON
         }
         let hash = SHA256.hash(data: clientData)

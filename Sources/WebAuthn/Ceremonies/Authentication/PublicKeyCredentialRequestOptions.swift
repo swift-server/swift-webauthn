@@ -16,7 +16,7 @@ import Foundation
 
 /// The `PublicKeyCredentialRequestOptions` gets passed to the WebAuthn API (`navigator.credentials.get()`)
 public struct PublicKeyCredentialRequestOptions: Codable {
-    public let challenge: String
+    public let challenge: EncodedBase64
     public let timeout: TimeInterval?
     public let rpId: String?
     public let allowCredentials: [PublicKeyCredentialDescriptor]?
