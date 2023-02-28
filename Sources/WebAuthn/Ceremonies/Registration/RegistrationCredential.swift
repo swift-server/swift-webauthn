@@ -44,7 +44,7 @@ struct ParsedCredentialCreationResponse {
     init(from rawResponse: RegistrationCredential) throws {
         id = rawResponse.id
 
-        guard let decodedRawID = rawResponse.rawID.base64URLDecodedData else {
+        guard let decodedRawID = rawResponse.rawID.urlDecoded.decoded else {
             throw WebAuthnError.invalidRawID
         }
         rawID = decodedRawID
@@ -72,7 +72,7 @@ struct ParsedCredentialCreationResponse {
         )
 
         // Step 10.
-        guard let clientData = raw.clientDataJSON.string.data(using: .utf8) else {
+        guard let clientData = raw.clientDataJSON.asData() else {
             throw WebAuthnError.invalidClientDataJSON
         }
         let hash = SHA256.hash(data: clientData)

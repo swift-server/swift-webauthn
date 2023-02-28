@@ -49,7 +49,7 @@ final class WebAuthnManagerTests: XCTestCase {
         XCTAssertEqual(options.relyingParty.id, relyingPartyID)
         XCTAssertEqual(options.relyingParty.name, relyingPartyDisplayName)
         XCTAssertEqual(options.timeout, timeout)
-        XCTAssertEqual(options.user.id, user.userID.toBase64().string)
+        XCTAssertEqual(options.user.id, user.userID.toBase64().asString())
         XCTAssertEqual(options.user.displayName, user.displayName)
         XCTAssertEqual(options.user.name, user.name)
         XCTAssertEqual(options.publicKeyCredentialParameters, [publicKeyCredentialParameter])
@@ -211,7 +211,7 @@ final class WebAuthnManagerTests: XCTestCase {
     }
 
     func testFinishRegistrationFailsIfCeremonyTypeDoesNotMatch() async throws {
-        let clientDataJSONWrongCeremonyType = String.base64URL(fromBase64: """
+        let clientDataJSONWrongCeremonyType = """
         {
             "type": "webauthn.get",
             "challenge": "cmFuZG9tU3RyaW5nRnJvbVNlcnZlcg",
@@ -219,7 +219,7 @@ final class WebAuthnManagerTests: XCTestCase {
             "crossOrigin": false,
             "other_keys_can_be_added_here": "do not compare clientDataJSON against a template. See https://goo.gl/yabPex"
         }
-        """.toBase64())
+        """.toBase64().urlEncoded
         try await assertThrowsError(
             await finishRegistration(clientDataJSON: clientDataJSONWrongCeremonyType),
             expect: CollectedClientData.CollectedClientDataVerifyError.ceremonyTypeDoesNotMatch
@@ -227,7 +227,7 @@ final class WebAuthnManagerTests: XCTestCase {
     }
 
     func testFinishRegistrationFailsIfChallengeDoesNotMatch() async throws {
-        let clientDataJSONWrongChallenge = String.base64URL(fromBase64: """
+        let clientDataJSONWrongChallenge = """
         {
             "type": "webauthn.create",
             "challenge": "cmFuZG9tU3RyaW5nRnJvbVNlcnZlcg",
@@ -235,7 +235,7 @@ final class WebAuthnManagerTests: XCTestCase {
             "crossOrigin": false,
             "other_keys_can_be_added_here": "do not compare clientDataJSON against a template. See https://goo.gl/yabPex"
         }
-        """.toBase64())
+        """.toBase64().urlEncoded
         try await assertThrowsError(
             await finishRegistration(
                 challenge: "definitelyAnotherChallenge",
@@ -246,7 +246,7 @@ final class WebAuthnManagerTests: XCTestCase {
     }
 
     func testFinishRegistrationFailsIfOriginDoesNotMatch() async throws {
-        let clientDataJSONWrongOrigin: URLEncodedBase64 = String.base64URL(fromBase64: """
+        let clientDataJSONWrongOrigin: URLEncodedBase64 = """
         {
             "type": "webauthn.create",
             "challenge": "cmFuZG9tU3RyaW5nRnJvbVNlcnZlcg",
@@ -254,7 +254,7 @@ final class WebAuthnManagerTests: XCTestCase {
             "crossOrigin": false,
             "other_keys_can_be_added_here": "do not compare clientDataJSON against a template. See https://goo.gl/yabPex"
         }
-        """.toBase64())
+        """.toBase64().urlEncoded
         // `webAuthnManager` is configured with origin = https://example.com
         try await assertThrowsError(
             await finishRegistration(
@@ -340,7 +340,7 @@ final class WebAuthnManagerTests: XCTestCase {
 
     func testFinishRegistrationFailsIfRawIDIsTooLong() async throws {
         try await assertThrowsError(
-            await finishRegistration(rawID: String.base64URL(fromBase64: [UInt8](repeating: 0, count: 1024).base64EncodedString())),
+            await finishRegistration(rawID: [UInt8](repeating: 0, count: 1024).base64EncodedString().urlEncoded),
             expect: WebAuthnError.credentialRawIDTooLong
         )
     }

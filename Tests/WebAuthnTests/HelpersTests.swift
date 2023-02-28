@@ -11,8 +11,8 @@ final class HelpersTests: XCTestCase {
         let base64Encoded = input.base64EncodedString()
         let base64URLEncoded = input.base64URLEncodedString()
 
-        XCTAssertEqual(expectedBase64, base64Encoded.string)
-        XCTAssertEqual(expectedBase64URL, base64URLEncoded.string)
+        XCTAssertEqual(expectedBase64, base64Encoded.asString())
+        XCTAssertEqual(expectedBase64URL, base64URLEncoded.asString())
     }
 
     func testEncodeBase64Codable() throws {
