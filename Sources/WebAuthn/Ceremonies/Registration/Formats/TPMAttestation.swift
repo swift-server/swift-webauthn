@@ -1,6 +1,9 @@
+// 🚨 WIP
+
 import Foundation
 import SwiftCBOR
 
+/// 🚨 WIP
 struct TPMAttestation {
     enum TPMAttestationError: Error {
         case pubAreaInvalid
@@ -52,33 +55,33 @@ struct TPMAttestation {
             let pubArea = PubArea(from: Data(pubArea)) else {
             throw TPMAttestationError.pubAreaInvalid
         }
-        switch pubArea.parameters {
-        case let .rsa(rsaParameters):
-            guard case let .rsa(rsaPublicKeyData) = credentialPublicKey,
-                pubArea.unique.data == rsaPublicKeyData.n else {
-                throw TPMAttestationError.invalidPublicKey
-            }
-            var pubAreaExponent: Int = rsaParameters.exponent.toInteger(endian: .big)
-            if pubAreaExponent == 0 {
-                // "When zero, indicates that the exponent is the default of 2^16 + 1"
-                pubAreaExponent = 65537
-            }
-
-            let pubKeyExponent: Int = rsaPublicKeyData.e.toInteger(endian: .big)
-            guard pubAreaExponent == pubKeyExponent else {
-                throw TPMAttestationError.pubAreaExponentDoesNotMatchPubKeyExponent
-            }
-        case let .ecc(eccParameters):
-            guard case let .ec2(ec2PublicKeyData) = credentialPublicKey,
-                pubArea.unique.data == ec2PublicKeyData.rawRepresentation else {
-                throw TPMAttestationError.invalidPublicKey
-            }
-
-            guard let pubAreaCrv = COSECurve(from: eccParameters.curveID),
-                pubAreaCrv == ec2PublicKeyData.curve else {
-                throw TPMAttestationError.invalidPubAreaCurve
-            }
-        }
+//        switch pubArea.parameters {
+//        case let .rsa(rsaParameters):
+//            guard case let .rsa(rsaPublicKeyData) = credentialPublicKey,
+//                pubArea.unique.data == rsaPublicKeyData.n else {
+//                throw TPMAttestationError.invalidPublicKey
+//            }
+//            var pubAreaExponent: Int = rsaParameters.exponent.toInteger(endian: .big)
+//            if pubAreaExponent == 0 {
+//                // "When zero, indicates that the exponent is the default of 2^16 + 1"
+//                pubAreaExponent = 65537
+//            }
+//
+//            let pubKeyExponent: Int = rsaPublicKeyData.e.toInteger(endian: .big)
+//            guard pubAreaExponent == pubKeyExponent else {
+//                throw TPMAttestationError.pubAreaExponentDoesNotMatchPubKeyExponent
+//            }
+//        case let .ecc(eccParameters):
+//            guard case let .ec2(ec2PublicKeyData) = credentialPublicKey,
+//                pubArea.unique.data == ec2PublicKeyData.rawRepresentation else {
+//                throw TPMAttestationError.invalidPublicKey
+//            }
+//
+//            guard let pubAreaCrv = COSECurve(from: eccParameters.curveID),
+//                pubAreaCrv == ec2PublicKeyData.curve else {
+//                throw TPMAttestationError.invalidPubAreaCurve
+//            }
+//        }
 
         // Verify certInfo
         guard let certInfoCBOR = attStmt["certInfo"],

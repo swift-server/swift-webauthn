@@ -21,8 +21,6 @@ public struct PublicKeyCredentialRequestOptions: Codable {
     public let rpId: String?
     public let allowCredentials: [PublicKeyCredentialDescriptor]?
     public let userVerification: UserVerificationRequirement?
-    public let attestation: String?
-    public let attestationFormats: [String]?
     // let extensions: [String: Any]
 }
 

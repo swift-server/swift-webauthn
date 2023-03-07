@@ -66,7 +66,7 @@ struct ParsedCredentialCreationResponse {
         relyingPartyOrigin: String,
         supportedPublicKeyAlgorithms: [PublicKeyCredentialParameters],
         pemRootCertificatesByFormat: [AttestationFormat: [Data]]
-    ) throws -> AttestedCredentialData {
+    ) async throws -> AttestedCredentialData {
         // Step 7. - 9.
         try response.clientData.verify(
             storedChallenge: storedChallenge,
@@ -83,7 +83,7 @@ struct ParsedCredentialCreationResponse {
         // CBOR decoding happened already. Skipping Step 11.
 
         // Step 12. - 17.
-        let attestedCredentialData = try response.attestationObject.verify(
+        let attestedCredentialData = try await response.attestationObject.verify(
             relyingPartyID: relyingPartyID,
             verificationRequired: verifyUser,
             clientDataHash: hash,

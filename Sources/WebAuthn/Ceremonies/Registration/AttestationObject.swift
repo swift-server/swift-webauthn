@@ -29,7 +29,7 @@ public struct AttestationObject {
         clientDataHash: SHA256.Digest,
         supportedPublicKeyAlgorithms: [PublicKeyCredentialParameters],
         pemRootCertificatesByFormat: [AttestationFormat: [Data]] = [:]
-    ) throws -> AttestedCredentialData {
+    ) async throws -> AttestedCredentialData {
         let relyingPartyIDHash = SHA256.hash(data: relyingPartyID.data(using: .utf8)!)
 
         guard relyingPartyIDHash == authenticatorData.relyingPartyIDHash else {
@@ -56,31 +56,30 @@ public struct AttestationObject {
             throw WebAuthnError.unsupportedCredentialPublicKeyAlgorithm
         }
 
-        let pemRootCertificates = pemRootCertificatesByFormat[format] ?? []
-
+        // let pemRootCertificates = pemRootCertificatesByFormat[format] ?? []
         switch format {
         case .none:
             // if format is `none` statement must be empty
             guard attestationStatement == .map([:]) else {
                 throw WebAuthnError.attestationStatementMustBeEmpty
             }
-        case .packed:
-            try PackedAttestation.verify(
-                attStmt: attestationStatement,
-                authenticatorData: rawAuthenticatorData,
-                clientDataHash: Data(clientDataHash),
-                credentialPublicKey: credentialPublicKey,
-                pemRootCertificates: pemRootCertificates
-            )
-        case .tpm:
-            try TPMAttestation.verify(
-                attStmt: attestationStatement,
-                authenticatorData: rawAuthenticatorData,
-                attestedCredentialData: attestedCredentialData,
-                clientDataHash: Data(clientDataHash),
-                credentialPublicKey: credentialPublicKey,
-                pemRootCertificates: pemRootCertificates
-            )
+        // case .packed:
+        //     try await PackedAttestation.verify(
+        //         attStmt: attestationStatement,
+        //         authenticatorData: rawAuthenticatorData,
+        //         clientDataHash: Data(clientDataHash),
+        //         credentialPublicKey: credentialPublicKey,
+        //         pemRootCertificates: pemRootCertificates
+        //     )
+        // case .tpm:
+        //     try TPMAttestation.verify(
+        //         attStmt: attestationStatement,
+        //         authenticatorData: rawAuthenticatorData,
+        //         attestedCredentialData: attestedCredentialData,
+        //         clientDataHash: Data(clientDataHash),
+        //         credentialPublicKey: credentialPublicKey,
+        //         pemRootCertificates: pemRootCertificates
+        //     )
         default:
             throw WebAuthnError.attestationVerificationNotSupported
         }

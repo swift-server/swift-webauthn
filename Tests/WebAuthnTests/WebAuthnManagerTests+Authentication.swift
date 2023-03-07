@@ -24,9 +24,7 @@ extension WebAuthnManagerTests {
         let options = try webAuthnManager.beginAuthentication(
             timeout: timeout,
             allowCredentials: allowCredentials,
-            userVerification: .preferred,
-            attestation: "direct",
-            attestationFormats: nil
+            userVerification: .preferred
         )
 
         XCTAssertEqual(options.challenge, challenge.base64EncodedString())
@@ -34,8 +32,6 @@ extension WebAuthnManagerTests {
         XCTAssertEqual(options.rpId, relyingPartyID)
         XCTAssertEqual(options.allowCredentials, allowCredentials)
         XCTAssertEqual(options.userVerification, .preferred)
-        XCTAssertEqual(options.attestation, "direct")
-        XCTAssertEqual(options.attestationFormats, nil)
     }
 
     func testFinishAuthenticationFailsIfCredentialTypeIsInvalid() throws {

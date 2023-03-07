@@ -68,7 +68,7 @@ public struct WebAuthnManager {
         confirmCredentialIDNotRegisteredYet: (String) async throws -> Bool
     ) async throws -> Credential {
         let parsedData = try ParsedCredentialCreationResponse(from: credentialCreationData)
-        let attestedCredentialData = try parsedData.verify(
+        let attestedCredentialData = try await parsedData.verify(
             storedChallenge: String.base64URL(fromBase64: challenge),
             verifyUser: requireUserVerification,
             relyingPartyID: config.relyingPartyID,
@@ -101,9 +101,7 @@ public struct WebAuthnManager {
         challenge: String? = nil,
         timeout: TimeInterval?,
         allowCredentials: [PublicKeyCredentialDescriptor]? = nil,
-        userVerification: UserVerificationRequirement = .preferred,
-        attestation: String? = nil,
-        attestationFormats: [String]? = nil
+        userVerification: UserVerificationRequirement = .preferred
     ) throws -> PublicKeyCredentialRequestOptions {
         let challenge = challenge ?? challengeGenerator.generate().base64EncodedString()
         return PublicKeyCredentialRequestOptions(
@@ -111,9 +109,7 @@ public struct WebAuthnManager {
             timeout: timeout,
             rpId: config.relyingPartyID,
             allowCredentials: allowCredentials,
-            userVerification: userVerification,
-            attestation: attestation,
-            attestationFormats: attestationFormats
+            userVerification: userVerification
         )
     }
 
