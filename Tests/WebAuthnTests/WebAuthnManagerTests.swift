@@ -88,77 +88,66 @@ final class WebAuthnManagerTests: XCTestCase {
     }
 
     func testFinishRegistrationFailsIfAuthDataIsInvalid() async throws {
-        // {
-        //   "fmt": "packed",
-        //   "attStmt": {
-        //     "alg": -7,
-        //     "sig": h'3045022035346DA48FD238E655CD4D6937FE1C5FEA2CA943E21CC396E3CAAAABDD435DF5022100BE30789A231B7639D23182A627C940C771E7AF34E31F3E26DE9DA6D01AF5E08C'
-        //   },
-        //   "authData": 1
-        // }
-        let hexAttestationObjectWithInvalidAuthData: URLEncodedBase64 = "o2NmbXRmcGFja2VkZ2F0dFN0bXSiY2FsZyZjc2lnWEcwRQIgNTRtpI_SOOZVzU1pN_4cX-osqUPiHMOW48qqq91DXfUCIQC-MHiaIxt2OdIxgqYnyUDHceevNOMfPibenabQGvXgjGhhdXRoRGF0YQE"
         try await assertThrowsError(
-            await finishRegistration(attestationObject: hexAttestationObjectWithInvalidAuthData),
+            await finishRegistration(
+                attestationObject: TestAttestationObjectBuilder()
+                    .allValid()
+                    .invalidAuthData()
+                    .buildBase64URLEncoded()
+            ),
             expect: WebAuthnError.invalidAuthData
         )
     }
 
     func testFinishRegistrationFailsIfFmtIsInvalid() async throws {
-        // {
-        //   "fmt": 1,
-        //   "attStmt": {
-        //     "alg": -7,
-        //     "sig": h'3045022035346DA48FD238E655CD4D6937FE1C5FEA2CA943E21CC396E3CAAAABDD435DF5022100BE30789A231B7639D23182A627C940C771E7AF34E31F3E26DE9DA6D01AF5E08C'
-        //   },
-        //   "authData": h'49960DE5880E8C687434170F6476605B8FE4AEB9A28632C7995CF3BA831D97634500000000ADCE000235BCC60A648B0B25F1F0550300203A3EE56DCABABEC0EF2F4B7F0EE28E11317C2CF7FF972830440D63FCBAA7E26BA50102032620012158209AFFC8BA186D85A071FEDA41C77BA5C8D48FEDE8F1B89A7D6407DBC5A28D04AF2258203C8D8AAAA450DBA28AB85689D321FB9E8B8206BCC7BBCA9138D5BE08F6BD5433'
-        // }
-        let hexAttestationObjectWithInvalidFmt: URLEncodedBase64 = "o2NmbXQBZ2F0dFN0bXSiY2FsZyZjc2lnWEcwRQIgNTRtpI_SOOZVzU1pN_4cX-osqUPiHMOW48qqq91DXfUCIQC-MHiaIxt2OdIxgqYnyUDHceevNOMfPibenabQGvXgjGhhdXRoRGF0YVikSZYN5YgOjGh0NBcPZHZgW4_krrmihjLHmVzzuoMdl2NFAAAAAK3OAAI1vMYKZIsLJfHwVQMAIDo-5W3Kur7A7y9Lfw7ijhExfCz3_5coMEQNY_y6p-JrpQECAyYgASFYIJr_yLoYbYWgcf7aQcd7pcjUj-3o8biafWQH28WijQSvIlggPI2KqqRQ26KKuFaJ0yH7nouCBrzHu8qRONW-CPa9VDM"
         try await assertThrowsError(
-            await finishRegistration(attestationObject: hexAttestationObjectWithInvalidFmt),
+            await finishRegistration(
+                attestationObject: TestAttestationObjectBuilder()
+                    .allValid()
+                    .invalidFmt()
+                    .buildBase64URLEncoded()
+            ),
             expect: WebAuthnError.invalidFmt
         )
     }
 
     func testFinishRegistrationFailsIfAttStmtIsMissing() async throws {
-        // {
-        //   "fmt": "packed",
-        //   "authData": h'49960DE5880E8C687434170F6476605B8FE4AEB9A28632C7995CF3BA831D97634500000000ADCE000235BCC60A648B0B25F1F0550300203A3EE56DCABABEC0EF2F4B7F0EE28E11317C2CF7FF972830440D63FCBAA7E26BA50102032620012158209AFFC8BA186D85A071FEDA41C77BA5C8D48FEDE8F1B89A7D6407DBC5A28D04AF2258203C8D8AAAA450DBA28AB85689D321FB9E8B8206BCC7BBCA9138D5BE08F6BD5433'
-        // }
-        let hexAttestationObjectWithMissingAttStmt: URLEncodedBase64 = "omNmbXRmcGFja2VkaGF1dGhEYXRhWKRJlg3liA6MaHQ0Fw9kdmBbj-SuuaKGMseZXPO6gx2XY0UAAAAArc4AAjW8xgpkiwsl8fBVAwAgOj7lbcq6vsDvL0t_DuKOETF8LPf_lygwRA1j_Lqn4mulAQIDJiABIVggmv_IuhhthaBx_tpBx3ulyNSP7ejxuJp9ZAfbxaKNBK8iWCA8jYqqpFDbooq4VonTIfuei4IGvMe7ypE41b4I9r1UMw"
         try await assertThrowsError(
-            await finishRegistration(attestationObject: hexAttestationObjectWithMissingAttStmt),
+            await finishRegistration(
+                attestationObject: TestAttestationObjectBuilder()
+                    .allValid()
+                    .missingAttStmt()
+                    .buildBase64URLEncoded()
+            ),
             expect: WebAuthnError.missingAttStmt
         )
     }
 
     func testFinishRegistrationFailsIfAuthDataIsTooShort() async throws {
-        // {
-        //   "fmt": "packed",
-        //   "attStmt": {
-        //     "alg": -7,
-        //     "sig": h'3045022035346DA48FD238E655CD4D6937FE1C5FEA2CA943E21CC396E3CAAAABDD435DF5022100BE30789A231B7639D23182A627C940C771E7AF34E31F3E26DE9DA6D01AF5E08C'
-        //   },
-        //   "authData": h'49960D'
-        // }
-        let hexAttestationObjectInvalidAuthData: URLEncodedBase64 = "o2NmbXRmcGFja2VkZ2F0dFN0bXSiY2FsZyZjc2lnWEcwRQIgNTRtpI_SOOZVzU1pN_4cX-osqUPiHMOW48qqq91DXfUCIQC-MHiaIxt2OdIxgqYnyUDHceevNOMfPibenabQGvXgjGhhdXRoRGF0YUNJlg0"
         try await assertThrowsError(
-            await finishRegistration(attestationObject: hexAttestationObjectInvalidAuthData),
+            await finishRegistration(
+                attestationObject: TestAttestationObjectBuilder()
+                    .allValid()
+                    .zeroAuthData(byteCount: 36)
+                    .buildBase64URLEncoded()
+            ),
             expect: WebAuthnError.authDataTooShort
         )
     }
 
     func testFinishRegistrationFailsIfAttestedCredentialDataFlagIsSetButThereIsNotCredentialData() async throws {
-        // {
-        //   "fmt": "packed",
-        //   "attStmt": {
-        //       "alg": -7,
-        //       "sig": h'3045022035346DA48FD238E655CD4D6937FE1C5FEA2CA943E21CC396E3CAAAABDD435DF5022100BE30789A231B7639D23182A627C940C771E7AF34E31F3E26DE9DA6D01AF5E08C'
-        //    },
-        //    "authData": h'5647686C5647686C5647686C5647686C5647686C5647686C686C5647686C686C4000000000'
-        // }
-        let hexAttestationObjectMissingCredentialData: URLEncodedBase64 = "o2NmbXRmcGFja2VkZ2F0dFN0bXSiY2FsZyZjc2lnWEcwRQIgNTRtpI_SOOZVzU1pN_4cX-osqUPiHMOW48qqq91DXfUCIQC-MHiaIxt2OdIxgqYnyUDHceevNOMfPibenabQGvXgjGhhdXRoRGF0YVglVkdobFZHaGxWR2hsVkdobFZHaGxWR2hsaGxWR2hsaGxAAAAAAA"
         try await assertThrowsError(
-            await finishRegistration(attestationObject: hexAttestationObjectMissingCredentialData),
+            await finishRegistration(
+                attestationObject: TestAttestationObjectBuilder()
+                    .allValid()
+                    .buildAuthData(
+                        TestAuthDataBuilder()
+                            .validBase()
+                            .flags(0b01000001)
+                            .noAttestedCredentialData()
+                    )
+                    .buildBase64URLEncoded()
+            ),
             expect: WebAuthnError.attestedCredentialDataMissing
         )
     }
