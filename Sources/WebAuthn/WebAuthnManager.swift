@@ -69,7 +69,7 @@ public struct WebAuthnManager {
     ) async throws -> Credential {
         let parsedData = try ParsedCredentialCreationResponse(from: credentialCreationData)
         let attestedCredentialData = try await parsedData.verify(
-            storedChallenge: String.base64URL(fromBase64: challenge),
+            storedChallenge: challenge.urlEncoded,
             verifyUser: requireUserVerification,
             relyingPartyID: config.relyingPartyID,
             relyingPartyOrigin: config.relyingPartyOrigin,
@@ -98,7 +98,7 @@ public struct WebAuthnManager {
     }
 
     public func beginAuthentication(
-        challenge: String? = nil,
+        challenge: EncodedBase64? = nil,
         timeout: TimeInterval?,
         allowCredentials: [PublicKeyCredentialDescriptor]? = nil,
         userVerification: UserVerificationRequirement = .preferred

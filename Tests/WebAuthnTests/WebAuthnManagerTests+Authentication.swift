@@ -109,16 +109,16 @@ extension WebAuthnManagerTests {
     }
 
     private func finishAuthentication(
-        credentialID: String = "t17cFo-duGmNFikXovKNdxJeKt1opiOhNbGB0SVP9Jc",
+        credentialID: URLEncodedBase64 = "t17cFo-duGmNFikXovKNdxJeKt1opiOhNbGB0SVP9Jc",
         clientDataJSON: URLEncodedBase64 = "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoic29tZUNoYWxsZW5nZSIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS5jb20iLCJjcm9zc09yaWdpbiI6ZmFsc2V9",
         authenticatorData: URLEncodedBase64 = "dKbqkhPJnC90siSSsyDPQCYqlMGpUKA5fyklC2CEHvAFAAAAAA",
-        signature: String = "MEQCIERtRvAoEUoIaJSK3LjjdPc8Rti0rlc7ce98paobF9tQAiB9KrKDwRFA7Rsfnhaik1wxJzlO-yYPynEy91WL9tfaAg",
+        signature: URLEncodedBase64 = "MEQCIERtRvAoEUoIaJSK3LjjdPc8Rti0rlc7ce98paobF9tQAiB9KrKDwRFA7Rsfnhaik1wxJzlO-yYPynEy91WL9tfaAg",
         userHandle: String? = "NjI2OEJENkUtMDgxRS00QzExLUE3QzMtM0REMEFGMzNFQzE0",
         attestationObject: String? = nil,
         authenticatorAttachment: String? = "platform",
         type: String = "public-key",
         expectedChallenge: URLEncodedBase64 = "someChallenge",
-        credentialPublicKey: [UInt8] = [UInt8]("pQECAyYgASFYIHHav63TRyKma7L7duPysRTSZ0u_l_ezg_ALplDTEfBmIlggxsiNa6gSWfFLFDOnhMKTTYurKp66FMpWAt2ZFbhTEPs".base64URLDecodedData!),
+        credentialPublicKey: [UInt8] = [UInt8](URLEncodedBase64("pQECAyYgASFYIHHav63TRyKma7L7duPysRTSZ0u_l_ezg_ALplDTEfBmIlggxsiNa6gSWfFLFDOnhMKTTYurKp66FMpWAt2ZFbhTEPs").asData()!),
         credentialCurrentSignCount: Int = 0,
         requireUserVerification: Bool = false
     ) throws -> VerifiedAuthentication {

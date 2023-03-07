@@ -42,13 +42,13 @@ struct ParsedAuthenticatorAssertionResponse {
     let userHandle: String?
 
     init(from authenticatorAssertionResponse: AuthenticatorAssertionResponse) throws {
-        guard let clientDataData = authenticatorAssertionResponse.clientDataJSON.base64URLDecodedData else {
+        guard let clientDataData = authenticatorAssertionResponse.clientDataJSON.urlDecoded.decoded else {
             throw WebAuthnError.invalidClientDataJSON
         }
         rawClientData = clientDataData
         clientData = try JSONDecoder().decode(CollectedClientData.self, from: clientDataData)
 
-        guard let authenticatorDataBytes = authenticatorAssertionResponse.authenticatorData.base64URLDecodedData else {
+        guard let authenticatorDataBytes = authenticatorAssertionResponse.authenticatorData.urlDecoded.decoded else {
             throw WebAuthnError.invalidAuthenticatorData
         }
         rawAuthenticatorData = authenticatorDataBytes
@@ -97,7 +97,7 @@ struct ParsedAuthenticatorAssertionResponse {
         let signatureBase = rawAuthenticatorData + clientDataHash
 
         let credentialPublicKey = try CredentialPublicKey(publicKeyBytes: credentialPublicKey)
-        guard let signatureData = signature.base64URLDecodedData else { throw WebAuthnError.invalidSignature }
+        guard let signatureData = signature.urlDecoded.decoded else { throw WebAuthnError.invalidSignature }
         try credentialPublicKey.verify(signature: signatureData, data: signatureBase)
     }
 }
