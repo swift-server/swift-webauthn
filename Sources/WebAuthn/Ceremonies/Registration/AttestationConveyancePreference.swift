@@ -12,8 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-/// Options to specify the Relying Party's preference regarding
-/// attestation conveyance during credential generation.
+/// Options to specify the Relying Party's preference regarding attestation conveyance during credential generation.
 ///
 /// Currently only supports `none`.
 public enum AttestationConveyancePreference: String, Codable {

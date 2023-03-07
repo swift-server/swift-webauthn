@@ -40,7 +40,7 @@ final class WebAuthnManagerTests: XCTestCase {
 
     func testBeginRegistrationReturns() throws {
         let user = MockUser()
-        let publicKeyCredentialParameter = PublicKeyCredentialParameters(type: "public-key", alg: .algPS384)
+        let publicKeyCredentialParameter = PublicKeyCredentialParameters(type: "public-key", alg: .algES256)
         let options = try webAuthnManager.beginRegistration(
             user: user,
             publicKeyCredentialParameters: [publicKeyCredentialParameter]
