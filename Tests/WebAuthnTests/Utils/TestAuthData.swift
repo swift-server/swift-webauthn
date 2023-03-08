@@ -40,17 +40,18 @@ struct TestAuthDataBuilder {
         return wrapped
     }
 
-    func validBase() -> Self {
+    func validMock() -> Self {
         self
-            .rpIDHash(fromRpID: "example.com")
-            .flags(0b10100010)
+            .rpIDHash(fromRpID: "webauthn.io")
+            .flags(0b01000101)
             .counter([0b00000000, 0b00000000, 0b00000000, 0b00000000])
             .attestedCredData(
                 aaguid: [UInt8](repeating: 0, count: 16),
                 credentialIDLength: [0b00000000, 0b00000001],
                 credentialID: [0b00000001],
-                credentialPublicKey: [] // TODO: This is not a valid credentialPublicKey
+                credentialPublicKey: TestCredentialPublicKeyBuilder().validMock().buildAsByteArray()
             )
+            .extensions([UInt8](repeating: 0, count: 20))
     }
 
     func rpIDHash(fromRpID rpID: String) -> Self {
@@ -80,9 +81,9 @@ struct TestAuthDataBuilder {
     /// credentialID length = credentialIDLength
     /// credentialPublicKey = variable
     func attestedCredData(
-        aaguid: [UInt8],
-        credentialIDLength: [UInt8],
-        credentialID: [UInt8],
+        aaguid: [UInt8] = [UInt8](repeating: 0, count: 16),
+        credentialIDLength: [UInt8] = [0b00000000, 0b00000001],
+        credentialID: [UInt8] = [0b00000001],
         credentialPublicKey: [UInt8]
     ) -> Self {
         var temp = self
@@ -99,6 +100,12 @@ struct TestAuthDataBuilder {
     func extensions(_ extensions: [UInt8]) -> Self {
         var temp = self
         temp.wrapped.extensions = extensions
+        return temp
+    }
+
+    func noExtensionData() -> Self {
+        var temp = self
+        temp.wrapped.extensions = nil
         return temp
     }
 }

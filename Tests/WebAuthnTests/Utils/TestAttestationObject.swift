@@ -31,11 +31,11 @@ struct TestAttestationObjectBuilder {
         self.wrapped = wrapped
     }
 
-    func allValid() -> Self {
+    func validMock() -> Self {
         var temp = self
         temp.wrapped.fmt = .utf8String("none")
         temp.wrapped.attStmt = .map([:])
-        temp.wrapped.authData = .byteString([])
+        temp.wrapped.authData = .byteString(TestAuthDataBuilder().validMock().build().byteArrayRepresentation)
         return temp
     }
 
@@ -107,7 +107,7 @@ struct TestAttestationObjectBuilder {
         return temp
     }
 
-    func buildAuthData(_ builder: TestAuthDataBuilder) -> Self {
+    func authData(_ builder: TestAuthDataBuilder) -> Self {
         var temp = self
         temp.wrapped.authData = .byteString(builder.build().byteArrayRepresentation)
         return temp
