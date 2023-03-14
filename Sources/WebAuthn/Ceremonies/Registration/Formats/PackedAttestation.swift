@@ -3,7 +3,7 @@
 import Foundation
 import SwiftCBOR
 import X509
-import CryptoKit
+import Crypto
 
 /// 🚨 WIP
 struct PackedAttestation {
