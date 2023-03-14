@@ -1,5 +1,6 @@
 import Foundation
 import Crypto
+import WebAuthn
 
 struct TestAuthData {
     var rpIDHash: [UInt8]?
@@ -37,7 +38,11 @@ struct TestAuthDataBuilder {
     }
 
     func build() -> TestAuthData {
-        return wrapped
+        wrapped
+    }
+
+    func buildAsBase64URLEncoded() -> URLEncodedBase64 {
+        build().byteArrayRepresentation.base64URLEncodedString()
     }
 
     func validMock() -> Self {
@@ -51,6 +56,20 @@ struct TestAuthDataBuilder {
                 credentialID: [0b00000001],
                 credentialPublicKey: TestCredentialPublicKeyBuilder().validMock().buildAsByteArray()
             )
+            .extensions([UInt8](repeating: 0, count: 20))
+    }
+
+    /// Creates a valid authData
+    ///
+    /// rpID = "webauthn.io", user
+    /// flags "extension data included", "user verified" and "user present" are set
+    /// sign count is set to 0
+    /// random extension data is included
+    func validAuthenticationMock() -> Self {
+        self
+            .rpIDHash(fromRpID: "webauthn.io")
+            .flags(0b10000101)
+            .counter([0b00000000, 0b00000000, 0b00000000, 0b00000000])
             .extensions([UInt8](repeating: 0, count: 20))
     }
 
@@ -70,6 +89,7 @@ struct TestAuthDataBuilder {
         return temp
     }
 
+    /// A valid counter has length 4
     func counter(_ counter: [UInt8]) -> Self {
         var temp = self
         temp.wrapped.counter = counter

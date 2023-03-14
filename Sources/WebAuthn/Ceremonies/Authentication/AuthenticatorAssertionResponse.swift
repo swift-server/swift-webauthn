@@ -64,7 +64,7 @@ struct ParsedAuthenticatorAssertionResponse {
         relyingPartyID: String,
         requireUserVerification: Bool,
         credentialPublicKey: [UInt8],
-        credentialCurrentSignCount: Int
+        credentialCurrentSignCount: UInt32
     ) throws {
         try clientData.verify(
             storedChallenge: expectedChallenge,

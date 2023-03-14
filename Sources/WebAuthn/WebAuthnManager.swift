@@ -118,7 +118,7 @@ public struct WebAuthnManager {
         // clientExtensionResults: ,
         expectedChallenge: URLEncodedBase64,
         credentialPublicKey: [UInt8],
-        credentialCurrentSignCount: Int,
+        credentialCurrentSignCount: UInt32,
         requireUserVerification: Bool = false
     ) throws -> VerifiedAuthentication {
         guard credential.type == "public-key" else { throw WebAuthnError.invalidAssertionCredentialType }

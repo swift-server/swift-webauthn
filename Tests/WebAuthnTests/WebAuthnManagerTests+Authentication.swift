@@ -15,6 +15,7 @@
 @testable import WebAuthn
 import XCTest
 import SwiftCBOR
+import Crypto
 
 // swiftlint:disable line_length
 
@@ -62,28 +63,34 @@ extension WebAuthnManagerTests {
     }
 
     func testFinishAuthenticationFailsIfCeremonyTypeDoesNotMatch() throws {
-        // {
-        //   "type":"webauthn.create",
-        //   "challenge":"jZGE93wyfZbd0OF5LlRumoTCPLlU7XQaYMglJWPPspWSpaMf-sqTXOIV28AW8iZV95uiG-8BH6zddICo9ZGrWA",
-        //   "origin":"https://webauthn.io",
-        //   "crossOrigin":false
-        // }
+        var clientDataJSON = TestClientDataJSON()
+        clientDataJSON.type = "webauthn.create"
         try assertThrowsError(
-            finishAuthentication(clientDataJSON: "eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlbmdlIjoialpHRTkzd3lmWmJkME9GNUxsUnVtb1RDUExsVTdYUWFZTWdsSldQUHNwV1NwYU1mLXNxVFhPSVYyOEFXOGlaVjk1dWlHLThCSDZ6ZGRJQ285WkdyV0EiLCJvcmlnaW4iOiJodHRwczovL3dlYmF1dGhuLmlvIiwiY3Jvc3NPcmlnaW4iOmZhbHNlfQ"),
+            finishAuthentication(clientDataJSON: clientDataJSON.base64URLEncoded),
             expect: CollectedClientData.CollectedClientDataVerifyError.ceremonyTypeDoesNotMatch
         )
     }
 
     func testFinishAuthenticationFailsIfRelyingPartyIDHashDoesNotMatch() throws {
         try assertThrowsError(
-            finishAuthentication(authenticatorData: "SJYN5YgOjGh0NBcPZHZgW4_krrmihjLHmVzzuoMdl2MFAAAAAA"),
+            finishAuthentication(
+                authenticatorData: TestAuthDataBuilder()
+                    .validAuthenticationMock()
+                    .rpIDHash(fromRpID: "wrong-id.org")
+                    .buildAsBase64URLEncoded()
+            ),
             expect: WebAuthnError.relyingPartyIDHashDoesNotMatch
         )
     }
 
     func testFinishAuthenticationFailsIfUserPresentFlagIsNotSet() throws {
         try assertThrowsError(
-            finishAuthentication(authenticatorData: "dKbqkhPJnC90siSSsyDPQCYqlMGpUKA5fyklC2CEHvAEAAAAAA"),
+            finishAuthentication(
+                authenticatorData: TestAuthDataBuilder()
+                    .validAuthenticationMock()
+                    .flags(0b10000000)
+                    .buildAsBase64URLEncoded()
+            ),
             expect: WebAuthnError.userPresentFlagNotSet
         )
     }
@@ -91,7 +98,10 @@ extension WebAuthnManagerTests {
     func testFinishAuthenticationFailsIfUserIsNotVerified() throws {
         try assertThrowsError(
             finishAuthentication(
-                authenticatorData: "dKbqkhPJnC90siSSsyDPQCYqlMGpUKA5fyklC2CEHvABAAAAAA",
+                authenticatorData: TestAuthDataBuilder()
+                    .validAuthenticationMock()
+                    .flags(0b10000001)
+                    .buildAsBase64URLEncoded(),
                 requireUserVerification: true
             ),
             expect: WebAuthnError.userVerifiedFlagNotSet
@@ -101,25 +111,56 @@ extension WebAuthnManagerTests {
     func testFinishAuthenticationFailsIfCredentialCounterIsNotUpToDate() throws {
         try assertThrowsError(
             finishAuthentication(
-                authenticatorData: "dKbqkhPJnC90siSSsyDPQCYqlMGpUKA5fyklC2CEHvAFAAAAAQ", // signCount = 1
+                authenticatorData: TestAuthDataBuilder()
+                    .validAuthenticationMock()
+                    .counter([0, 0, 0, 1]) // signCount = 1
+                    .buildAsBase64URLEncoded(),
                 credentialCurrentSignCount: 2
             ),
             expect: WebAuthnError.potentialReplayAttack
         )
     }
 
+    func testFinishAuthenticationSucceeds() throws {
+        let credentialID = TestConstants.mockCredentialID
+        let oldSignCount: UInt32 = 0
+
+        let authenticatorData = TestAuthDataBuilder()
+                .validAuthenticationMock()
+                .counter([0, 0, 0, 1])
+                .buildAsBase64URLEncoded()
+
+        // create a signature. This part is usually performed by the authenticator
+        let clientDataHash = SHA256.hash(data: TestClientDataJSON(type: "webauthn.get").jsonData)
+        let rawAuthenticatorData = authenticatorData.urlDecoded.decoded!
+        let signatureBase = rawAuthenticatorData + clientDataHash
+        let signature = try TestECCKeyPair.signature(data: signatureBase).derRepresentation
+
+        let verifiedAuthentication = try finishAuthentication(
+            credentialID: credentialID,
+            authenticatorData: authenticatorData,
+            signature: signature.base64URLEncodedString(),
+            credentialCurrentSignCount: oldSignCount
+        )
+
+        XCTAssertEqual(verifiedAuthentication.credentialID, credentialID)
+        XCTAssertEqual(verifiedAuthentication.newSignCount, oldSignCount + 1)
+    }
+
+    /// Using the default parameters `finishAuthentication` should succeed.
     private func finishAuthentication(
-        credentialID: URLEncodedBase64 = "t17cFo-duGmNFikXovKNdxJeKt1opiOhNbGB0SVP9Jc",
-        clientDataJSON: URLEncodedBase64 = "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoic29tZUNoYWxsZW5nZSIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS5jb20iLCJjcm9zc09yaWdpbiI6ZmFsc2V9",
-        authenticatorData: URLEncodedBase64 = "dKbqkhPJnC90siSSsyDPQCYqlMGpUKA5fyklC2CEHvAFAAAAAA",
-        signature: URLEncodedBase64 = "MEQCIERtRvAoEUoIaJSK3LjjdPc8Rti0rlc7ce98paobF9tQAiB9KrKDwRFA7Rsfnhaik1wxJzlO-yYPynEy91WL9tfaAg",
+        credentialID: URLEncodedBase64 = TestConstants.mockCredentialID,
+        clientDataJSON: URLEncodedBase64 = TestClientDataJSON(type: "webauthn.get").base64URLEncoded,
+        authenticatorData: URLEncodedBase64 = TestAuthDataBuilder().validAuthenticationMock()
+            .buildAsBase64URLEncoded(),
+        signature: URLEncodedBase64 = "MEUCIQCs67ijqtM-Ow5UBvIT5afc_4RQZDLbfoXOnFgDUsYymQIgIdSmullkPCYrdES4-HBMkL-dL5FXr9gjqUfsdXvnxp8",
         userHandle: String? = "NjI2OEJENkUtMDgxRS00QzExLUE3QzMtM0REMEFGMzNFQzE0",
         attestationObject: String? = nil,
         authenticatorAttachment: String? = "platform",
         type: String = "public-key",
-        expectedChallenge: URLEncodedBase64 = "someChallenge",
-        credentialPublicKey: [UInt8] = [UInt8](URLEncodedBase64("pQECAyYgASFYIHHav63TRyKma7L7duPysRTSZ0u_l_ezg_ALplDTEfBmIlggxsiNa6gSWfFLFDOnhMKTTYurKp66FMpWAt2ZFbhTEPs").asData()!),
-        credentialCurrentSignCount: Int = 0,
+        expectedChallenge: URLEncodedBase64 = TestConstants.mockChallenge,
+        credentialPublicKey: [UInt8] = TestCredentialPublicKeyBuilder().validMock().buildAsByteArray(),
+        credentialCurrentSignCount: UInt32 = 0,
         requireUserVerification: Bool = false
     ) throws -> VerifiedAuthentication {
         try webAuthnManager.finishAuthentication(
