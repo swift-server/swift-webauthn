@@ -29,7 +29,7 @@ public struct WebAuthnManager {
 
     /// Generate a new set of registration data to be sent to the client and authenticator.
     public func beginRegistration(
-        user: User,
+        user: WebAuthnUser,
         attestation: AttestationConveyancePreference = .none,
         publicKeyCredentialParameters: [PublicKeyCredentialParameters] = PublicKeyCredentialParameters.supported
     ) throws -> PublicKeyCredentialCreationOptions {

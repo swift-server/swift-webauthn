@@ -1,6 +1,6 @@
 import WebAuthn
 
-struct MockUser: User {
+struct MockUser: WebAuthnUser {
     var userID: String
     var name: String
     var displayName: String

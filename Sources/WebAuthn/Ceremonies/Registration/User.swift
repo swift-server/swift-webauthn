@@ -13,7 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 /// Protocol to interact with a user throughout the registration ceremony
-public protocol User {
+public protocol WebAuthnUser {
     /// A unique identifier for the user. For privacy reasons it should NOT be something like an email address.
     var userID: String { get }
     /// A value that will help the user identify which account this credential is associated with.
