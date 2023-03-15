@@ -120,7 +120,8 @@ extension WebAuthnManagerTests {
             expect: WebAuthnError.potentialReplayAttack
         )
     }
-
+// c155900296b95a46f75d57328e4523910e74d629331fcd12cce2e95644114182
+// cf28f38af10da2d9ca9e2d3bd373f0574253404075ca5d748869bbb01f8677be
     func testFinishAuthenticationSucceeds() throws {
         let credentialID = TestConstants.mockCredentialID
         let oldSignCount: UInt32 = 0
@@ -130,14 +131,16 @@ extension WebAuthnManagerTests {
                 .counter([0, 0, 0, 1])
                 .buildAsBase64URLEncoded()
 
-        // create a signature. This part is usually performed by the authenticator
-        let clientDataHash = SHA256.hash(data: TestClientDataJSON(type: "webauthn.get").jsonData)
+        // Create a signature. This part is usually performed by the authenticator
+        let clientData: Data = TestClientDataJSON(type: "webauthn.get").jsonData
+        let clientDataHash = SHA256.hash(data: clientData)
         let rawAuthenticatorData = authenticatorData.urlDecoded.decoded!
         let signatureBase = rawAuthenticatorData + clientDataHash
         let signature = try TestECCKeyPair.signature(data: signatureBase).derRepresentation
 
         let verifiedAuthentication = try finishAuthentication(
             credentialID: credentialID,
+            clientDataJSON: clientData.base64URLEncodedString(),
             authenticatorData: authenticatorData,
             signature: signature.base64URLEncodedString(),
             credentialCurrentSignCount: oldSignCount
