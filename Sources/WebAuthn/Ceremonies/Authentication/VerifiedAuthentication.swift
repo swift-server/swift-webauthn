@@ -7,8 +7,8 @@ public struct VerifiedAuthentication {
         case multiDevice = "multi_device"
     }
 
-    let credentialID: URLEncodedBase64
-    let newSignCount: UInt32
-    let credentialDeviceType: CredentialDeviceType
-    let credentialBackedUp: Bool
+    public let credentialID: URLEncodedBase64
+    public let newSignCount: UInt32
+    public let credentialDeviceType: CredentialDeviceType
+    public let credentialBackedUp: Bool
 }
