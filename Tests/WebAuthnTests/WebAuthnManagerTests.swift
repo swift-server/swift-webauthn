@@ -26,14 +26,12 @@ final class WebAuthnManagerTests: XCTestCase {
     let relyingPartyDisplayName = "Testy test"
     let relyingPartyID = "webauthn.io"
     let relyingPartyOrigin = "https://example.com"
-    let timeout: TimeInterval = 6000
 
     override func setUp() {
         let config = WebAuthnConfig(
             relyingPartyDisplayName: relyingPartyDisplayName,
             relyingPartyID: relyingPartyID,
-            relyingPartyOrigin: relyingPartyOrigin,
-            timeout: timeout
+            relyingPartyOrigin: relyingPartyOrigin
         )
         webAuthnManager = .init(config: config, challengeGenerator: .mock(generate: challenge))
     }
@@ -51,7 +49,6 @@ final class WebAuthnManagerTests: XCTestCase {
         XCTAssertEqual(options.challenge, challenge.base64EncodedString())
         XCTAssertEqual(options.rp.id, relyingPartyID)
         XCTAssertEqual(options.rp.name, relyingPartyDisplayName)
-        XCTAssertEqual(options.timeout, timeout)
         XCTAssertEqual(options.user.id, user.userID.toBase64().asString())
         XCTAssertEqual(options.user.displayName, user.displayName)
         XCTAssertEqual(options.user.name, user.name)

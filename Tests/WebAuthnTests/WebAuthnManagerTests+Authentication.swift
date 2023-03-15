@@ -23,13 +23,13 @@ extension WebAuthnManagerTests {
     func testBeginAuthentication() async throws {
         let allowCredentials: [PublicKeyCredentialDescriptor] = [.init(type: "public-key", id: [1, 0, 2, 30])]
         let options = try webAuthnManager.beginAuthentication(
-            timeout: timeout,
+            timeout: 1234,
             allowCredentials: allowCredentials,
             userVerification: .preferred
         )
 
         XCTAssertEqual(options.challenge, challenge.base64EncodedString())
-        XCTAssertEqual(options.timeout, timeout)
+        XCTAssertEqual(options.timeout, 1234)
         XCTAssertEqual(options.rpId, relyingPartyID)
         XCTAssertEqual(options.allowCredentials, allowCredentials)
         XCTAssertEqual(options.userVerification, .preferred)

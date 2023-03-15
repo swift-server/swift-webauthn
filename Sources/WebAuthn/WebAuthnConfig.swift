@@ -21,18 +21,16 @@ public struct WebAuthnConfig {
     /// For example, if the origin is https://login.example.com:1337, then _login.example.com_ or _example.com_ are
     /// valid ids, but not _m.login.example.com_ and not _com_.
     public let relyingPartyID: String
+    /// The domain, with HTTP protocol (e.g. "https://example.com")
     public let relyingPartyOrigin: String
-    public let timeout: TimeInterval
 
     public init(
         relyingPartyDisplayName: String,
         relyingPartyID: String,
-        relyingPartyOrigin: String,
-        timeout: TimeInterval
+        relyingPartyOrigin: String
     ) {
         self.relyingPartyDisplayName = relyingPartyDisplayName
         self.relyingPartyID = relyingPartyID
         self.relyingPartyOrigin = relyingPartyOrigin
-        self.timeout = timeout
     }
 }
