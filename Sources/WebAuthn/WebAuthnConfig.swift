@@ -14,7 +14,9 @@
 
 import Foundation
 
+/// Config represents the WebAuthn configuration.
 public struct WebAuthnConfig {
+    /// Configures the display name for the Relying Party Server. This can be any string.
     public let relyingPartyDisplayName: String
     /// The relying party id is based on the host's domain.
     /// It does not include a scheme or port (like the `relyingPartyOrigin`).
@@ -24,6 +26,11 @@ public struct WebAuthnConfig {
     /// The domain, with HTTP protocol (e.g. "https://example.com")
     public let relyingPartyOrigin: String
 
+    /// Creates a new `WebAuthnConfig` with information about the Relying Party
+    /// - Parameters:
+    ///   - relyingPartyDisplayName: Display name for the Relying Party. Can be any string.
+    ///   - relyingPartyID: The relying party id is based on the host's domain. (e.g. _login.example.com_)
+    ///   - relyingPartyOrigin: The domain, with HTTP protocol (e.g. _https://login.example.com_)
     public init(
         relyingPartyDisplayName: String,
         relyingPartyID: String,
