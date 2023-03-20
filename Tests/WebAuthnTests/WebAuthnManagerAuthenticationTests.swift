@@ -17,9 +17,23 @@ import XCTest
 import SwiftCBOR
 import Crypto
 
-// swiftlint:disable line_length
+final class WebAuthnManagerAuthenticationTests: XCTestCase {
+    var webAuthnManager: WebAuthnManager!
 
-extension WebAuthnManagerTests {
+    let challenge: [UInt8] = [1, 0, 1]
+    let relyingPartyDisplayName = "Testy test"
+    let relyingPartyID = "webauthn.io"
+    let relyingPartyOrigin = "https://example.com"
+
+    override func setUp() {
+        let config = WebAuthnConfig(
+            relyingPartyDisplayName: relyingPartyDisplayName,
+            relyingPartyID: relyingPartyID,
+            relyingPartyOrigin: relyingPartyOrigin
+        )
+        webAuthnManager = .init(config: config, challengeGenerator: .mock(generate: challenge))
+    }
+
     func testBeginAuthentication() async throws {
         let allowCredentials: [PublicKeyCredentialDescriptor] = [.init(type: "public-key", id: [1, 0, 2, 30])]
         let options = try webAuthnManager.beginAuthentication(
@@ -120,8 +134,7 @@ extension WebAuthnManagerTests {
             expect: WebAuthnError.potentialReplayAttack
         )
     }
-// c155900296b95a46f75d57328e4523910e74d629331fcd12cce2e95644114182
-// cf28f38af10da2d9ca9e2d3bd373f0574253404075ca5d748869bbb01f8677be
+
     func testFinishAuthenticationSucceeds() throws {
         let credentialID = TestConstants.mockCredentialID
         let oldSignCount: UInt32 = 0
@@ -156,7 +169,7 @@ extension WebAuthnManagerTests {
         clientDataJSON: URLEncodedBase64 = TestClientDataJSON(type: "webauthn.get").base64URLEncoded,
         authenticatorData: URLEncodedBase64 = TestAuthDataBuilder().validAuthenticationMock()
             .buildAsBase64URLEncoded(),
-        signature: URLEncodedBase64 = "MEUCIQCs67ijqtM-Ow5UBvIT5afc_4RQZDLbfoXOnFgDUsYymQIgIdSmullkPCYrdES4-HBMkL-dL5FXr9gjqUfsdXvnxp8",
+        signature: URLEncodedBase64 = TestECCKeyPair.signature,
         userHandle: String? = "NjI2OEJENkUtMDgxRS00QzExLUE3QzMtM0REMEFGMzNFQzE0",
         attestationObject: String? = nil,
         authenticatorAttachment: String? = "platform",

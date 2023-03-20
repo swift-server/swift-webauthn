@@ -16,10 +16,8 @@
 import XCTest
 import SwiftCBOR
 
-// swiftlint:disable line_length
-// swiftlint:disable identifier_name
-
-final class WebAuthnManagerTests: XCTestCase {
+// swiftlint:disable:next type_body_length
+final class WebAuthnManagerRegistrationTests: XCTestCase {
     var webAuthnManager: WebAuthnManager!
 
     let challenge: [UInt8] = [1, 0, 1]
