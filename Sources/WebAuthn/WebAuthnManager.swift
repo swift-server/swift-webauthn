@@ -115,15 +115,15 @@ public struct WebAuthnManager {
     /// - Parameters:
     ///   - challenge: Optionally generate a challenge on your own. Defaults to `nil` which will let the library
     ///     generate it.
-    ///   - timeout: How long in milliseconds the browser should give the user to choose an authenticator. This value
-    ///     is a *hint* and may be ignored by the browser.
+    ///   - timeout: How long the browser should give the user to choose an authenticator. This value
+    ///     is a *hint* and may be ignored by the browser. Defaults to 60 seconds.
     ///   - allowCredentials: A list of credentials registered to the user.
     ///   - userVerification: The Relying Party's preference for the authenticator's enforcement of the
     ///     "user verified" flag.
     /// - Returns: Authentication options ready for the browser.
     public func beginAuthentication(
         challenge: EncodedBase64? = nil,
-        timeout: TimeInterval? = 60000,
+        timeout: TimeInterval? = 60,
         allowCredentials: [PublicKeyCredentialDescriptor]? = nil,
         userVerification: UserVerificationRequirement = .preferred
     ) throws -> PublicKeyCredentialRequestOptions {

@@ -47,7 +47,7 @@ struct TestAuthDataBuilder {
 
     func validMock() -> Self {
         self
-            .rpIDHash(fromRpID: "webauthn.io")
+            .rpIDHash(fromRpID: "example.com")
             .flags(0b01000101)
             .counter([0b00000000, 0b00000000, 0b00000000, 0b00000000])
             .attestedCredData(
@@ -61,13 +61,13 @@ struct TestAuthDataBuilder {
 
     /// Creates a valid authData
     ///
-    /// rpID = "webauthn.io", user
+    /// rpID = "example.com", user
     /// flags "extension data included", "user verified" and "user present" are set
     /// sign count is set to 0
     /// random extension data is included
     func validAuthenticationMock() -> Self {
         self
-            .rpIDHash(fromRpID: "webauthn.io")
+            .rpIDHash(fromRpID: "example.com")
             .flags(0b10000101)
             .counter([0b00000000, 0b00000000, 0b00000000, 0b00000000])
             .extensions([UInt8](repeating: 0, count: 20))

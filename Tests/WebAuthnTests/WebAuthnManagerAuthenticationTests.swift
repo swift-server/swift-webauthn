@@ -22,7 +22,7 @@ final class WebAuthnManagerAuthenticationTests: XCTestCase {
 
     let challenge: [UInt8] = [1, 0, 1]
     let relyingPartyDisplayName = "Testy test"
-    let relyingPartyID = "webauthn.io"
+    let relyingPartyID = "example.com"
     let relyingPartyOrigin = "https://example.com"
 
     override func setUp() {
