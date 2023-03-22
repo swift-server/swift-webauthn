@@ -45,6 +45,21 @@ interface with a client that will handle calling the WebAuthn API:
    - `public typealias URLEncodedBase64 = String`
    - `public typealias EncodedBase64 = String`
 
+## Limitations
+
+There are a few things this library currently does **not** support:
+
+1. Currently RSA public keys are not support, we do however plan to add support for that. RSA keys are necessary for
+   compatibility with Microsoft Windows platform authenticators.
+
+2. Octet key pairs are not supported.
+
+3. Attestation verification is currently not supported, we do however plan to add support for that. Some work has been
+   done already, but there are more pieces missing. In most cases attestation verification is not recommended since it
+   causes a lot of overhead. [From Yubico](https://developers.yubico.com/WebAuthn/WebAuthn_Developer_Guide/Attestation.html):
+   > "If a service does not have a specific need for attestation information, namely a well defined policy for what to
+     do with it and why, it is not recommended to verify authenticator attestations"
+
 ### Setup
 
 Configure your backend with a `WebAuthnManager` instance:

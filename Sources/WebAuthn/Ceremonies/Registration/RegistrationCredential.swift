@@ -58,12 +58,15 @@ struct ParsedCredentialCreationResponse {
         response = try ParsedAuthenticatorAttestationResponse(from: raw)
     }
 
+    // swiftlint:disable:next function_parameter_count
     func verify(
         storedChallenge: URLEncodedBase64,
         verifyUser: Bool,
         relyingPartyID: String,
-        relyingPartyOrigin: String
-    ) throws {
+        relyingPartyOrigin: String,
+        supportedPublicKeyAlgorithms: [PublicKeyCredentialParameters],
+        pemRootCertificatesByFormat: [AttestationFormat: [Data]]
+    ) async throws -> AttestedCredentialData {
         // Step 7. - 9.
         try response.clientData.verify(
             storedChallenge: storedChallenge,
@@ -72,7 +75,7 @@ struct ParsedCredentialCreationResponse {
         )
 
         // Step 10.
-        guard let clientData = raw.clientDataJSON.asData() else {
+        guard let clientData = raw.clientDataJSON.urlDecoded.decoded else {
             throw WebAuthnError.invalidClientDataJSON
         }
         let hash = SHA256.hash(data: clientData)
@@ -80,15 +83,19 @@ struct ParsedCredentialCreationResponse {
         // CBOR decoding happened already. Skipping Step 11.
 
         // Step 12. - 17.
-        try response.attestationObject.verify(
+        let attestedCredentialData = try await response.attestationObject.verify(
             relyingPartyID: relyingPartyID,
             verificationRequired: verifyUser,
-            clientDataHash: hash
+            clientDataHash: hash,
+            supportedPublicKeyAlgorithms: supportedPublicKeyAlgorithms,
+            pemRootCertificatesByFormat: pemRootCertificatesByFormat
         )
 
         // Step 23.
         guard rawID.count <= 1023 else {
             throw WebAuthnError.credentialRawIDTooLong
         }
+
+        return attestedCredentialData
     }
 }

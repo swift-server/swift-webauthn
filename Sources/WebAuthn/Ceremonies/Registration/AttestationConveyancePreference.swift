@@ -12,9 +12,13 @@
 //
 //===----------------------------------------------------------------------===//
 
-// Contains the new public key created by the authenticator.
-struct AttestedCredentialData: Equatable {
-    let aaguid: [UInt8]
-    let credentialID: [UInt8]
-    let publicKey: [UInt8]
+/// Options to specify the Relying Party's preference regarding attestation conveyance during credential generation.
+///
+/// Currently only supports `none`.
+public enum AttestationConveyancePreference: String, Codable {
+    /// Indicates the Relying Party is not interested in authenticator attestation.
+    case none
+    // case indirect
+    // case direct
+    // case enterprise
 }

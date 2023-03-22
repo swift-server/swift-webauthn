@@ -19,6 +19,7 @@ import SwiftCBOR
 
 protocol PublicKey {
     var algorithm: COSEAlgorithmIdentifier { get }
+    /// Verify a signature was signed with the private key corresponding to the public key.
     func verify(signature: Data, data: Data) throws
 }
 
@@ -47,10 +48,10 @@ enum CredentialPublicKey {
         // https://fidoalliance.org/specs/fido-v2.0-id-20180227/fido-registry-v2.0-id-20180227.html#public-key-representation-formats
         guard publicKeyBytes[0] != 0x04 else {
             self = .ec2(EC2PublicKey(
-                algorithm: .algRS1,
+                algorithm: .algES256,
                 curve: .p256,
-                xCoordinate: Array(publicKeyBytes[1...33]),
-                yCoordinate: Array(publicKeyBytes[33...65])
+                xCoordinate: Data(Array(publicKeyBytes[1...33])),
+                yCoordinate: Data(Array(publicKeyBytes[33...65]))
             ))
             return
         }
@@ -71,13 +72,16 @@ enum CredentialPublicKey {
             throw WebAuthnError.unsupportedCOSEAlgorithm
         }
 
+        // Currently we only support elliptic curve algorithms
         switch keyType {
         case .ellipticKey:
             self = try .ec2(EC2PublicKey(publicKeyObject: publicKeyObject, algorithm: algorithm))
         case .rsaKey:
-            self = try .rsa(RSAPublicKeyData(publicKeyObject: publicKeyObject, algorithm: algorithm))
+            throw WebAuthnError.unsupported
+            // self = try .rsa(RSAPublicKeyData(publicKeyObject: publicKeyObject, algorithm: algorithm))
         case .octetKey:
-            self = try .okp(OKPPublicKey(publicKeyObject: publicKeyObject, algorithm: algorithm))
+            throw WebAuthnError.unsupported
+            // self = try .okp(OKPPublicKey(publicKeyObject: publicKeyObject, algorithm: algorithm))
         }
     }
 
@@ -92,13 +96,13 @@ struct EC2PublicKey: PublicKey {
     /// The curve on which we derive the signature from.
     let curve: COSECurve
     /// A byte string 32 bytes in length that holds the x coordinate of the key.
-    let xCoordinate: [UInt8]
+    let xCoordinate: Data
     /// A byte string 32 bytes in length that holds the y coordinate of the key.
-    let yCoordinate: [UInt8]
+    let yCoordinate: Data
 
-    var rawRepresentation: [UInt8] { xCoordinate + yCoordinate }
+    var rawRepresentation: Data { xCoordinate + yCoordinate }
 
-    init(algorithm: COSEAlgorithmIdentifier, curve: COSECurve, xCoordinate: [UInt8], yCoordinate: [UInt8]) {
+    init(algorithm: COSEAlgorithmIdentifier, curve: COSECurve, xCoordinate: Data, yCoordinate: Data) {
         self.algorithm = algorithm
         self.curve = curve
         self.xCoordinate = xCoordinate
@@ -122,12 +126,12 @@ struct EC2PublicKey: PublicKey {
               case let .byteString(xCoordinateBytes) = xCoordRaw else {
             throw WebAuthnError.invalidXCoordinate
         }
-        xCoordinate = xCoordinateBytes
+        xCoordinate = Data(xCoordinateBytes)
         guard let yCoordRaw = publicKeyObject[COSEKey.y.cbor],
               case let .byteString(yCoordinateBytes) = yCoordRaw else {
             throw WebAuthnError.invalidYCoordinate
         }
-        yCoordinate = yCoordinateBytes
+        yCoordinate = Data(yCoordinateBytes)
     }
 
     func verify(signature: Data, data: Data) throws {
@@ -150,20 +154,19 @@ struct EC2PublicKey: PublicKey {
                 .isValidSignature(ecdsaSignature, for: data) else {
                 throw WebAuthnError.invalidSignature
             }
-        default:
-            throw WebAuthnError.unsupportedCOSEAlgorithmForEC2PublicKey
         }
     }
 }
 
+/// Currently not in use
 struct RSAPublicKeyData: PublicKey {
     let algorithm: COSEAlgorithmIdentifier
     // swiftlint:disable:next identifier_name
-    let n: [UInt8]
+    let n: Data
     // swiftlint:disable:next identifier_name
-    let e: [UInt8]
+    let e: Data
 
-    var rawRepresentation: [UInt8] { n + e }
+    var rawRepresentation: Data { n + e }
 
     init(publicKeyObject: CBOR, algorithm: COSEAlgorithmIdentifier) throws {
         self.algorithm = algorithm
@@ -172,38 +175,40 @@ struct RSAPublicKeyData: PublicKey {
               case let .byteString(nBytes) = nRaw else {
             throw WebAuthnError.invalidModulus
         }
-        n = nBytes
+        n = Data(nBytes)
 
         guard let eRaw = publicKeyObject[COSEKey.e.cbor],
               case let .byteString(eBytes) = eRaw else {
             throw WebAuthnError.invalidExponent
         }
-        e = eBytes
+        e = Data(eBytes)
     }
 
     func verify(signature: Data, data: Data) throws {
-        let rsaSignature = _RSA.Signing.RSASignature(rawRepresentation: signature)
+        throw WebAuthnError.unsupported
+        // let rsaSignature = _RSA.Signing.RSASignature(derRepresentation: signature)
 
-        var rsaPadding: _RSA.Signing.Padding
-        switch algorithm {
-        case .algRS1, .algRS256, .algRS384, .algRS512:
-            rsaPadding = .insecurePKCS1v1_5
-        case .algPS256, .algPS384, .algPS512:
-            rsaPadding = .PSS
-        default:
-            throw WebAuthnError.unsupportedCOSEAlgorithmForRSAPublicKey
-        }
+        // var rsaPadding: _RSA.Signing.Padding
+        // switch algorithm {
+        // case .algRS1, .algRS256, .algRS384, .algRS512:
+        //     rsaPadding = .insecurePKCS1v1_5
+        // case .algPS256, .algPS384, .algPS512:
+        //     rsaPadding = .PSS
+        // default:
+        //     throw WebAuthnError.unsupportedCOSEAlgorithmForRSAPublicKey
+        // }
 
-        guard try _RSA.Signing.PublicKey(derRepresentation: rawRepresentation).isValidSignature(
-            rsaSignature,
-            for: data,
-            padding: rsaPadding
-        ) else {
-            throw WebAuthnError.invalidSignature
-        }
+        // guard try _RSA.Signing.PublicKey(rawRepresentation: rawRepresentation).isValidSignature(
+        //     rsaSignature,
+        //     for: data,
+        //     padding: rsaPadding
+        // ) else {
+        //     throw WebAuthnError.invalidSignature
+        // }
     }
 }
 
+/// Currently not in use
 struct OKPPublicKey: PublicKey {
     let algorithm: COSEAlgorithmIdentifier
     let curve: UInt64
@@ -225,6 +230,6 @@ struct OKPPublicKey: PublicKey {
     }
 
     func verify(signature: Data, data: Data) throws {
-        fatalError("OKPPublicKey not implemented yet")
+        throw WebAuthnError.unsupported
     }
 }

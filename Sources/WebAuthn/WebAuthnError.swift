@@ -66,4 +66,5 @@ public enum WebAuthnError: Error, Equatable {
     case invalidModulus
     case invalidExponent
     case unsupportedCOSEAlgorithmForRSAPublicKey
+    case unsupported
 }

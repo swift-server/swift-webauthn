@@ -40,6 +40,10 @@ struct AuthenticatorFlags: Equatable {
     let attestedCredentialData: Bool
     let extensionDataIncluded: Bool
 
+    var deviceType: VerifiedAuthentication.CredentialDeviceType {
+        isBackupEligible ? .multiDevice : .singleDevice
+    }
+
     static func isFlagSet(on byte: UInt8, at position: Bit) -> Bool {
         (byte & (1 << position.rawValue)) != 0
     }

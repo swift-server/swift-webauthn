@@ -1,6 +1,7 @@
 import SwiftCBOR
 
 enum COSEKey {
+    // swiftlint:disable identifier_name
     case kty
     case alg
 
@@ -14,6 +15,7 @@ enum COSEKey {
     // RSA
     case n
     case e
+    // swiftlint:enable identifier_name
 
     var cbor: CBOR {
         var value: Int
