@@ -16,11 +16,14 @@ import Foundation
 import Crypto
 
 /// The unprocessed response received from `navigator.credentials.create()`.
-/// Internally this will be parsed into a more readable `ParsedCredentialCreationResponse`.
 public struct RegistrationCredential: Codable {
+    /// The credential ID of the newly created credential.
     public let id: String
+    /// Value will always be "public-key" (for now)
     public let type: String
+    /// The raw credential ID of the newly created credential.
     public let rawID: URLEncodedBase64
+    /// The attestation response from the authenticator.
     public let attestationResponse: AuthenticatorAttestationResponse
 
     enum CodingKeys: String, CodingKey {

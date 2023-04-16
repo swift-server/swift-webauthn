@@ -27,7 +27,8 @@ let package = Package(
         .package(url: "https://github.com/unrelentingtech/SwiftCBOR.git", from: "0.4.5"),
         .package(url: "https://github.com/apple/swift-crypto.git", from: "2.0.0"),
         .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
-        .package(url: "https://github.com/apple/swift-certificates.git", branch: "main")
+        .package(url: "https://github.com/apple/swift-certificates.git", from: "0.3.0"),
+        .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.1.0")
     ],
     targets: [
         .target(

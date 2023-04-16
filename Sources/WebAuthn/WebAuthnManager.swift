@@ -14,11 +14,29 @@
 
 import Foundation
 
+/// Main entrypoint for WebAuthn operations.
+///
+/// Use this struct to perform registration and authentication ceremonies.
+///
+/// Registration: To generate registration options, call `beginRegistration()`. Pass the resulting
+/// ``PublicKeyCredentialCreationOptions`` to the client.
+/// When the client has received the response from the authenticator, pass the response to
+/// `finishRegistration()`.
+///
+/// Authentication: To generate authentication options, call `beginAuthentication()`. Pass the resulting
+/// ``PublicKeyCredentialRequestOptions`` to the client.
+/// When the client has received the response from the authenticator, pass the response to
+/// `finishAuthentication()`.
 public struct WebAuthnManager {
     private let config: WebAuthnConfig
 
     private let challengeGenerator: ChallengeGenerator
 
+    /// Create a new WebAuthnManager using the given configuration and challenge generator.
+    ///
+    /// - Parameters:
+    ///   - config: The configuration to use for this manager.
+    ///   - challengeGenerator: The challenge generator to use for this manager. Defaults to a live generator.
     public init(config: WebAuthnConfig, challengeGenerator: ChallengeGenerator = .live) {
         self.config = config
         self.challengeGenerator = challengeGenerator
