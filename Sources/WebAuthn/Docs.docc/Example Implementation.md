@@ -54,6 +54,8 @@ app.webAuthn = WebAuthnManager(
 
 Scenario: A user wants to signup on a website using WebAuthn.
 
+![Registration flow overview](registration.svg)
+
 #### Explanation
 
 1. When tapping the "Register" button the client sends a request to
@@ -68,7 +70,7 @@ Scenario: A user wants to signup on a website using WebAuthn.
     ```
 
 3. Next the backend calls `finishRegistration(challenge:credentialCreationData:)` with the previously
-   generated challenge and the received `RegistrationCredential`. If `finishRegistration` succeeds a new `Credential`
+   generated challenge and the received ``RegistrationCredential``. If `finishRegistration` succeeds a new ``Credential``
    object will be returned. This object contains information about the new credential, including an id and the generated public-key. Persist this data in e.g. a database and link the entry to the user.
 
 ##### Example implementation (using Vapor)
@@ -106,6 +108,8 @@ authSessionRoutes.post("makeCredential") { req -> HTTPStatus in
 
 Scenario: A user wants to log in on a website using WebAuthn.
 
+![Authentication flow overview](authentication.svg)
+
 #### Explanation
 
 1. When tapping the "Login" button the client sends a request to
@@ -118,7 +122,7 @@ Scenario: A user wants to log in on a website using WebAuthn.
    let authenticationCredential = try req.content.decode(AuthenticationCredential.self)
    ```
 3. Next the backend calls
-   `finishAuthentication(credential:expectedChallenge:credentialPublicKey:credentialCurrentSignCount:)`.
+   ``WebAuthnManager/finishAuthentication(credential:expectedChallenge:credentialPublicKey:credentialCurrentSignCount:requireUserVerification:)``.
     - The `credential` parameter expects the decoded ``AuthenticationCredential``
     - The `expectedChallenge` parameter expects the challenge previously generated
       from `beginAuthentication()` (obtained e.g. through a session).
