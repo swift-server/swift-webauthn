@@ -5,12 +5,6 @@ easy to leverage the power of WebAuthn.
 
 🚨 This library is a proof of concept - do not use it in production yet!
 
-## Documentation
-
-Documentation and how-to-guides can be found in our DocC documentation, hosted by [Swift Package Index](https://swiftpackageindex.com/):
-
-[https://swiftpackageindex.com/swift-server/webauthn-swift/main/documentation/webauthn](https://swiftpackageindex.com/swift-server/webauthn-swift/main/documentation/webauthn)
-
 ## Getting Started
 
 **Adding the dependency**
