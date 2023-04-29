@@ -1,6 +1,6 @@
 # ``WebAuthn``
 
-A library for working with WebAuthn/ Passkeys.
+A library for working with WebAuthn and Passkeys.
 
 ## Overview
 
