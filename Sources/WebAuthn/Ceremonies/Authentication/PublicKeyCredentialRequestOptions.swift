@@ -18,9 +18,9 @@ import Foundation
 public struct PublicKeyCredentialRequestOptions: Codable {
     /// A challenge that the authenticator signs, along with other data, when producing an authentication assertion
     public let challenge: EncodedBase64
-    /// A `TimeInterval`, that the Relying Party is willing to wait for the call to complete. The value is treated
+    /// The number of milliseconds that the Relying Party is willing to wait for the call to complete. The value is treated
     /// as a hint, and may be overridden by the client.
-    public let timeout: TimeInterval?
+    public let timeout: UInt32?
     /// The Relying Party ID.
     public let rpId: String?
     /// Optionally used by the client to find authenticators eligible for this authentication ceremony.

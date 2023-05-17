@@ -43,7 +43,7 @@ final class WebAuthnManagerAuthenticationTests: XCTestCase {
         )
 
         XCTAssertEqual(options.challenge, challenge.base64EncodedString())
-        XCTAssertEqual(options.timeout, 1234)
+        XCTAssertEqual(options.timeout, 1234000)    // timeout converted to milliseconds
         XCTAssertEqual(options.rpId, relyingPartyID)
         XCTAssertEqual(options.allowCredentials, allowCredentials)
         XCTAssertEqual(options.userVerification, .preferred)

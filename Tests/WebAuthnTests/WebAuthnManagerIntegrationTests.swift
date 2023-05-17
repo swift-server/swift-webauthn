@@ -108,7 +108,7 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
         )
 
         XCTAssertEqual(authenticationOptions.rpId, config.relyingPartyID)
-        XCTAssertEqual(authenticationOptions.timeout, authenticationTimeout)
+        XCTAssertEqual(authenticationOptions.timeout, UInt32(authenticationTimeout * 1000)) // timeout is in milliseconds
         XCTAssertEqual(authenticationOptions.challenge, mockChallenge.base64EncodedString())
         XCTAssertEqual(authenticationOptions.userVerification, userVerification)
         XCTAssertEqual(authenticationOptions.allowCredentials, rememberedCredentials)
