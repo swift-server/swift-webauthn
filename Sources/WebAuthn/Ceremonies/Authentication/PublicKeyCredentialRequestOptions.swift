@@ -20,6 +20,7 @@ public struct PublicKeyCredentialRequestOptions: Codable {
     public let challenge: EncodedBase64
     /// The number of milliseconds that the Relying Party is willing to wait for the call to complete. The value is treated
     /// as a hint, and may be overridden by the client.
+    /// See https://www.w3.org/TR/webauthn-2/#dictionary-assertion-options
     public let timeout: UInt32?
     /// The Relying Party ID.
     public let rpId: String?
