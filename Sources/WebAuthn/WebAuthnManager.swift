@@ -146,9 +146,13 @@ public struct WebAuthnManager {
         userVerification: UserVerificationRequirement = .preferred
     ) throws -> PublicKeyCredentialRequestOptions {
         let challenge = challenge ?? challengeGenerator.generate().base64EncodedString()
+        var timeoutInMilliseconds: UInt32? = nil
+        if let timeout {
+            timeoutInMilliseconds = UInt32(timeout * 1000)
+        }
         return PublicKeyCredentialRequestOptions(
             challenge: challenge,
-            timeout: timeout,
+            timeout: timeoutInMilliseconds,
             rpId: config.relyingPartyID,
             allowCredentials: allowCredentials,
             userVerification: userVerification
