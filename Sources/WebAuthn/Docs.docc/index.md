@@ -24,7 +24,7 @@ the corresponding user in a database.
 
 - ``WebAuthnManager``
 - ``WebAuthnConfig``
-- ``WebAuthnUser``
+- ``PublicKeyCredentialUserEntity``
 
 ### Responses
 

@@ -19,9 +19,9 @@ import Crypto
 final class WebAuthnManagerIntegrationTests: XCTestCase {
     // swiftlint:disable:next function_body_length
     func testRegistrationAndAuthenticationSucceeds() async throws {
-        let config = WebAuthnConfig(
-            relyingPartyDisplayName: "Example RP",
+        let config = WebAuthnManager.Config(
             relyingPartyID: "example.com",
+            relyingPartyName: "Example RP",
             relyingPartyOrigin: "https://example.com"
         )
 
@@ -33,23 +33,23 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
         let mockUser = MockUser()
         let timeout: TimeInterval = 1234
         let attestationPreference = AttestationConveyancePreference.none
-        let publicKeyCredentialParameters = PublicKeyCredentialParameters.supported
+        let publicKeyCredentialParameters: [PublicKeyCredentialParameters] = .supported
 
-        let registrationOptions = try webAuthnManager.beginRegistration(
+        let registrationOptions = webAuthnManager.createRegistrationOptions(
             user: mockUser,
-            timeout: timeout,
+            timeoutInSeconds: timeout,
             attestation: attestationPreference,
             publicKeyCredentialParameters: publicKeyCredentialParameters
         )
 
-        XCTAssertEqual(registrationOptions.challenge, mockChallenge.base64EncodedString())
-        XCTAssertEqual(registrationOptions.user.id, mockUser.userID.toBase64().asString())
+        XCTAssertEqual(registrationOptions.challenge, mockChallenge)
+        XCTAssertEqual(registrationOptions.user.id, mockUser.id)
         XCTAssertEqual(registrationOptions.user.name, mockUser.name)
         XCTAssertEqual(registrationOptions.user.displayName, mockUser.displayName)
         XCTAssertEqual(registrationOptions.attestation, attestationPreference)
         XCTAssertEqual(registrationOptions.rp.id, config.relyingPartyID)
-        XCTAssertEqual(registrationOptions.rp.name, config.relyingPartyDisplayName)
-        XCTAssertEqual(registrationOptions.timeout, timeout)
+        XCTAssertEqual(registrationOptions.rp.name, config.relyingPartyName)
+        XCTAssertEqual(registrationOptions.timeout, UInt32(timeout * 1000))
         XCTAssertEqual(registrationOptions.pubKeyCredParams, publicKeyCredentialParameters)
 
         // Now send `registrationOptions` to client, which in turn will send the authenticator's response back to us:
@@ -75,7 +75,7 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
 
         // Step 2.: Finish Registration
         let credential = try await webAuthnManager.finishRegistration(
-            challenge: mockChallenge.base64EncodedString(),
+            challenge: mockChallenge,
             credentialCreationData: registrationResponse,
             requireUserVerification: true,
             supportedPublicKeyAlgorithms: publicKeyCredentialParameters,
@@ -101,7 +101,6 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
         )]
 
         let authenticationOptions = try webAuthnManager.beginAuthentication(
-            challenge: mockChallenge.base64EncodedString(),
             timeout: authenticationTimeout,
             allowCredentials: rememberedCredentials,
             userVerification: userVerification
@@ -109,7 +108,7 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
 
         XCTAssertEqual(authenticationOptions.rpId, config.relyingPartyID)
         XCTAssertEqual(authenticationOptions.timeout, UInt32(authenticationTimeout * 1000)) // timeout is in milliseconds
-        XCTAssertEqual(authenticationOptions.challenge, mockChallenge.base64EncodedString())
+        XCTAssertEqual(authenticationOptions.challenge, mockChallenge)
         XCTAssertEqual(authenticationOptions.userVerification, userVerification)
         XCTAssertEqual(authenticationOptions.allowCredentials, rememberedCredentials)
 
@@ -136,7 +135,7 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
                 clientDataJSON: clientData.base64URLEncodedString(),
                 authenticatorData: authenticatorData,
                 signature: signature.base64URLEncodedString(),
-                userHandle: mockUser.userID,
+                userHandle: mockUser.id,
                 attestationObject: nil
             ),
             authenticatorAttachment: "platform",

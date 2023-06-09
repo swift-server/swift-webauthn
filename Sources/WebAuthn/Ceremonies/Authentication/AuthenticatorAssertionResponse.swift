@@ -25,7 +25,7 @@ public struct AuthenticatorAssertionResponse: Codable {
     public let signature: URLEncodedBase64
     /// Contains the user handle returned from the authenticator, or null if the authenticator did not return
     /// a user handle. Used by to give scope to credentials.
-    public let userHandle: String?
+    public let userHandle: [UInt8]?
     /// Contains an attestation object, if the authenticator supports attestation in assertions.
     /// The attestation object, if present, includes an attestation statement. Unlike the attestationObject
     /// in an AuthenticatorAttestationResponse, it does not contain an authData key because the authenticator
@@ -39,7 +39,7 @@ struct ParsedAuthenticatorAssertionResponse {
     let rawAuthenticatorData: Data
     let authenticatorData: AuthenticatorData
     let signature: URLEncodedBase64
-    let userHandle: String?
+    let userHandle: [UInt8]?
 
     init(from authenticatorAssertionResponse: AuthenticatorAssertionResponse) throws {
         guard let clientDataData = authenticatorAssertionResponse.clientDataJSON.urlDecoded.decoded else {

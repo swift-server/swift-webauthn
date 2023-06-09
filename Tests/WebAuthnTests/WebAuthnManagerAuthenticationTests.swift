@@ -21,14 +21,14 @@ final class WebAuthnManagerAuthenticationTests: XCTestCase {
     var webAuthnManager: WebAuthnManager!
 
     let challenge: [UInt8] = [1, 0, 1]
-    let relyingPartyDisplayName = "Testy test"
     let relyingPartyID = "example.com"
+    let relyingPartyName = "Testy test"
     let relyingPartyOrigin = "https://example.com"
 
     override func setUp() {
-        let config = WebAuthnConfig(
-            relyingPartyDisplayName: relyingPartyDisplayName,
+        let config = WebAuthnManager.Config(
             relyingPartyID: relyingPartyID,
+            relyingPartyName: relyingPartyName,
             relyingPartyOrigin: relyingPartyOrigin
         )
         webAuthnManager = .init(config: config, challengeGenerator: .mock(generate: challenge))
@@ -42,7 +42,7 @@ final class WebAuthnManagerAuthenticationTests: XCTestCase {
             userVerification: .preferred
         )
 
-        XCTAssertEqual(options.challenge, challenge.base64EncodedString())
+        XCTAssertEqual(options.challenge, challenge)
         XCTAssertEqual(options.timeout, 1234000)    // timeout converted to milliseconds
         XCTAssertEqual(options.rpId, relyingPartyID)
         XCTAssertEqual(options.allowCredentials, allowCredentials)
@@ -170,7 +170,7 @@ final class WebAuthnManagerAuthenticationTests: XCTestCase {
         authenticatorData: URLEncodedBase64 = TestAuthDataBuilder().validAuthenticationMock()
             .buildAsBase64URLEncoded(),
         signature: URLEncodedBase64 = TestECCKeyPair.signature,
-        userHandle: String? = "NjI2OEJENkUtMDgxRS00QzExLUE3QzMtM0REMEFGMzNFQzE0",
+        userHandle: [UInt8]? = "36323638424436452d303831452d344331312d413743332d334444304146333345433134".hexadecimal!,
         attestationObject: String? = nil,
         authenticatorAttachment: String? = "platform",
         type: String = "public-key",

@@ -17,7 +17,7 @@ import Foundation
 /// The `PublicKeyCredentialRequestOptions` gets passed to the WebAuthn API (`navigator.credentials.get()`)
 public struct PublicKeyCredentialRequestOptions: Codable {
     /// A challenge that the authenticator signs, along with other data, when producing an authentication assertion
-    public let challenge: EncodedBase64
+    public let challenge: [UInt8]
     /// The number of milliseconds that the Relying Party is willing to wait for the call to complete. The value is treated
     /// as a hint, and may be overridden by the client.
     /// See https://www.w3.org/TR/webauthn-2/#dictionary-assertion-options

@@ -63,7 +63,7 @@ struct ParsedCredentialCreationResponse {
 
     // swiftlint:disable:next function_parameter_count
     func verify(
-        storedChallenge: URLEncodedBase64,
+        storedChallenge: [UInt8],
         verifyUser: Bool,
         relyingPartyID: String,
         relyingPartyOrigin: String,
@@ -72,7 +72,7 @@ struct ParsedCredentialCreationResponse {
     ) async throws -> AttestedCredentialData {
         // Step 7. - 9.
         try response.clientData.verify(
-            storedChallenge: storedChallenge,
+            storedChallenge: storedChallenge.base64URLEncodedString(),
             ceremonyType: .create,
             relyingPartyOrigin: relyingPartyOrigin
         )

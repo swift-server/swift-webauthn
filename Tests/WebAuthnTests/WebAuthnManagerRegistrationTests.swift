@@ -26,9 +26,9 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
     let relyingPartyOrigin = "https://example.com"
 
     override func setUp() {
-        let config = WebAuthnConfig(
-            relyingPartyDisplayName: relyingPartyDisplayName,
+        let config = WebAuthnManager.Config(
             relyingPartyID: relyingPartyID,
+            relyingPartyName: relyingPartyDisplayName,
             relyingPartyOrigin: relyingPartyOrigin
         )
         webAuthnManager = .init(config: config, challengeGenerator: .mock(generate: challenge))
@@ -39,15 +39,15 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
     func testBeginRegistrationReturns() throws {
         let user = MockUser()
         let publicKeyCredentialParameter = PublicKeyCredentialParameters(type: "public-key", alg: .algES256)
-        let options = try webAuthnManager.beginRegistration(
+        let options = try webAuthnManager.createRegistrationOptions(
             user: user,
             publicKeyCredentialParameters: [publicKeyCredentialParameter]
         )
 
-        XCTAssertEqual(options.challenge, challenge.base64EncodedString())
+        XCTAssertEqual(options.challenge, challenge)
         XCTAssertEqual(options.rp.id, relyingPartyID)
         XCTAssertEqual(options.rp.name, relyingPartyDisplayName)
-        XCTAssertEqual(options.user.id, user.userID.toBase64().asString())
+        XCTAssertEqual(options.user.id, user.id)
         XCTAssertEqual(options.user.displayName, user.displayName)
         XCTAssertEqual(options.user.name, user.name)
         XCTAssertEqual(options.pubKeyCredParams, [publicKeyCredentialParameter])
@@ -69,7 +69,7 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
         clientDataJSON.challenge = "some random challenge"
         try await assertThrowsError(
             await finishRegistration(
-                challenge: "definitely another challenge",
+                challenge: [UInt8]("definitely another challenge".utf8),
                 clientDataJSON: clientDataJSON.base64URLEncoded
             ),
             expect: CollectedClientData.CollectedClientDataVerifyError.challengeDoesNotMatch
@@ -332,7 +332,7 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
     // }
 
     private func finishRegistration(
-        challenge: EncodedBase64 = "cmFuZG9tU3RyaW5nRnJvbVNlcnZlcg", // "randomStringFromServer"
+        challenge: [UInt8] = TestConstants.randomStringFromServerInBytes,
         id: EncodedBase64 = "4PrJNQUJ9xdI2DeCzK9rTBRixhXHDiVdoTROQIh8j80",
         type: String = "public-key",
         rawID: URLEncodedBase64 = "4PrJNQUJ9xdI2DeCzK9rTBRixhXHDiVdoTROQIh8j80",

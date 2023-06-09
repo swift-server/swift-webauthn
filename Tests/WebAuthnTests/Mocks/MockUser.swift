@@ -14,13 +14,13 @@
 
 import WebAuthn
 
-struct MockUser: WebAuthnUser {
-    var userID: String
+struct MockUser: PublicKeyCredentialUserEntity {
+    var id: [UInt8]
     var name: String
     var displayName: String
 
-    init(userID: String = "1", name: String = "John", displayName: String = "Johnny") {
-        self.userID = userID
+    init(id: [UInt8] = [1, 2, 3], name: String = "John", displayName: String = "Johnny") {
+        self.id = id
         self.name = name
         self.displayName = displayName
     }
