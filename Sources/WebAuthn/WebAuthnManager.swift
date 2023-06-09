@@ -44,6 +44,7 @@ public struct WebAuthnManager {
 
     /// Generate a new set of registration data to be sent to the client.
     ///
+    /// This method will use the Relying Party information from the WebAuthnManager's config  to create ``PublicKeyCredentialCreationOptions``
     /// - Parameters:
     ///   - user: The user to register.
     ///   - timeoutInSeconds: How long the browser should give the user to choose an authenticator. This value
