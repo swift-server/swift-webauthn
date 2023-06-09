@@ -30,7 +30,7 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
         let webAuthnManager = WebAuthnManager(config: config, challengeGenerator: challengeGenerator)
 
         // Step 1.: Begin Registration
-        let mockUser = MockUser()
+        let mockUser = PublicKeyCredentialUserEntity.mock
         let timeout: TimeInterval = 1234
         let attestationPreference = AttestationConveyancePreference.none
         let publicKeyCredentialParameters: [PublicKeyCredentialParameters] = .supported
