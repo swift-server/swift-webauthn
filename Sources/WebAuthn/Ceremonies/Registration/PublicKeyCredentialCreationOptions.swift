@@ -26,15 +26,15 @@ public struct PublicKeyCredentialCreationOptions {
     public let user: PublicKeyCredentialUserEntity
 
     /// Contains a name and an identifier for the Relying Party responsible for the request
-    public let rp: PublicKeyCredentialRpEntity
+    public let relyingParty: PublicKeyCredentialRpEntity
 
     /// A list of key types and signature algorithms the Relying Party supports. Ordered from most preferred to least
     /// preferred.
-    public let pubKeyCredParams: [PublicKeyCredentialParameters]
+    public let publicKeyCredentialParameters: [PublicKeyCredentialParameters]
 
     /// A time, in milliseconds, that the caller is willing to wait for the call to complete. This is treated as a
     /// hint, and may be overridden by the client.
-    public let timeout: UInt32?
+    public let timeoutInMilliseconds: UInt32?
 
     /// Sets the Relying Party's preference for attestation conveyance. At the time of writing only `none` is
     /// supported.

@@ -47,10 +47,10 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
         XCTAssertEqual(registrationOptions.user.name, mockUser.name)
         XCTAssertEqual(registrationOptions.user.displayName, mockUser.displayName)
         XCTAssertEqual(registrationOptions.attestation, attestationPreference)
-        XCTAssertEqual(registrationOptions.rp.id, config.relyingPartyID)
-        XCTAssertEqual(registrationOptions.rp.name, config.relyingPartyName)
-        XCTAssertEqual(registrationOptions.timeout, UInt32(timeout * 1000))
-        XCTAssertEqual(registrationOptions.pubKeyCredParams, publicKeyCredentialParameters)
+        XCTAssertEqual(registrationOptions.relyingParty.id, config.relyingPartyID)
+        XCTAssertEqual(registrationOptions.relyingParty.name, config.relyingPartyName)
+        XCTAssertEqual(registrationOptions.timeoutInMilliseconds, UInt32(timeout * 1000))
+        XCTAssertEqual(registrationOptions.publicKeyCredentialParameters, publicKeyCredentialParameters)
 
         // Now send `registrationOptions` to client, which in turn will send the authenticator's response back to us:
         // The following lines reflect what an authenticator normally produces

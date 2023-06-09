@@ -68,9 +68,9 @@ public struct WebAuthnManager {
         return PublicKeyCredentialCreationOptions(
             challenge: challenge,
             user: user,
-            rp: .init(id: config.relyingPartyID, name: config.relyingPartyName),
-            pubKeyCredParams: publicKeyCredentialParameters,
-            timeout: timeoutInMilliseconds,
+            relyingParty: .init(id: config.relyingPartyID, name: config.relyingPartyName),
+            publicKeyCredentialParameters: publicKeyCredentialParameters,
+            timeoutInMilliseconds: timeoutInMilliseconds,
             attestation: attestation
         )
     }

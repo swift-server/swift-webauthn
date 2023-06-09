@@ -45,12 +45,12 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
         )
 
         XCTAssertEqual(options.challenge, challenge)
-        XCTAssertEqual(options.rp.id, relyingPartyID)
-        XCTAssertEqual(options.rp.name, relyingPartyDisplayName)
+        XCTAssertEqual(options.relyingParty.id, relyingPartyID)
+        XCTAssertEqual(options.relyingParty.name, relyingPartyDisplayName)
         XCTAssertEqual(options.user.id, user.id)
         XCTAssertEqual(options.user.displayName, user.displayName)
         XCTAssertEqual(options.user.name, user.name)
-        XCTAssertEqual(options.pubKeyCredParams, [publicKeyCredentialParameter])
+        XCTAssertEqual(options.publicKeyCredentialParameters, [publicKeyCredentialParameter])
     }
 
     // MARK: - finishRegistration()
