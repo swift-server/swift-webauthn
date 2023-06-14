@@ -16,7 +16,7 @@ import Foundation
 import Crypto
 
 /// This is what the authenticator device returned after we requested it to authenticate a user.
-public struct AuthenticatorAssertionResponse: Encodable {
+public struct AuthenticatorAssertionResponse {
     /// Representation of what we passed to `navigator.credentials.get()`
     public let clientDataJSON: [UInt8]
     /// Contains the authenticator data returned by the authenticator.
@@ -31,14 +31,17 @@ public struct AuthenticatorAssertionResponse: Encodable {
     /// in an AuthenticatorAttestationResponse, it does not contain an authData key because the authenticator
     /// data is provided directly in an AuthenticatorAssertionResponse structure.
     public let attestationObject: [UInt8]?
+}
 
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
+extension AuthenticatorAssertionResponse: Decodable {
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
 
-        try container.encode(clientDataJSON.base64URLEncodedString(), forKey: .clientDataJSON)
-        try container.encode(authenticatorData.base64URLEncodedString(), forKey: .authenticatorData)
-        try container.encode(signature.base64URLEncodedString(), forKey: .signature)
-        try container.encodeIfPresent(userHandle?.base64URLEncodedString(), forKey: .userHandle)
+        clientDataJSON = try container.decodeBytesFromURLEncodedBase64(forKey: .clientDataJSON)
+        authenticatorData = try container.decodeBytesFromURLEncodedBase64(forKey: .authenticatorData)
+        signature = try container.decodeBytesFromURLEncodedBase64(forKey: .signature)
+        userHandle = try container.decodeBytesFromURLEncodedBase64IfPresent(forKey: .userHandle)
+        attestationObject = try container.decodeBytesFromURLEncodedBase64IfPresent(forKey: .attestationObject)
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -46,6 +49,7 @@ public struct AuthenticatorAssertionResponse: Encodable {
         case authenticatorData
         case signature
         case userHandle
+        case attestationObject
     }
 }
 
