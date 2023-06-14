@@ -66,7 +66,7 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
 
     func testFinishRegistrationFailsIfChallengeDoesNotMatch() async throws {
         var clientDataJSON = TestClientDataJSON()
-        clientDataJSON.challenge = [0, 2, 4]
+        clientDataJSON.challenge = [0, 2, 4].base64URLEncodedString()
         try await assertThrowsError(
             await finishRegistration(
                 challenge: [UInt8]("definitely another challenge".utf8),
@@ -332,7 +332,7 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
     // }
 
     private func finishRegistration(
-        challenge: [UInt8] = TestConstants.randomStringFromServerInBytes,
+        challenge: [UInt8] = TestConstants.mockChallenge,
         id: EncodedBase64 = "4PrJNQUJ9xdI2DeCzK9rTBRixhXHDiVdoTROQIh8j80",
         type: String = "public-key",
         rawID: URLEncodedBase64 = "4PrJNQUJ9xdI2DeCzK9rTBRixhXHDiVdoTROQIh8j80",
