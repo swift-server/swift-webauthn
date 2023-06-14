@@ -66,7 +66,7 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
 
     func testFinishRegistrationFailsIfChallengeDoesNotMatch() async throws {
         var clientDataJSON = TestClientDataJSON()
-        clientDataJSON.challenge = "some random challenge"
+        clientDataJSON.challenge = [0, 2, 4]
         try await assertThrowsError(
             await finishRegistration(
                 challenge: [UInt8]("definitely another challenge".utf8),

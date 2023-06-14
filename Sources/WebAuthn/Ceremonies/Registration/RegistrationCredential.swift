@@ -72,7 +72,7 @@ struct ParsedCredentialCreationResponse {
     ) async throws -> AttestedCredentialData {
         // Step 7. - 9.
         try response.clientData.verify(
-            storedChallenge: storedChallenge.base64URLEncodedString(),
+            storedChallenge: storedChallenge,
             ceremonyType: .create,
             relyingPartyOrigin: relyingPartyOrigin
         )

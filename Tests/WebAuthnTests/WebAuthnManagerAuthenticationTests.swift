@@ -174,7 +174,7 @@ final class WebAuthnManagerAuthenticationTests: XCTestCase {
         attestationObject: String? = nil,
         authenticatorAttachment: String? = "platform",
         type: String = "public-key",
-        expectedChallenge: URLEncodedBase64 = TestConstants.mockChallenge,
+        expectedChallenge: [UInt8] = TestConstants.mockChallenge,
         credentialPublicKey: [UInt8] = TestCredentialPublicKeyBuilder().validMock().buildAsByteArray(),
         credentialCurrentSignCount: UInt32 = 0,
         requireUserVerification: Bool = false

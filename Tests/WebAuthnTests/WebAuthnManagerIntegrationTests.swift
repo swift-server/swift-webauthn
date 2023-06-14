@@ -55,7 +55,7 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
         // Now send `registrationOptions` to client, which in turn will send the authenticator's response back to us:
         // The following lines reflect what an authenticator normally produces
         let mockCredentialID = [UInt8](repeating: 1, count: 10).base64URLEncodedString()
-        let mockClientDataJSON = TestClientDataJSON(challenge: mockChallenge.base64URLEncodedString())
+        let mockClientDataJSON = TestClientDataJSON(challenge: mockChallenge)
         let mockCredentialPublicKey = TestCredentialPublicKeyBuilder().validMock().buildAsByteArray()
         let mockAttestationObject = TestAttestationObjectBuilder().validMock().authData(
             TestAuthDataBuilder().validMock()
@@ -86,7 +86,7 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
         XCTAssertEqual(credential.id, mockCredentialID.asString())
         XCTAssertEqual(credential.attestationClientDataJSON.type, .create)
         XCTAssertEqual(credential.attestationClientDataJSON.origin, mockClientDataJSON.origin)
-        XCTAssertEqual(credential.attestationClientDataJSON.challenge, mockChallenge.base64URLEncodedString())
+        XCTAssertEqual(credential.attestationClientDataJSON.challenge, mockChallenge)
         XCTAssertEqual(credential.isBackedUp, false)
         XCTAssertEqual(credential.signCount, 0)
         XCTAssertEqual(credential.type, "public-key")
@@ -122,7 +122,7 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
         // Authenticator creates a signature with private key
         let clientData: Data = TestClientDataJSON(
             type: "webauthn.get",
-            challenge: mockChallenge.base64URLEncodedString()
+            challenge: mockChallenge
         ).jsonData
         let clientDataHash = SHA256.hash(data: clientData)
         let rawAuthenticatorData = authenticatorData.urlDecoded.decoded!
@@ -146,7 +146,7 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
         let oldSignCount: UInt32 = 0
         let successfullAuthentication = try webAuthnManager.finishAuthentication(
             credential: authenticationCredential,
-            expectedChallenge: mockChallenge.base64URLEncodedString(),
+            expectedChallenge: mockChallenge,
             credentialPublicKey: mockCredentialPublicKey,
             credentialCurrentSignCount: oldSignCount,
             requireUserVerification: false

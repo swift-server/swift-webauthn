@@ -172,7 +172,7 @@ public struct WebAuthnManager {
     public func finishAuthentication(
         credential: AuthenticationCredential,
         // clientExtensionResults: ,
-        expectedChallenge: URLEncodedBase64,
+        expectedChallenge: [UInt8],
         credentialPublicKey: [UInt8],
         credentialCurrentSignCount: UInt32,
         requireUserVerification: Bool = false

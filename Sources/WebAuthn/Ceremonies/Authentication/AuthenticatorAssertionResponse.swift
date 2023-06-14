@@ -59,7 +59,7 @@ struct ParsedAuthenticatorAssertionResponse {
 
     // swiftlint:disable:next function_parameter_count
     func verify(
-        expectedChallenge: URLEncodedBase64,
+        expectedChallenge: [UInt8],
         relyingPartyOrigin: String,
         relyingPartyID: String,
         requireUserVerification: Bool,
