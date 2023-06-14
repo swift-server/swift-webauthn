@@ -32,12 +32,14 @@ public struct CollectedClientData: Codable, Hashable {
     /// and "webauthn.get" when getting an assertion from an existing credential
     public let type: CeremonyType
     /// The challenge that was provided by the Relying Party
-    public let challenge: [UInt8]
+    public let challenge: URLEncodedBase64
     public let origin: String
 
     func verify(storedChallenge: [UInt8], ceremonyType: CeremonyType, relyingPartyOrigin: String) throws {
         guard type == ceremonyType else { throw CollectedClientDataVerifyError.ceremonyTypeDoesNotMatch }
-        guard challenge == storedChallenge else { throw CollectedClientDataVerifyError.challengeDoesNotMatch }
+        guard challenge == storedChallenge.base64URLEncodedString() else {
+            throw CollectedClientDataVerifyError.challengeDoesNotMatch
+        }
         guard origin == relyingPartyOrigin else { throw CollectedClientDataVerifyError.originDoesNotMatch }
     }
 }
