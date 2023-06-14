@@ -16,13 +16,13 @@ import Foundation
 import Crypto
 
 /// This is what the authenticator device returned after we requested it to authenticate a user.
-public struct AuthenticatorAssertionResponse {
+public struct AuthenticatorAssertionResponse: Encodable {
     /// Representation of what we passed to `navigator.credentials.get()`
-    public let clientDataJSON: URLEncodedBase64
+    public let clientDataJSON: [UInt8]
     /// Contains the authenticator data returned by the authenticator.
-    public let authenticatorData: URLEncodedBase64
+    public let authenticatorData: [UInt8]
     /// Contains the raw signature returned from the authenticator
-    public let signature: URLEncodedBase64
+    public let signature: [UInt8]
     /// Contains the user handle returned from the authenticator, or null if the authenticator did not return
     /// a user handle. Used by to give scope to credentials.
     public let userHandle: [UInt8]?
@@ -30,7 +30,23 @@ public struct AuthenticatorAssertionResponse {
     /// The attestation object, if present, includes an attestation statement. Unlike the attestationObject
     /// in an AuthenticatorAttestationResponse, it does not contain an authData key because the authenticator
     /// data is provided directly in an AuthenticatorAssertionResponse structure.
-    public let attestationObject: String?
+    public let attestationObject: [UInt8]?
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        try container.encode(clientDataJSON.base64URLEncodedString(), forKey: .clientDataJSON)
+        try container.encode(authenticatorData.base64URLEncodedString(), forKey: .authenticatorData)
+        try container.encode(signature.base64URLEncodedString(), forKey: .signature)
+        try container.encodeIfPresent(userHandle?.base64URLEncodedString(), forKey: .userHandle)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case clientDataJSON
+        case authenticatorData
+        case signature
+        case userHandle
+    }
 }
 
 struct ParsedAuthenticatorAssertionResponse {
@@ -42,18 +58,12 @@ struct ParsedAuthenticatorAssertionResponse {
     let userHandle: [UInt8]?
 
     init(from authenticatorAssertionResponse: AuthenticatorAssertionResponse) throws {
-        guard let clientDataData = authenticatorAssertionResponse.clientDataJSON.urlDecoded.decoded else {
-            throw WebAuthnError.invalidClientDataJSON
-        }
-        rawClientData = clientDataData
-        clientData = try JSONDecoder().decode(CollectedClientData.self, from: clientDataData)
+        rawClientData = Data(authenticatorAssertionResponse.clientDataJSON)
+        clientData = try JSONDecoder().decode(CollectedClientData.self, from: rawClientData)
 
-        guard let authenticatorDataBytes = authenticatorAssertionResponse.authenticatorData.urlDecoded.decoded else {
-            throw WebAuthnError.invalidAuthenticatorData
-        }
-        rawAuthenticatorData = authenticatorDataBytes
-        authenticatorData = try AuthenticatorData(bytes: authenticatorDataBytes)
-        signature = authenticatorAssertionResponse.signature
+        rawAuthenticatorData = Data(authenticatorAssertionResponse.authenticatorData)
+        authenticatorData = try AuthenticatorData(bytes: rawAuthenticatorData)
+        signature = authenticatorAssertionResponse.signature.base64URLEncodedString()
         userHandle = authenticatorAssertionResponse.userHandle
     }
 

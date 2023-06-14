@@ -59,7 +59,7 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
         var clientDataJSON = TestClientDataJSON()
         clientDataJSON.type = "webauthn.get"
         try await assertThrowsError(
-            await finishRegistration(clientDataJSON: clientDataJSON.base64URLEncoded),
+            await finishRegistration(clientDataJSON: clientDataJSON.jsonBytes),
             expect: CollectedClientData.CollectedClientDataVerifyError.ceremonyTypeDoesNotMatch
         )
     }
@@ -70,7 +70,7 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
         try await assertThrowsError(
             await finishRegistration(
                 challenge: [UInt8]("definitely another challenge".utf8),
-                clientDataJSON: clientDataJSON.base64URLEncoded
+                clientDataJSON: clientDataJSON.jsonBytes
             ),
             expect: CollectedClientData.CollectedClientDataVerifyError.challengeDoesNotMatch
         )
@@ -81,22 +81,9 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
         clientDataJSON.origin = "https://random-origin.org"
         // `webAuthnManager` is configured with origin = https://example.com
         try await assertThrowsError(
-            await finishRegistration(
-                clientDataJSON: clientDataJSON.base64URLEncoded
-            ),
+            await finishRegistration(clientDataJSON: clientDataJSON.jsonBytes),
             expect: CollectedClientData.CollectedClientDataVerifyError.originDoesNotMatch
         )
-    }
-
-    func testFinishRegistrationFailsIfClientDataJSONIsInvalid() async throws {
-        try await assertThrowsError(
-            await finishRegistration(clientDataJSON: "%"),
-            expect: WebAuthnError.invalidClientDataJSON
-        )
-    }
-
-    func testFinishRegistrationFailsWithInvalidRawID() async throws {
-        try await assertThrowsError(await finishRegistration(rawID: "%"), expect: WebAuthnError.invalidRawID)
     }
 
     func testFinishRegistrationFailsWithInvalidCredentialCreationType() async throws {
@@ -106,22 +93,15 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
         )
     }
 
-    func testFinishRegistrationFailsWithInvalidClientDataJSON() async throws {
-        try await assertThrowsError(
-            await finishRegistration(clientDataJSON: "%%%"),
-            expect: WebAuthnError.invalidClientDataJSON
-        )
-    }
-
     func testFinishRegistrationFailsIfClientDataJSONDecodingFails() async throws {
-        try await assertThrowsError(await finishRegistration(clientDataJSON: "abc")) { (_: DecodingError) in
+        try await assertThrowsError(await finishRegistration(clientDataJSON: [0])) { (_: DecodingError) in
             return
         }
     }
 
     func testFinishRegistrationFailsIfAttestationObjectIsNotBase64() async throws {
         try await assertThrowsError(
-            await finishRegistration(attestationObject: "%%%"),
+            await finishRegistration(attestationObject: []),
             expect: WebAuthnError.invalidAttestationObject
         )
     }
@@ -132,7 +112,8 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
                 attestationObject: TestAttestationObjectBuilder()
                     .validMock()
                     .invalidAuthData()
-                    .buildBase64URLEncoded()
+                    .build()
+                    .cborEncoded
             ),
             expect: WebAuthnError.invalidAuthData
         )
@@ -144,7 +125,8 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
                 attestationObject: TestAttestationObjectBuilder()
                     .validMock()
                     .invalidFmt()
-                    .buildBase64URLEncoded()
+                    .build()
+                    .cborEncoded
             ),
             expect: WebAuthnError.invalidFmt
         )
@@ -156,7 +138,8 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
                 attestationObject: TestAttestationObjectBuilder()
                     .validMock()
                     .missingAttStmt()
-                    .buildBase64URLEncoded()
+                    .build()
+                    .cborEncoded
             ),
             expect: WebAuthnError.missingAttStmt
         )
@@ -168,7 +151,8 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
                 attestationObject: TestAttestationObjectBuilder()
                     .validMock()
                     .zeroAuthData(byteCount: 36)
-                    .buildBase64URLEncoded()
+                    .build()
+                    .cborEncoded
             ),
             expect: WebAuthnError.authDataTooShort
         )
@@ -186,7 +170,8 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
                             .noAttestedCredentialData()
                             .noExtensionData()
                     )
-                    .buildBase64URLEncoded()
+                    .build()
+                    .cborEncoded
             ),
             expect: WebAuthnError.attestedCredentialDataMissing
         )
@@ -203,7 +188,8 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
                             .flags(0b00000001)
                             .attestedCredData(credentialPublicKey: [])
                     )
-                    .buildBase64URLEncoded()
+                    .build()
+                    .cborEncoded
             ),
             expect: WebAuthnError.attestedCredentialFlagNotSet
         )
@@ -215,7 +201,8 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
                 attestationObject: TestAttestationObjectBuilder()
                     .validMock()
                     .authData(TestAuthDataBuilder().validMock().flags(0b11000001).noExtensionData())
-                    .buildBase64URLEncoded()
+                    .build()
+                    .cborEncoded
             ),
             expect: WebAuthnError.extensionDataMissing
         )
@@ -236,7 +223,8 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
                             )
                             .noExtensionData()
                     )
-                    .buildBase64URLEncoded()
+                    .build()
+                    .cborEncoded
             ),
             expect: WebAuthnError.credentialIDTooShort
         )
@@ -248,7 +236,8 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
                 attestationObject: TestAttestationObjectBuilder()
                     .validMock()
                     .authData(TestAuthDataBuilder().validMock().rpIDHash(fromRpID: "invalid-id.com"))
-                    .buildBase64URLEncoded()
+                    .build()
+                    .cborEncoded
             ),
             expect: WebAuthnError.relyingPartyIDHashDoesNotMatch
         )
@@ -260,7 +249,8 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
                 attestationObject: TestAttestationObjectBuilder()
                     .validMock()
                     .authData(TestAuthDataBuilder().validMock().flags(0b01000000))
-                    .buildBase64URLEncoded()
+                    .build()
+                    .cborEncoded
             ),
             expect: WebAuthnError.userPresentFlagNotSet
         )
@@ -272,7 +262,8 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
                 attestationObject: TestAttestationObjectBuilder()
                     .validMock()
                     .authData(TestAuthDataBuilder().validMock().flags(0b01000001))
-                    .buildBase64URLEncoded(),
+                    .build()
+                    .cborEncoded,
                 requireUserVerification: true
             ),
             expect: WebAuthnError.userVerificationRequiredButFlagNotSet
@@ -286,7 +277,8 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
                     .validMock()
                     .fmt("none")
                     .attStmt(.double(123))
-                    .buildBase64URLEncoded(),
+                    .build()
+                    .cborEncoded,
                 requireUserVerification: true
             ),
             expect: WebAuthnError.attestationStatementMustBeEmpty
@@ -295,13 +287,13 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
 
     func testFinishRegistrationFailsIfRawIDIsTooLong() async throws {
         try await assertThrowsError(
-            await finishRegistration(rawID: [UInt8](repeating: 0, count: 1024).base64EncodedString().urlEncoded),
+            await finishRegistration(rawID: [UInt8](repeating: 0, count: 1024)),
             expect: WebAuthnError.credentialRawIDTooLong
         )
     }
 
     func testFinishRegistrationSucceeds() async throws {
-        let credentialID = [0, 1, 0, 1, 0, 1].base64EncodedString()
+        let credentialID: [UInt8] = [0, 1, 0, 1, 0, 1]
         let credentialPublicKey: [UInt8] = TestCredentialPublicKeyBuilder().validMock().buildAsByteArray()
         let authData = TestAuthDataBuilder()
             .validMock()
@@ -310,11 +302,16 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
         let attestationObject = TestAttestationObjectBuilder()
             .validMock()
             .authData(authData)
-            .buildBase64URLEncoded()
-        let credential = try await finishRegistration(id: credentialID, attestationObject: attestationObject)
+            .build()
+            .cborEncoded
+
+        let credential = try await finishRegistration(
+            rawID: credentialID,
+            attestationObject: attestationObject
+        )
         XCTAssertNotNil(credential)
 
-        XCTAssertEqual(credential.id, credentialID.asString())
+        XCTAssertEqual(credential.id, credentialID.base64EncodedString().asString())
         XCTAssertEqual(credential.publicKey, credentialPublicKey)
     }
 
@@ -333,18 +330,17 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
 
     private func finishRegistration(
         challenge: [UInt8] = TestConstants.mockChallenge,
-        id: EncodedBase64 = "4PrJNQUJ9xdI2DeCzK9rTBRixhXHDiVdoTROQIh8j80",
         type: String = "public-key",
-        rawID: URLEncodedBase64 = "4PrJNQUJ9xdI2DeCzK9rTBRixhXHDiVdoTROQIh8j80",
-        clientDataJSON: URLEncodedBase64 = TestClientDataJSON().base64URLEncoded,
-        attestationObject: URLEncodedBase64 = TestAttestationObjectBuilder().validMock().buildBase64URLEncoded(),
+        rawID: [UInt8] = "e0fac9350509f71748d83782ccaf6b4c1462c615c70e255da1344e40887c8fcd".hexadecimal!,
+        clientDataJSON: [UInt8] = TestClientDataJSON().jsonBytes,
+        attestationObject: [UInt8] = TestAttestationObjectBuilder().validMock().build().cborEncoded,
         requireUserVerification: Bool = false,
         confirmCredentialIDNotRegisteredYet: (String) async throws -> Bool = { _ in true }
     ) async throws -> Credential {
         try await webAuthnManager.finishRegistration(
             challenge: challenge,
             credentialCreationData: RegistrationCredential(
-                id: id.asString(),
+                id: rawID.base64URLEncodedString(),
                 type: type,
                 rawID: rawID,
                 attestationResponse: AuthenticatorAttestationResponse(

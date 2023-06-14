@@ -16,9 +16,21 @@ import Foundation
 import SwiftCBOR
 
 /// The response from the authenticator device for the creation of a new public key credential.
-public struct AuthenticatorAttestationResponse {
-    public let clientDataJSON: URLEncodedBase64
-    public let attestationObject: URLEncodedBase64
+public struct AuthenticatorAttestationResponse: Encodable {
+    public let clientDataJSON: [UInt8]
+    public let attestationObject: [UInt8]
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        try container.encode(clientDataJSON.base64URLEncodedString(), forKey: .clientDataJSON)
+        try container.encode(attestationObject.base64URLEncodedString(), forKey: .attestationObject)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case clientDataJSON
+        case attestationObject
+    }
 }
 
 /// A parsed version of `AuthenticatorAttestationResponse`
@@ -28,15 +40,12 @@ struct ParsedAuthenticatorAttestationResponse {
 
     init(from rawResponse: AuthenticatorAttestationResponse) throws {
         // assembling clientData
-        guard let clientDataJSONData = rawResponse.clientDataJSON.urlDecoded.decoded else {
-            throw WebAuthnError.invalidClientDataJSON
-        }
-        let clientData = try JSONDecoder().decode(CollectedClientData.self, from: clientDataJSONData)
+        let clientData = try JSONDecoder().decode(CollectedClientData.self, from: Data(rawResponse.clientDataJSON))
         self.clientData = clientData
 
         // Step 11. (assembling attestationObject)
-        guard let attestationObjectData = rawResponse.attestationObject.urlDecoded.decoded,
-            let decodedAttestationObject = try CBOR.decode([UInt8](attestationObjectData)) else {
+        let attestationObjectData = Data(rawResponse.attestationObject)
+        guard let decodedAttestationObject = try? CBOR.decode([UInt8](attestationObjectData)) else {
             throw WebAuthnError.invalidAttestationObject
         }
 

@@ -30,4 +30,8 @@ struct TestClientDataJSON: Encodable {
         // swiftlint:disable:next force_try
         try! JSONEncoder().encode(self)
     }
+
+    var jsonBytes: [UInt8] {
+        [UInt8](jsonData)
+    }
 }

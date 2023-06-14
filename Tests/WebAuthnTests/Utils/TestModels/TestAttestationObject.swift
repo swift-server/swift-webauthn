@@ -22,7 +22,7 @@ struct TestAttestationObject {
     var attStmt: CBOR?
     var authData: CBOR?
 
-    var base64URLEncoded: URLEncodedBase64 {
+    var cborEncoded: [UInt8] {
         var attestationObject: [CBOR: CBOR] = [:]
         if let fmt {
             attestationObject[.utf8String("fmt")] = fmt
@@ -34,7 +34,7 @@ struct TestAttestationObject {
             attestationObject[.utf8String("authData")] = authData
         }
 
-        return CBOR.map(attestationObject).encode().base64URLEncodedString()
+        return [UInt8](CBOR.map(attestationObject).encode())
     }
 }
 
@@ -58,7 +58,7 @@ struct TestAttestationObjectBuilder {
     }
 
     func buildBase64URLEncoded() -> URLEncodedBase64 {
-        build().base64URLEncoded
+        build().cborEncoded.base64URLEncodedString()
     }
 
     // MARK: fmt

@@ -16,17 +16,26 @@ import Foundation
 import Crypto
 
 /// The unprocessed response received from `navigator.credentials.create()`.
-public struct RegistrationCredential {
+public struct RegistrationCredential: Encodable {
     /// The credential ID of the newly created credential.
-    public let id: String
+    public let id: URLEncodedBase64
     /// Value will always be "public-key" (for now)
     public let type: String
     /// The raw credential ID of the newly created credential.
-    public let rawID: URLEncodedBase64
+    public let rawID: [UInt8]
     /// The attestation response from the authenticator.
     public let attestationResponse: AuthenticatorAttestationResponse
 
-    enum CodingKeys: String, CodingKey {
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        try container.encode(id, forKey: .id)
+        try container.encode(type, forKey: .type)
+        try container.encode(rawID.base64URLEncodedString(), forKey: .rawID)
+        try container.encode(attestationResponse, forKey: .attestationResponse)
+    }
+
+    private enum CodingKeys: String, CodingKey {
         case id
         case type
         case rawID = "rawId"
@@ -36,11 +45,8 @@ public struct RegistrationCredential {
     /// Returns challenge from `clientDataJSON`.
     ///
     /// - Returns: The challenge from `clientDataJSON`.
-    /// - Throws: `WebAuthnError.invalidClientDataJSON` if `clientDataJSON` is not valid JSON.
     public func getChallenge() throws -> URLEncodedBase64 {
-        guard let clientData = attestationResponse.clientDataJSON.urlDecoded.decoded else {
-            throw WebAuthnError.invalidClientDataJSON
-        }
+        let clientData = Data(attestationResponse.clientDataJSON)
         let parsedClientData = try JSONDecoder().decode(CollectedClientData.self, from: clientData)
         return parsedClientData.challenge
     }
@@ -48,7 +54,7 @@ public struct RegistrationCredential {
 
 /// The processed response received from `navigator.credentials.create()`.
 struct ParsedCredentialCreationResponse {
-    let id: String
+    let id: URLEncodedBase64
     let rawID: Data
     /// Value will always be "public-key" (for now)
     let type: String
@@ -58,11 +64,7 @@ struct ParsedCredentialCreationResponse {
     /// Create a `ParsedCredentialCreationResponse` from a raw `CredentialCreationResponse`.
     init(from rawResponse: RegistrationCredential) throws {
         id = rawResponse.id
-
-        guard let decodedRawID = rawResponse.rawID.urlDecoded.decoded else {
-            throw WebAuthnError.invalidRawID
-        }
-        rawID = decodedRawID
+        rawID = Data(rawResponse.rawID)
 
         guard rawResponse.type == "public-key" else {
             throw WebAuthnError.invalidCredentialCreationType
@@ -90,10 +92,7 @@ struct ParsedCredentialCreationResponse {
         )
 
         // Step 10.
-        guard let clientData = raw.clientDataJSON.urlDecoded.decoded else {
-            throw WebAuthnError.invalidClientDataJSON
-        }
-        let hash = SHA256.hash(data: clientData)
+        let hash = SHA256.hash(data: Data(raw.clientDataJSON))
 
         // CBOR decoding happened already. Skipping Step 11.
 

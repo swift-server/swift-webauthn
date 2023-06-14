@@ -17,5 +17,5 @@ import WebAuthn
 struct TestConstants {
     /// Byte representation of string "randomStringFromServer"
     static var mockChallenge: [UInt8] = "72616e646f6d537472696e6746726f6d536572766572".hexadecimal!
-    static var mockCredentialID: URLEncodedBase64 = [0, 1, 2, 3, 4].base64URLEncodedString()
+    static var mockCredentialID: [UInt8] = [0, 1, 2, 3, 4]
 }
