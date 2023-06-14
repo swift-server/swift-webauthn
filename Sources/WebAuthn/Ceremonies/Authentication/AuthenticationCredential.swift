@@ -15,16 +15,9 @@
 import Foundation
 
 /// The unprocessed response received from `navigator.credentials.get()`.
-public struct AuthenticationCredential: Codable {
+public struct AuthenticationCredential {
     public let id: URLEncodedBase64
     public let response: AuthenticatorAssertionResponse
     public let authenticatorAttachment: String?
     public let type: String
-
-    enum CodingKeys: String, CodingKey {
-        case id
-        case response
-        case authenticatorAttachment
-        case type
-    }
 }

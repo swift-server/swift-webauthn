@@ -16,7 +16,7 @@ import Foundation
 import Crypto
 
 /// The unprocessed response received from `navigator.credentials.create()`.
-public struct RegistrationCredential: Codable {
+public struct RegistrationCredential {
     /// The credential ID of the newly created credential.
     public let id: String
     /// Value will always be "public-key" (for now)

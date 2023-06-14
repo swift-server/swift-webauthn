@@ -16,7 +16,7 @@ import Foundation
 import SwiftCBOR
 
 /// The response from the authenticator device for the creation of a new public key credential.
-public struct AuthenticatorAttestationResponse: Codable {
+public struct AuthenticatorAttestationResponse {
     public let clientDataJSON: URLEncodedBase64
     public let attestationObject: URLEncodedBase64
 }

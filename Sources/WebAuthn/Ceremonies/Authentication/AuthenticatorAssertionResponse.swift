@@ -16,7 +16,7 @@ import Foundation
 import Crypto
 
 /// This is what the authenticator device returned after we requested it to authenticate a user.
-public struct AuthenticatorAssertionResponse: Codable {
+public struct AuthenticatorAssertionResponse {
     /// Representation of what we passed to `navigator.credentials.get()`
     public let clientDataJSON: URLEncodedBase64
     /// Contains the authenticator data returned by the authenticator.
