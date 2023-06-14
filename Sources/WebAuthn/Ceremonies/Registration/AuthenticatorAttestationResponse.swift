@@ -16,15 +16,38 @@ import Foundation
 import SwiftCBOR
 
 /// The response from the authenticator device for the creation of a new public key credential.
-public struct AuthenticatorAttestationResponse: Encodable {
+public struct AuthenticatorAttestationResponse {
     public let clientDataJSON: [UInt8]
     public let attestationObject: [UInt8]
+}
 
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
+extension AuthenticatorAttestationResponse: Decodable {
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
 
-        try container.encode(clientDataJSON.base64URLEncodedString(), forKey: .clientDataJSON)
-        try container.encode(attestationObject.base64URLEncodedString(), forKey: .attestationObject)
+        guard let clientDataJSON = try container.decode(
+            URLEncodedBase64.self,
+            forKey: .clientDataJSON
+        ).decodedBytes else {
+            throw DecodingError.dataCorruptedError(
+                forKey: .clientDataJSON,
+                in: container,
+                debugDescription: "Failed to decode base64url encoded clientDataJSON into bytes"
+            )
+        }
+        self.clientDataJSON = clientDataJSON
+
+        guard let attestationObject = try container.decode(
+            URLEncodedBase64.self,
+            forKey: .attestationObject
+        ).decodedBytes else {
+            throw DecodingError.dataCorruptedError(
+                forKey: .attestationObject,
+                in: container,
+                debugDescription: "Failed to decode base64url encoded attestationObject into bytes"
+            )
+        }
+        self.attestationObject = attestationObject
     }
 
     private enum CodingKeys: String, CodingKey {

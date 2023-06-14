@@ -16,7 +16,7 @@ import Foundation
 import Crypto
 
 /// The unprocessed response received from `navigator.credentials.create()`.
-public struct RegistrationCredential: Encodable {
+public struct RegistrationCredential {
     /// The credential ID of the newly created credential.
     public let id: URLEncodedBase64
     /// Value will always be "public-key" (for now)
@@ -26,22 +26,6 @@ public struct RegistrationCredential: Encodable {
     /// The attestation response from the authenticator.
     public let attestationResponse: AuthenticatorAttestationResponse
 
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-
-        try container.encode(id, forKey: .id)
-        try container.encode(type, forKey: .type)
-        try container.encode(rawID.base64URLEncodedString(), forKey: .rawID)
-        try container.encode(attestationResponse, forKey: .attestationResponse)
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case id
-        case type
-        case rawID = "rawId"
-        case attestationResponse = "response"
-    }
-
     /// Returns challenge from `clientDataJSON`.
     ///
     /// - Returns: The challenge from `clientDataJSON`.
@@ -49,6 +33,31 @@ public struct RegistrationCredential: Encodable {
         let clientData = Data(attestationResponse.clientDataJSON)
         let parsedClientData = try JSONDecoder().decode(CollectedClientData.self, from: clientData)
         return parsedClientData.challenge
+    }
+}
+
+extension RegistrationCredential: Decodable {
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        id = try container.decode(URLEncodedBase64.self, forKey: .id)
+        type = try container.decode(String.self, forKey: .type)
+        guard let rawID = try container.decode(URLEncodedBase64.self, forKey: .rawID).decodedBytes else {
+            throw DecodingError.dataCorruptedError(
+                forKey: .rawID,
+                in: container,
+                debugDescription: "Failed to decode base64url encoded rawID into bytes"
+            )
+        }
+        self.rawID = rawID
+        attestationResponse = try container.decode(AuthenticatorAttestationResponse.self, forKey: .attestationResponse)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case type
+        case rawID = "rawId"
+        case attestationResponse = "response"
     }
 }
 
