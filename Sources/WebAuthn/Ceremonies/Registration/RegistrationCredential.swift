@@ -32,6 +32,18 @@ public struct RegistrationCredential: Codable {
         case rawID = "rawId"
         case attestationResponse = "response"
     }
+
+    /// Returns challenge from `clientDataJSON`.
+    ///
+    /// - Returns: The challenge from `clientDataJSON`.
+    /// - Throws: `WebAuthnError.invalidClientDataJSON` if `clientDataJSON` is not valid JSON.
+    public func getChallenge() throws -> URLEncodedBase64 {
+        guard let clientData = attestationResponse.clientDataJSON.urlDecoded.decoded else {
+            throw WebAuthnError.invalidClientDataJSON
+        }
+        let parsedClientData = try JSONDecoder().decode(CollectedClientData.self, from: clientData)
+        return parsedClientData.challenge
+    }
 }
 
 /// The processed response received from `navigator.credentials.create()`.
