@@ -35,7 +35,7 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
         let attestationPreference = AttestationConveyancePreference.none
         let publicKeyCredentialParameters: [PublicKeyCredentialParameters] = .supported
 
-        let registrationOptions = webAuthnManager.createRegistrationOptions(
+        let registrationOptions = webAuthnManager.beginRegistration(
             user: mockUser,
             timeoutInSeconds: timeout,
             attestation: attestationPreference,

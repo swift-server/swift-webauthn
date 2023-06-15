@@ -53,7 +53,7 @@ public struct WebAuthnManager {
     ///   - publicKeyCredentialParameters: A list of public key algorithms the Relying Party chooses to restrict
     ///     support to. Defaults to all supported algorithms.
     /// - Returns: Registration options ready for the browser.
-    public func createRegistrationOptions(
+    public func beginRegistration(
         user: PublicKeyCredentialUserEntity,
         timeoutInSeconds: TimeInterval? = 3600,
         attestation: AttestationConveyancePreference = .none,
