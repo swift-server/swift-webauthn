@@ -25,15 +25,6 @@ public struct RegistrationCredential {
     public let rawID: [UInt8]
     /// The attestation response from the authenticator.
     public let attestationResponse: AuthenticatorAttestationResponse
-
-    /// Returns challenge from `clientDataJSON`.
-    ///
-    /// - Returns: The challenge from `clientDataJSON`.
-    public func getChallenge() throws -> URLEncodedBase64 {
-        let clientData = Data(attestationResponse.clientDataJSON)
-        let parsedClientData = try JSONDecoder().decode(CollectedClientData.self, from: clientData)
-        return parsedClientData.challenge
-    }
 }
 
 extension RegistrationCredential: Decodable {

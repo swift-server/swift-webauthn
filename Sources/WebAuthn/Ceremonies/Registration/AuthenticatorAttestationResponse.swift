@@ -25,29 +25,8 @@ extension AuthenticatorAttestationResponse: Decodable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
-        guard let clientDataJSON = try container.decode(
-            URLEncodedBase64.self,
-            forKey: .clientDataJSON
-        ).decodedBytes else {
-            throw DecodingError.dataCorruptedError(
-                forKey: .clientDataJSON,
-                in: container,
-                debugDescription: "Failed to decode base64url encoded clientDataJSON into bytes"
-            )
-        }
-        self.clientDataJSON = clientDataJSON
-
-        guard let attestationObject = try container.decode(
-            URLEncodedBase64.self,
-            forKey: .attestationObject
-        ).decodedBytes else {
-            throw DecodingError.dataCorruptedError(
-                forKey: .attestationObject,
-                in: container,
-                debugDescription: "Failed to decode base64url encoded attestationObject into bytes"
-            )
-        }
-        self.attestationObject = attestationObject
+        clientDataJSON = try container.decodeBytesFromURLEncodedBase64(forKey: .clientDataJSON)
+        attestationObject = try container.decodeBytesFromURLEncodedBase64(forKey: .attestationObject)
     }
 
     private enum CodingKeys: String, CodingKey {
