@@ -31,8 +31,8 @@ extension WebAuthnManager {
 
         /// Creates a new `WebAuthnConfig` with information about the Relying Party
         /// - Parameters:
-        ///   - relyingPartyDisplayName: Display name for the Relying Party. Can be any string.
         ///   - relyingPartyID: The relying party id is based on the host's domain. (e.g. _login.example.com_)
+        ///   - relyingPartyName: Name for the Relying Party. Can be any string.
         ///   - relyingPartyOrigin: The domain, with HTTP protocol (e.g. _https://login.example.com_)
         public init(
             relyingPartyID: String,
