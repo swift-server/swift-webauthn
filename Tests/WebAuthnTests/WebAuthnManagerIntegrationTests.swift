@@ -121,11 +121,15 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
             .byteArrayRepresentation
 
         // Authenticator creates a signature with private key
+
+        // ATTENTION: It is very important that we encode `TestClientDataJSON` only once!!! Subsequent calls to
+        // `jsonBytes` will result in different json (and thus the signature verification will fail)
+        // This has already cost me hours of troubleshooting twice
         let clientData = TestClientDataJSON(
             type: "webauthn.get",
             challenge: mockChallenge.base64URLEncodedString()
-        )
-        let clientDataHash = SHA256.hash(data: clientData.jsonData)
+        ).jsonBytes
+        let clientDataHash = SHA256.hash(data: clientData)
         let signatureBase = Data(authenticatorData + clientDataHash)
         let signature = try TestECCKeyPair.signature(data: signatureBase).derRepresentation
 
@@ -133,7 +137,7 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
             id: mockCredentialID.base64URLEncodedString(),
             rawID: mockCredentialID,
             response: AuthenticatorAssertionResponse(
-                clientDataJSON: clientData.jsonBytes,
+                clientDataJSON: clientData,
                 authenticatorData: authenticatorData,
                 signature: [UInt8](signature),
                 userHandle: mockUser.id,

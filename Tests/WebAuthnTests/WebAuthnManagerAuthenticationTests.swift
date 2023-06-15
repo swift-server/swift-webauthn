@@ -136,14 +136,18 @@ final class WebAuthnManagerAuthenticationTests: XCTestCase {
                 .byteArrayRepresentation
 
         // Create a signature. This part is usually performed by the authenticator
-        let clientData = TestClientDataJSON(type: "webauthn.get")
-        let clientDataHash = SHA256.hash(data: clientData.jsonData)
-        let signatureBase = Data(authenticatorData + clientDataHash)
+
+        // ATTENTION: It is very important that we encode `TestClientDataJSON` only once!!! Subsequent calls to
+        // `jsonBytes` will result in different json (and thus the signature verification will fail)
+        // This has already cost me hours of troubleshooting twice
+        let clientData = TestClientDataJSON(type: "webauthn.get").jsonBytes
+        let clientDataHash = SHA256.hash(data: clientData)
+        let signatureBase = Data(authenticatorData) + clientDataHash
         let signature = try TestECCKeyPair.signature(data: signatureBase).derRepresentation
 
         let verifiedAuthentication = try finishAuthentication(
             credentialID: credentialID,
-            clientDataJSON: clientData.jsonBytes,
+            clientDataJSON: clientData,
             authenticatorData: authenticatorData,
             signature: [UInt8](signature),
             credentialCurrentSignCount: oldSignCount
