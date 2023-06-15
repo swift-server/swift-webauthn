@@ -15,11 +15,23 @@
 import Foundation
 
 /// The unprocessed response received from `navigator.credentials.get()`.
+///
+/// When decoding using `Decodable`, the `rawID` is decoded from base64url to bytes.
 public struct AuthenticationCredential {
+    /// The credential ID of the newly created credential.
     public let id: URLEncodedBase64
+
+    /// The raw credential ID of the newly created credential.
     public let rawID: [UInt8]
+
+    /// The attestation response from the authenticator.
     public let response: AuthenticatorAssertionResponse
+
+    /// Reports the authenticator attachment modality in effect at the time the navigator.credentials.create() or
+    /// navigator.credentials.get() methods successfully complete
     public let authenticatorAttachment: String?
+
+    /// Value will always be "public-key" (for now)
     public let type: String
 }
 

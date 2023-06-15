@@ -15,19 +15,28 @@
 import Foundation
 
 /// The `PublicKeyCredentialRequestOptions` gets passed to the WebAuthn API (`navigator.credentials.get()`)
+///
+/// When encoding using `Encodable`, the byte arrays are encoded as base64url.
 public struct PublicKeyCredentialRequestOptions: Encodable {
     /// A challenge that the authenticator signs, along with other data, when producing an authentication assertion
+    ///
+    /// When encoding using `Encodable` this is encoded as base64url.
     public let challenge: [UInt8]
+
     /// The number of milliseconds that the Relying Party is willing to wait for the call to complete. The value is treated
     /// as a hint, and may be overridden by the client.
     /// See https://www.w3.org/TR/webauthn-2/#dictionary-assertion-options
     public let timeout: UInt32?
+
     /// The Relying Party ID.
     public let rpId: String?
+
     /// Optionally used by the client to find authenticators eligible for this authentication ceremony.
     public let allowCredentials: [PublicKeyCredentialDescriptor]?
+
     /// Specifies whether the user should be verified during the authentication ceremony.
     public let userVerification: UserVerificationRequirement?
+
     // let extensions: [String: Any]
 
     public func encode(to encoder: Encoder) throws {
@@ -50,6 +59,8 @@ public struct PublicKeyCredentialRequestOptions: Encodable {
 }
 
 /// Information about a generated credential.
+///
+/// When encoding using `Encodable`, `id` is encoded as base64url.
 public struct PublicKeyCredentialDescriptor: Equatable, Encodable {
     /// Defines hints as to how clients might communicate with a particular authenticator in order to obtain an
     /// assertion for a specific credential
@@ -71,8 +82,12 @@ public struct PublicKeyCredentialDescriptor: Equatable, Encodable {
 
     /// Will always be 'public-key'
     public let type: String
+
     /// The sequence of bytes representing the credential's ID
+    ///
+    /// When encoding using `Encodable`, this is encoded as base64url.
     public let id: [UInt8]
+
     /// The types of connections to the client/browser the authenticator supports
     public let transports: [AuthenticatorTransport]
 

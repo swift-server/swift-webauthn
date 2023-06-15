@@ -16,13 +16,18 @@ import Foundation
 import Crypto
 
 /// The unprocessed response received from `navigator.credentials.create()`.
+///
+/// When decoding using `Decodable`, the `rawID` is decoded from base64url to bytes.
 public struct RegistrationCredential {
     /// The credential ID of the newly created credential.
     public let id: URLEncodedBase64
+
     /// Value will always be "public-key" (for now)
     public let type: String
+
     /// The raw credential ID of the newly created credential.
     public let rawID: [UInt8]
+
     /// The attestation response from the authenticator.
     public let attestationResponse: AuthenticatorAttestationResponse
 }

@@ -16,20 +16,36 @@ import Foundation
 import Crypto
 
 /// This is what the authenticator device returned after we requested it to authenticate a user.
+///
+/// When decoding using `Decodable`, byte arrays are decoded from base64url to bytes.
 public struct AuthenticatorAssertionResponse {
     /// Representation of what we passed to `navigator.credentials.get()`
+    ///
+    /// When decoding using `Decodable`, this is decoded from base64url to bytes.
     public let clientDataJSON: [UInt8]
+
     /// Contains the authenticator data returned by the authenticator.
+    ///
+    /// When decoding using `Decodable`, this is decoded from base64url to bytes.
     public let authenticatorData: [UInt8]
+
     /// Contains the raw signature returned from the authenticator
+    ///
+    /// When decoding using `Decodable`, this is decoded from base64url to bytes.
     public let signature: [UInt8]
+
     /// Contains the user handle returned from the authenticator, or null if the authenticator did not return
     /// a user handle. Used by to give scope to credentials.
+    ///
+    /// When decoding using `Decodable`, this is decoded from base64url to bytes.
     public let userHandle: [UInt8]?
+
     /// Contains an attestation object, if the authenticator supports attestation in assertions.
     /// The attestation object, if present, includes an attestation statement. Unlike the attestationObject
     /// in an AuthenticatorAttestationResponse, it does not contain an authData key because the authenticator
     /// data is provided directly in an AuthenticatorAssertionResponse structure.
+    ///
+    /// When decoding using `Decodable`, this is decoded from base64url to bytes.
     public let attestationObject: [UInt8]?
 }
 
