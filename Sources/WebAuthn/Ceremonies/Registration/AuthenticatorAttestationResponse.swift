@@ -16,9 +16,32 @@ import Foundation
 import SwiftCBOR
 
 /// The response from the authenticator device for the creation of a new public key credential.
-public struct AuthenticatorAttestationResponse: Codable {
-    public let clientDataJSON: URLEncodedBase64
-    public let attestationObject: URLEncodedBase64
+///
+/// When decoding using `Decodable`, `clientDataJSON` and `attestationObject` are decoded from base64url to bytes.
+public struct AuthenticatorAttestationResponse {
+    /// The client data that was passed to the authenticator during the creation ceremony.
+    ///
+    /// When decoding using `Decodable`, this is decoded from base64url to bytes.
+    public let clientDataJSON: [UInt8]
+
+    /// Contains both attestation data and attestation statement.
+    ///
+    /// When decoding using `Decodable`, this is decoded from base64url to bytes.
+    public let attestationObject: [UInt8]
+}
+
+extension AuthenticatorAttestationResponse: Decodable {
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        clientDataJSON = try container.decodeBytesFromURLEncodedBase64(forKey: .clientDataJSON)
+        attestationObject = try container.decodeBytesFromURLEncodedBase64(forKey: .attestationObject)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case clientDataJSON
+        case attestationObject
+    }
 }
 
 /// A parsed version of `AuthenticatorAttestationResponse`
@@ -28,15 +51,12 @@ struct ParsedAuthenticatorAttestationResponse {
 
     init(from rawResponse: AuthenticatorAttestationResponse) throws {
         // assembling clientData
-        guard let clientDataJSONData = rawResponse.clientDataJSON.urlDecoded.decoded else {
-            throw WebAuthnError.invalidClientDataJSON
-        }
-        let clientData = try JSONDecoder().decode(CollectedClientData.self, from: clientDataJSONData)
+        let clientData = try JSONDecoder().decode(CollectedClientData.self, from: Data(rawResponse.clientDataJSON))
         self.clientData = clientData
 
         // Step 11. (assembling attestationObject)
-        guard let attestationObjectData = rawResponse.attestationObject.urlDecoded.decoded,
-            let decodedAttestationObject = try CBOR.decode([UInt8](attestationObjectData)) else {
+        let attestationObjectData = Data(rawResponse.attestationObject)
+        guard let decodedAttestationObject = try? CBOR.decode([UInt8](attestationObjectData)) else {
             throw WebAuthnError.invalidAttestationObject
         }
 

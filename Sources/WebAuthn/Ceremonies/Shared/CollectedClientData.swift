@@ -23,21 +23,23 @@ public struct CollectedClientData: Codable, Hashable {
         case originDoesNotMatch
     }
 
-    enum CeremonyType: String, Codable {
+    public enum CeremonyType: String, Codable {
         case create = "webauthn.create"
         case assert = "webauthn.get"
     }
 
     /// Contains the string "webauthn.create" when creating new credentials,
     /// and "webauthn.get" when getting an assertion from an existing credential
-    let type: CeremonyType
-    /// Contains the base64url encoding of the challenge provided by the Relying Party
-    let challenge: URLEncodedBase64
-    let origin: String
+    public let type: CeremonyType
+    /// The challenge that was provided by the Relying Party
+    public let challenge: URLEncodedBase64
+    public let origin: String
 
-    func verify(storedChallenge: URLEncodedBase64, ceremonyType: CeremonyType, relyingPartyOrigin: String) throws {
+    func verify(storedChallenge: [UInt8], ceremonyType: CeremonyType, relyingPartyOrigin: String) throws {
         guard type == ceremonyType else { throw CollectedClientDataVerifyError.ceremonyTypeDoesNotMatch }
-        guard challenge == storedChallenge else { throw CollectedClientDataVerifyError.challengeDoesNotMatch }
+        guard challenge == storedChallenge.base64URLEncodedString() else {
+            throw CollectedClientDataVerifyError.challengeDoesNotMatch
+        }
         guard origin == relyingPartyOrigin else { throw CollectedClientDataVerifyError.originDoesNotMatch }
     }
 }

@@ -14,7 +14,6 @@
 
 public enum WebAuthnError: Error, Equatable {
     // MARK: Shared
-    case invalidClientDataJSON
     case attestedCredentialDataMissing
     case relyingPartyIDHashDoesNotMatch
     case userPresentFlagNotSet
@@ -29,7 +28,6 @@ public enum WebAuthnError: Error, Equatable {
     case invalidUserID
     case unsupportedCredentialPublicKeyAlgorithm
     case credentialIDAlreadyExists
-    case invalidAuthenticatorData
     case invalidRelyingPartyID
     case userVerifiedFlagNotSet
     case potentialReplayAttack
@@ -43,7 +41,6 @@ public enum WebAuthnError: Error, Equatable {
     case attestationFormatNotSupported
 
     // MARK: ParsedCredentialCreationResponse
-    case invalidRawID
     case invalidCredentialCreationType
     case credentialRawIDTooLong
 

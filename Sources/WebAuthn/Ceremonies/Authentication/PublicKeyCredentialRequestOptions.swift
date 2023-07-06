@@ -15,27 +15,56 @@
 import Foundation
 
 /// The `PublicKeyCredentialRequestOptions` gets passed to the WebAuthn API (`navigator.credentials.get()`)
-public struct PublicKeyCredentialRequestOptions: Codable {
+///
+/// When encoding using `Encodable`, the byte arrays are encoded as base64url.
+public struct PublicKeyCredentialRequestOptions: Encodable {
     /// A challenge that the authenticator signs, along with other data, when producing an authentication assertion
-    public let challenge: EncodedBase64
+    ///
+    /// When encoding using `Encodable` this is encoded as base64url.
+    public let challenge: [UInt8]
+
     /// The number of milliseconds that the Relying Party is willing to wait for the call to complete. The value is treated
     /// as a hint, and may be overridden by the client.
     /// See https://www.w3.org/TR/webauthn-2/#dictionary-assertion-options
     public let timeout: UInt32?
+
     /// The Relying Party ID.
     public let rpId: String?
+
     /// Optionally used by the client to find authenticators eligible for this authentication ceremony.
     public let allowCredentials: [PublicKeyCredentialDescriptor]?
+
     /// Specifies whether the user should be verified during the authentication ceremony.
     public let userVerification: UserVerificationRequirement?
+
     // let extensions: [String: Any]
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        try container.encode(challenge.base64URLEncodedString(), forKey: .challenge)
+        try container.encodeIfPresent(timeout, forKey: .timeout)
+        try container.encodeIfPresent(rpId, forKey: .rpId)
+        try container.encodeIfPresent(allowCredentials, forKey: .allowCredentials)
+        try container.encodeIfPresent(userVerification, forKey: .userVerification)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case challenge
+        case timeout
+        case rpId
+        case allowCredentials
+        case userVerification
+    }
 }
 
 /// Information about a generated credential.
-public struct PublicKeyCredentialDescriptor: Codable, Equatable {
+///
+/// When encoding using `Encodable`, `id` is encoded as base64url.
+public struct PublicKeyCredentialDescriptor: Equatable, Encodable {
     /// Defines hints as to how clients might communicate with a particular authenticator in order to obtain an
     /// assertion for a specific credential
-    public enum AuthenticatorTransport: String, Codable, Equatable {
+    public enum AuthenticatorTransport: String, Equatable, Encodable {
         /// Indicates the respective authenticator can be contacted over removable USB.
         case usb
         /// Indicates the respective authenticator can be contacted over Near Field Communication (NFC).
@@ -51,14 +80,14 @@ public struct PublicKeyCredentialDescriptor: Codable, Equatable {
         case `internal`
     }
 
-    enum CodingKeys: String, CodingKey {
-        case type, id, transports
-    }
-
     /// Will always be 'public-key'
     public let type: String
+
     /// The sequence of bytes representing the credential's ID
+    ///
+    /// When encoding using `Encodable`, this is encoded as base64url.
     public let id: [UInt8]
+
     /// The types of connections to the client/browser the authenticator supports
     public let transports: [AuthenticatorTransport]
 
@@ -72,14 +101,20 @@ public struct PublicKeyCredentialDescriptor: Codable, Equatable {
         var container = encoder.container(keyedBy: CodingKeys.self)
 
         try container.encode(type, forKey: .type)
-        try container.encode(id.base64EncodedString(), forKey: .id)
-        try container.encode(transports, forKey: .transports)
+        try container.encode(id.base64URLEncodedString(), forKey: .id)
+        try container.encodeIfPresent(transports, forKey: .transports)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case type
+        case id
+        case transports
     }
 }
 
 /// The Relying Party may require user verification for some of its operations but not for others, and may use this
 /// type to express its needs.
-public enum UserVerificationRequirement: String, Codable {
+public enum UserVerificationRequirement: String, Encodable {
     /// The Relying Party requires user verification for the operation and will fail the overall ceremony if the
     /// user wasn't verified.
     case required

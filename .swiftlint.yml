@@ -7,6 +7,7 @@ excluded:
 identifier_name:
   excluded:
     - id
+    - rp
 
 line_length:
   ignores_comments: true

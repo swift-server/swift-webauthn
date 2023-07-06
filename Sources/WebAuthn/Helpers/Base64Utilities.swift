@@ -37,7 +37,7 @@ public struct EncodedBase64: ExpressibleByStringLiteral, Codable, Hashable, Equa
         try container.encode(self.base64)
     }
 
-    /// Return as URL encoded base64
+    /// Return as Base64URL
     public var urlEncoded: URLEncodedBase64 {
         return .init(
             self.base64.replacingOccurrences(of: "+", with: "-")
@@ -46,28 +46,29 @@ public struct EncodedBase64: ExpressibleByStringLiteral, Codable, Hashable, Equa
         )
     }
 
-    /// Return base64 decoded data
+    /// Decodes Base64 string and transforms result into `Data`
     public var decoded: Data? {
         return Data(base64Encoded: self.base64)
     }
 
-    /// return Base64 data as a String
+    /// Returns Base64 data as a String
     public func asString() -> String {
         return self.base64
-    }
-
-    /// return Base64 data as Data
-    public func asData() -> Data? {
-        return self.base64.data(using: .utf8)
     }
 }
 
 /// Container for URL encoded base64 data
 public struct URLEncodedBase64: ExpressibleByStringLiteral, Codable, Hashable, Equatable {
-    let base64: String
+    let base64URL: String
+
+    /// Decodes Base64URL string and transforms result into `[UInt8]`
+    public var decodedBytes: [UInt8]? {
+        guard let base64DecodedData = urlDecoded.decoded else { return nil }
+        return [UInt8](base64DecodedData)
+    }
 
     public init(_ string: String) {
-        self.base64 = string
+        self.base64URL = string
     }
 
     public init(stringLiteral value: StringLiteralType) {
@@ -76,31 +77,26 @@ public struct URLEncodedBase64: ExpressibleByStringLiteral, Codable, Hashable, E
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
-        self.base64 = try container.decode(String.self)
+        self.base64URL = try container.decode(String.self)
     }
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
-        try container.encode(self.base64)
+        try container.encode(self.base64URL)
     }
 
-    /// Return URL decoded Base64 data
+    /// Decodes Base64URL into Base64
     public var urlDecoded: EncodedBase64 {
-        var result = self.base64.replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
+        var result = self.base64URL.replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
         while result.count % 4 != 0 {
             result = result.appending("=")
         }
         return .init(result)
     }
 
-    /// return Base64 data as a String
+    /// Return Base64URL as a String
     public func asString() -> String {
-        return self.base64
-    }
-
-    /// return Base64 data as Data
-    public func asData() -> Data? {
-        return self.base64.data(using: .utf8)
+        return self.base64URL
     }
 }
 

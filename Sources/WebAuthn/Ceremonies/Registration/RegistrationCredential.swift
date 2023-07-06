@@ -16,17 +16,40 @@ import Foundation
 import Crypto
 
 /// The unprocessed response received from `navigator.credentials.create()`.
-public struct RegistrationCredential: Codable {
+///
+/// When decoding using `Decodable`, the `rawID` is decoded from base64url to bytes.
+public struct RegistrationCredential {
     /// The credential ID of the newly created credential.
-    public let id: String
+    public let id: URLEncodedBase64
+
     /// Value will always be "public-key" (for now)
     public let type: String
+
     /// The raw credential ID of the newly created credential.
-    public let rawID: URLEncodedBase64
+    public let rawID: [UInt8]
+
     /// The attestation response from the authenticator.
     public let attestationResponse: AuthenticatorAttestationResponse
+}
 
-    enum CodingKeys: String, CodingKey {
+extension RegistrationCredential: Decodable {
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        id = try container.decode(URLEncodedBase64.self, forKey: .id)
+        type = try container.decode(String.self, forKey: .type)
+        guard let rawID = try container.decode(URLEncodedBase64.self, forKey: .rawID).decodedBytes else {
+            throw DecodingError.dataCorruptedError(
+                forKey: .rawID,
+                in: container,
+                debugDescription: "Failed to decode base64url encoded rawID into bytes"
+            )
+        }
+        self.rawID = rawID
+        attestationResponse = try container.decode(AuthenticatorAttestationResponse.self, forKey: .attestationResponse)
+    }
+
+    private enum CodingKeys: String, CodingKey {
         case id
         case type
         case rawID = "rawId"
@@ -36,7 +59,7 @@ public struct RegistrationCredential: Codable {
 
 /// The processed response received from `navigator.credentials.create()`.
 struct ParsedCredentialCreationResponse {
-    let id: String
+    let id: URLEncodedBase64
     let rawID: Data
     /// Value will always be "public-key" (for now)
     let type: String
@@ -46,11 +69,7 @@ struct ParsedCredentialCreationResponse {
     /// Create a `ParsedCredentialCreationResponse` from a raw `CredentialCreationResponse`.
     init(from rawResponse: RegistrationCredential) throws {
         id = rawResponse.id
-
-        guard let decodedRawID = rawResponse.rawID.urlDecoded.decoded else {
-            throw WebAuthnError.invalidRawID
-        }
-        rawID = decodedRawID
+        rawID = Data(rawResponse.rawID)
 
         guard rawResponse.type == "public-key" else {
             throw WebAuthnError.invalidCredentialCreationType
@@ -63,7 +82,7 @@ struct ParsedCredentialCreationResponse {
 
     // swiftlint:disable:next function_parameter_count
     func verify(
-        storedChallenge: URLEncodedBase64,
+        storedChallenge: [UInt8],
         verifyUser: Bool,
         relyingPartyID: String,
         relyingPartyOrigin: String,
@@ -78,10 +97,7 @@ struct ParsedCredentialCreationResponse {
         )
 
         // Step 10.
-        guard let clientData = raw.clientDataJSON.urlDecoded.decoded else {
-            throw WebAuthnError.invalidClientDataJSON
-        }
-        let hash = SHA256.hash(data: clientData)
+        let hash = SHA256.hash(data: Data(raw.clientDataJSON))
 
         // CBOR decoding happened already. Skipping Step 11.
 

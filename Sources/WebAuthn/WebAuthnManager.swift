@@ -28,7 +28,7 @@ import Foundation
 /// When the client has received the response from the authenticator, pass the response to
 /// `finishAuthentication()`.
 public struct WebAuthnManager {
-    private let config: WebAuthnConfig
+    private let config: Config
 
     private let challengeGenerator: ChallengeGenerator
 
@@ -37,40 +37,41 @@ public struct WebAuthnManager {
     /// - Parameters:
     ///   - config: The configuration to use for this manager.
     ///   - challengeGenerator: The challenge generator to use for this manager. Defaults to a live generator.
-    public init(config: WebAuthnConfig, challengeGenerator: ChallengeGenerator = .live) {
+    public init(config: Config, challengeGenerator: ChallengeGenerator = .live) {
         self.config = config
         self.challengeGenerator = challengeGenerator
     }
 
-    /// Generate a new set of registration data to be sent to the client and authenticator.
+    /// Generate a new set of registration data to be sent to the client.
     ///
+    /// This method will use the Relying Party information from the WebAuthnManager's config  to create ``PublicKeyCredentialCreationOptions``
     /// - Parameters:
     ///   - user: The user to register.
-    ///   - attestation: The level of attestation to be provided by the authenticator.
+    ///   - timeoutInSeconds: How long the browser should give the user to choose an authenticator. This value
+    ///     is a *hint* and may be ignored by the browser. Defaults to 60 seconds.
+    ///   - attestation: The Relying Party's preference regarding attestation. Defaults to `.none`.
     ///   - publicKeyCredentialParameters: A list of public key algorithms the Relying Party chooses to restrict
     ///     support to. Defaults to all supported algorithms.
     /// - Returns: Registration options ready for the browser.
     public func beginRegistration(
-        user: WebAuthnUser,
-        timeout: TimeInterval = 60000,
+        user: PublicKeyCredentialUserEntity,
+        timeoutInSeconds: TimeInterval? = 3600,
         attestation: AttestationConveyancePreference = .none,
-        publicKeyCredentialParameters: [PublicKeyCredentialParameters] = PublicKeyCredentialParameters.supported
-    ) throws -> PublicKeyCredentialCreationOptions {
-        guard let base64ID = user.userID.data(using: .utf8)?.base64EncodedString() else {
-            throw WebAuthnError.invalidUserID
-        }
-
-        let userEntity = PublicKeyCredentialUserEntity(name: user.name, id: base64ID, displayName: user.displayName)
-        let relyingParty = PublicKeyCredentialRpEntity(name: config.relyingPartyDisplayName, id: config.relyingPartyID)
-
+        publicKeyCredentialParameters: [PublicKeyCredentialParameters] = .supported
+    ) -> PublicKeyCredentialCreationOptions {
         let challenge = challengeGenerator.generate()
 
+        var timeoutInMilliseconds: UInt32?
+        if let timeoutInSeconds {
+            timeoutInMilliseconds = UInt32(timeoutInSeconds * 1000)
+        }
+
         return PublicKeyCredentialCreationOptions(
-            challenge: challenge.base64EncodedString(),
-            user: userEntity,
-            rp: relyingParty,
-            pubKeyCredParams: publicKeyCredentialParameters,
-            timeout: timeout,
+            challenge: challenge,
+            user: user,
+            relyingParty: .init(id: config.relyingPartyID, name: config.relyingPartyName),
+            publicKeyCredentialParameters: publicKeyCredentialParameters,
+            timeoutInMilliseconds: timeoutInMilliseconds,
             attestation: attestation
         )
     }
@@ -91,16 +92,16 @@ public struct WebAuthnManager {
     ///     handle that.
     /// - Returns:  A new `Credential` with information about the authenticator and registration
     public func finishRegistration(
-        challenge: EncodedBase64,
+        challenge: [UInt8],
         credentialCreationData: RegistrationCredential,
         requireUserVerification: Bool = false,
-        supportedPublicKeyAlgorithms: [PublicKeyCredentialParameters] = PublicKeyCredentialParameters.supported,
+        supportedPublicKeyAlgorithms: [PublicKeyCredentialParameters] = .supported,
         pemRootCertificatesByFormat: [AttestationFormat: [Data]] = [:],
         confirmCredentialIDNotRegisteredYet: (String) async throws -> Bool
     ) async throws -> Credential {
         let parsedData = try ParsedCredentialCreationResponse(from: credentialCreationData)
         let attestedCredentialData = try await parsedData.verify(
-            storedChallenge: challenge.urlEncoded,
+            storedChallenge: challenge,
             verifyUser: requireUserVerification,
             relyingPartyID: config.relyingPartyID,
             relyingPartyOrigin: config.relyingPartyOrigin,
@@ -111,14 +112,14 @@ public struct WebAuthnManager {
         // TODO: Step 18. -> Verify client extensions
 
         // Step 24.
-        guard try await confirmCredentialIDNotRegisteredYet(parsedData.id) else {
+        guard try await confirmCredentialIDNotRegisteredYet(parsedData.id.asString()) else {
             throw WebAuthnError.credentialIDAlreadyExists
         }
 
         // Step 25.
         return Credential(
             type: parsedData.type,
-            id: parsedData.id,
+            id: parsedData.id.urlDecoded.asString(),
             publicKey: attestedCredentialData.publicKey,
             signCount: parsedData.response.attestationObject.authenticatorData.counter,
             backupEligible: parsedData.response.attestationObject.authenticatorData.flags.isBackupEligible,
@@ -140,12 +141,11 @@ public struct WebAuthnManager {
     ///     "user verified" flag.
     /// - Returns: Authentication options ready for the browser.
     public func beginAuthentication(
-        challenge: EncodedBase64? = nil,
         timeout: TimeInterval? = 60,
         allowCredentials: [PublicKeyCredentialDescriptor]? = nil,
         userVerification: UserVerificationRequirement = .preferred
     ) throws -> PublicKeyCredentialRequestOptions {
-        let challenge = challenge ?? challengeGenerator.generate().base64EncodedString()
+        let challenge = challengeGenerator.generate()
         var timeoutInMilliseconds: UInt32? = nil
         if let timeout {
             timeoutInMilliseconds = UInt32(timeout * 1000)
@@ -172,7 +172,7 @@ public struct WebAuthnManager {
     public func finishAuthentication(
         credential: AuthenticationCredential,
         // clientExtensionResults: ,
-        expectedChallenge: URLEncodedBase64,
+        expectedChallenge: [UInt8],
         credentialPublicKey: [UInt8],
         credentialCurrentSignCount: UInt32,
         requireUserVerification: Bool = false
