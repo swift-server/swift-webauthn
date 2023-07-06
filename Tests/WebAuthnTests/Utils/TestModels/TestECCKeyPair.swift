@@ -39,7 +39,7 @@ struct TestECCKeyPair {
         return try privateKey.signature(for: data)
     }
 
-    static var signature: URLEncodedBase64 {
+    static var signature: [UInt8] {
         let authenticatorData = TestAuthDataBuilder()
             .validAuthenticationMock()
             // .counter([0, 0, 0, 1])
@@ -53,6 +53,6 @@ struct TestECCKeyPair {
         // swiftlint:disable:next force_try
         let signature = try! TestECCKeyPair.signature(data: signatureBase).derRepresentation
 
-        return signature.base64URLEncodedString()
+        return [UInt8](signature)
     }
 }

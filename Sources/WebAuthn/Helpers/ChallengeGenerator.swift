@@ -12,8 +12,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-import Foundation
-
 public struct ChallengeGenerator {
     var generate: () -> [UInt8]
 

@@ -21,14 +21,14 @@ final class WebAuthnManagerAuthenticationTests: XCTestCase {
     var webAuthnManager: WebAuthnManager!
 
     let challenge: [UInt8] = [1, 0, 1]
-    let relyingPartyDisplayName = "Testy test"
     let relyingPartyID = "example.com"
+    let relyingPartyName = "Testy test"
     let relyingPartyOrigin = "https://example.com"
 
     override func setUp() {
-        let config = WebAuthnConfig(
-            relyingPartyDisplayName: relyingPartyDisplayName,
+        let config = WebAuthnManager.Config(
             relyingPartyID: relyingPartyID,
+            relyingPartyName: relyingPartyName,
             relyingPartyOrigin: relyingPartyOrigin
         )
         webAuthnManager = .init(config: config, challengeGenerator: .mock(generate: challenge))
@@ -42,7 +42,7 @@ final class WebAuthnManagerAuthenticationTests: XCTestCase {
             userVerification: .preferred
         )
 
-        XCTAssertEqual(options.challenge, challenge.base64EncodedString())
+        XCTAssertEqual(options.challenge, challenge)
         XCTAssertEqual(options.timeout, 1234000)    // timeout converted to milliseconds
         XCTAssertEqual(options.rpId, relyingPartyID)
         XCTAssertEqual(options.allowCredentials, allowCredentials)
@@ -56,31 +56,17 @@ final class WebAuthnManagerAuthenticationTests: XCTestCase {
         )
     }
 
-    func testFinishAuthenticationFailsIfClientDataJSONIsNotBase64() throws {
-        try assertThrowsError(
-            finishAuthentication(clientDataJSON: "%"),
-            expect: WebAuthnError.invalidClientDataJSON
-        )
-    }
-
     func testFinishAuthenticationFailsIfClientDataJSONDecodingFails() throws {
-        try assertThrowsError(finishAuthentication(clientDataJSON: "abc")) { (_: DecodingError) in
+        try assertThrowsError(finishAuthentication(clientDataJSON: [0])) { (_: DecodingError) in
             return
         }
-    }
-
-    func testFinishAuthenticationFailsIfAuthenticatorDataIsInvalid() throws {
-        try assertThrowsError(
-            finishAuthentication(authenticatorData: "%"),
-            expect: WebAuthnError.invalidAuthenticatorData
-        )
     }
 
     func testFinishAuthenticationFailsIfCeremonyTypeDoesNotMatch() throws {
         var clientDataJSON = TestClientDataJSON()
         clientDataJSON.type = "webauthn.create"
         try assertThrowsError(
-            finishAuthentication(clientDataJSON: clientDataJSON.base64URLEncoded),
+            finishAuthentication(clientDataJSON: clientDataJSON.jsonBytes),
             expect: CollectedClientData.CollectedClientDataVerifyError.ceremonyTypeDoesNotMatch
         )
     }
@@ -91,7 +77,8 @@ final class WebAuthnManagerAuthenticationTests: XCTestCase {
                 authenticatorData: TestAuthDataBuilder()
                     .validAuthenticationMock()
                     .rpIDHash(fromRpID: "wrong-id.org")
-                    .buildAsBase64URLEncoded()
+                    .build()
+                    .byteArrayRepresentation
             ),
             expect: WebAuthnError.relyingPartyIDHashDoesNotMatch
         )
@@ -103,7 +90,8 @@ final class WebAuthnManagerAuthenticationTests: XCTestCase {
                 authenticatorData: TestAuthDataBuilder()
                     .validAuthenticationMock()
                     .flags(0b10000000)
-                    .buildAsBase64URLEncoded()
+                    .build()
+                    .byteArrayRepresentation
             ),
             expect: WebAuthnError.userPresentFlagNotSet
         )
@@ -115,7 +103,8 @@ final class WebAuthnManagerAuthenticationTests: XCTestCase {
                 authenticatorData: TestAuthDataBuilder()
                     .validAuthenticationMock()
                     .flags(0b10000001)
-                    .buildAsBase64URLEncoded(),
+                    .build()
+                    .byteArrayRepresentation,
                 requireUserVerification: true
             ),
             expect: WebAuthnError.userVerifiedFlagNotSet
@@ -128,7 +117,8 @@ final class WebAuthnManagerAuthenticationTests: XCTestCase {
                 authenticatorData: TestAuthDataBuilder()
                     .validAuthenticationMock()
                     .counter([0, 0, 0, 1]) // signCount = 1
-                    .buildAsBase64URLEncoded(),
+                    .build()
+                    .byteArrayRepresentation,
                 credentialCurrentSignCount: 2
             ),
             expect: WebAuthnError.potentialReplayAttack
@@ -142,46 +132,50 @@ final class WebAuthnManagerAuthenticationTests: XCTestCase {
         let authenticatorData = TestAuthDataBuilder()
                 .validAuthenticationMock()
                 .counter([0, 0, 0, 1])
-                .buildAsBase64URLEncoded()
+                .build()
+                .byteArrayRepresentation
 
         // Create a signature. This part is usually performed by the authenticator
-        let clientData: Data = TestClientDataJSON(type: "webauthn.get").jsonData
+
+        // ATTENTION: It is very important that we encode `TestClientDataJSON` only once!!! Subsequent calls to
+        // `jsonBytes` will result in different json (and thus the signature verification will fail)
+        // This has already cost me hours of troubleshooting twice
+        let clientData = TestClientDataJSON(type: "webauthn.get").jsonBytes
         let clientDataHash = SHA256.hash(data: clientData)
-        let rawAuthenticatorData = authenticatorData.urlDecoded.decoded!
-        let signatureBase = rawAuthenticatorData + clientDataHash
+        let signatureBase = Data(authenticatorData) + clientDataHash
         let signature = try TestECCKeyPair.signature(data: signatureBase).derRepresentation
 
         let verifiedAuthentication = try finishAuthentication(
             credentialID: credentialID,
-            clientDataJSON: clientData.base64URLEncodedString(),
+            clientDataJSON: clientData,
             authenticatorData: authenticatorData,
-            signature: signature.base64URLEncodedString(),
+            signature: [UInt8](signature),
             credentialCurrentSignCount: oldSignCount
         )
 
-        XCTAssertEqual(verifiedAuthentication.credentialID, credentialID)
+        XCTAssertEqual(verifiedAuthentication.credentialID, credentialID.base64URLEncodedString())
         XCTAssertEqual(verifiedAuthentication.newSignCount, oldSignCount + 1)
     }
 
     /// Using the default parameters `finishAuthentication` should succeed.
     private func finishAuthentication(
-        credentialID: URLEncodedBase64 = TestConstants.mockCredentialID,
-        clientDataJSON: URLEncodedBase64 = TestClientDataJSON(type: "webauthn.get").base64URLEncoded,
-        authenticatorData: URLEncodedBase64 = TestAuthDataBuilder().validAuthenticationMock()
-            .buildAsBase64URLEncoded(),
-        signature: URLEncodedBase64 = TestECCKeyPair.signature,
-        userHandle: String? = "NjI2OEJENkUtMDgxRS00QzExLUE3QzMtM0REMEFGMzNFQzE0",
-        attestationObject: String? = nil,
+        credentialID: [UInt8] = TestConstants.mockCredentialID,
+        clientDataJSON: [UInt8] = TestClientDataJSON(type: "webauthn.get").jsonBytes,
+        authenticatorData: [UInt8] = TestAuthDataBuilder().validAuthenticationMock().build().byteArrayRepresentation,
+        signature: [UInt8] = TestECCKeyPair.signature,
+        userHandle: [UInt8]? = "36323638424436452d303831452d344331312d413743332d334444304146333345433134".hexadecimal!,
+        attestationObject: [UInt8]? = nil,
         authenticatorAttachment: String? = "platform",
         type: String = "public-key",
-        expectedChallenge: URLEncodedBase64 = TestConstants.mockChallenge,
+        expectedChallenge: [UInt8] = TestConstants.mockChallenge,
         credentialPublicKey: [UInt8] = TestCredentialPublicKeyBuilder().validMock().buildAsByteArray(),
         credentialCurrentSignCount: UInt32 = 0,
         requireUserVerification: Bool = false
     ) throws -> VerifiedAuthentication {
         try webAuthnManager.finishAuthentication(
             credential: AuthenticationCredential(
-                id: credentialID,
+                id: credentialID.base64URLEncodedString(),
+                rawID: credentialID,
                 response: AuthenticatorAssertionResponse(
                     clientDataJSON: clientDataJSON,
                     authenticatorData: authenticatorData,

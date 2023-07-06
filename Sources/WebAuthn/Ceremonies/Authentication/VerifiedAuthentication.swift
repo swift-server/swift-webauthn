@@ -16,7 +16,7 @@ import Foundation
 
 /// On successful authentication, this structure contains a summary of the authentication flow
 public struct VerifiedAuthentication {
-    public enum CredentialDeviceType: String, Codable {
+    public enum CredentialDeviceType: String {
         case singleDevice = "single_device"
         case multiDevice = "multi_device"
     }

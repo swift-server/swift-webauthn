@@ -17,7 +17,7 @@ import WebAuthn
 
 struct TestClientDataJSON: Encodable {
     var type = "webauthn.create"
-    var challenge = TestConstants.mockChallenge
+    var challenge: URLEncodedBase64 = TestConstants.mockChallenge.base64URLEncodedString()
     var origin = "https://example.com"
     var crossOrigin = false
     var randomOtherKey = "123"
@@ -26,8 +26,16 @@ struct TestClientDataJSON: Encodable {
         jsonData.base64URLEncodedString()
     }
 
+    /// Returns this `TestClientDataJSON` as encoded json. On **Linux** this is NOT idempotent. Subsequent calls
+    /// will result in different `Data`
     var jsonData: Data {
         // swiftlint:disable:next force_try
         try! JSONEncoder().encode(self)
+    }
+
+    /// Returns this `TestClientDataJSON` as encoded json. On **Linux** this is NOT idempotent. Subsequent calls
+    /// will result in different bytes
+    var jsonBytes: [UInt8] {
+        [UInt8](jsonData)
     }
 }
