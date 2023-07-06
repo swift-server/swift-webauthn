@@ -4,21 +4,16 @@ Explains how to use this library in a server <-> website scenario.
 
 The library exposes four methods through ``WebAuthnManager``:
 
-- ``WebAuthnManager/beginRegistration(user:timeout:attestation:publicKeyCredentialParameters:)``
+- ``WebAuthnManager/beginRegistration(user:timeoutInSeconds:attestation:publicKeyCredentialParameters:)``
 - ``WebAuthnManager/finishRegistration(challenge:credentialCreationData:requireUserVerification:supportedPublicKeyAlgorithms:pemRootCertificatesByFormat:confirmCredentialIDNotRegisteredYet:)``
-- ``WebAuthnManager/beginAuthentication(challenge:timeout:allowCredentials:userVerification:)``
+- ``WebAuthnManager/beginAuthentication(timeout:allowCredentials:userVerification:)``
 - ``WebAuthnManager/finishAuthentication(credential:expectedChallenge:credentialPublicKey:credentialCurrentSignCount:requireUserVerification:)``
 
-Generally, the library makes the following assumptions about how a Relying Party implementing this library will
-interface with a client that will handle calling the WebAuthn API:
-
-1. JSON is the preferred data type for transmitting registration and authentication options from the server to
-   the client to feed to `navigator.credentials.create()` and `navigator.credentials.get()` respectively.
-
-2. JSON is the preferred data type for transmitting WebAuthn responses from the client to the Relying Party.
-
-3. Bytes are not directly transmittable in either direction as JSON, and so should be encoded to and decoded
-   using Base64 URL encoding. To make life a little bit easier ``URLEncodedBase64`` and ``EncodedBase64`` indicate whether a `String` is currently encoded or not.
+> Important information in advance:
+    Because bytes are not directly transmittable in either direction as JSON this library provides custom `Codable` implementations for a few types.
+    When using `Codable` to encode ``PublicKeyCredentialCreationOptions`` and ``PublicKeyCredentialRequestOptions`` byte array properties will be encoded to base64url strings.
+    When using `Codable` to decode ``RegistrationCredential`` and ``AuthenticationCredential`` base64url encoded strings will be decoded to byte arrays.
+    When data transmission happens without JSON (e.g. through GRPC) the byte arrays can be transmitted directly. In that case don't use the default `Codable` implementation provided by this library.
 
 ## Limitations
 
@@ -31,8 +26,8 @@ There are a few things this library currently does **not** support:
 
 3. Attestation verification is currently not supported, we do however plan to add support for that. Some work has been
    done already, but there are more pieces missing. In most cases attestation verification is not recommended since it
-   causes a lot of overhead. [From Yubico](https://developers.yubico.com/WebAuthn/WebAuthn_Developer_Guide/Attestation.html):
-   > "If a service does not have a specific need for attestation information, namely a well defined policy for what to
+   causes a lot of overhead.
+   > [From Yubico](https://developers.yubico.com/WebAuthn/WebAuthn_Developer_Guide/Attestation.html): "If a service does not have a specific need for attestation information, namely a well defined policy for what to
      do with it and why, it is not recommended to verify authenticator attestations"
 
 ### Setup
@@ -40,12 +35,11 @@ There are a few things this library currently does **not** support:
 Configure your backend with a ``WebAuthnManager`` instance:
 
 ```swift
-app.webAuthn = WebAuthnManager(
-    config: WebAuthnConfig(
-        relyingPartyDisplayName: "My Fancy Web App",
+let webAuthnManager = WebAuthnManager(
+    config: .init(
         relyingPartyID: "example.com",
-        relyingPartyOrigin: "https://example.com",
-        timeout: 600
+        relyingPartyName: "My Fancy Web App",
+        relyingPartyOrigin: "https://example.com"
     )
 )
 ```
@@ -59,18 +53,18 @@ Scenario: A user wants to signup on a website using WebAuthn.
 #### Explanation
 
 1. When tapping the "Register" button the client sends a request to
-   the backend. The backend responds to this request with a call to `begingRegistration(user:)` which then returns a
+   the backend. The relying party responds to this request with a call to ``WebAuthnManager/beginRegistration(user:timeoutInSeconds:attestation:publicKeyCredentialParameters:)`` which then returns a
    new ``PublicKeyCredentialRequestOptions``. This must be send back to the client so it can pass it to
    `navigator.credentials.create()`.
 
-2. Whatever `navigator.credentials.create()` returns will be send back to the backend, parsing it into
+2. Whatever `navigator.credentials.create()` returns will be send back to the relying party, parsing it into
    ``RegistrationCredential``.
     ```swift
-    let registrationCredential = try req.content.decode(RegistrationCredential.self)
+    let registrationCredential = try JSONDecoder().decode(RegistrationCredential.self)
     ```
 
-3. Next the backend calls `finishRegistration(challenge:credentialCreationData:)` with the previously
-   generated challenge and the received ``RegistrationCredential``. If `finishRegistration` succeeds a new ``Credential``
+3. Next the backend calls ``WebAuthnManager/finishRegistration(challenge:credentialCreationData:requireUserVerification:supportedPublicKeyAlgorithms:pemRootCertificatesByFormat:confirmCredentialIDNotRegisteredYet:)`` with the previously
+   generated challenge and the received ``RegistrationCredential``. If no error are thrown a new ``Credential``
    object will be returned. This object contains information about the new credential, including an id and the generated public-key. Persist this data in e.g. a database and link the entry to the user.
 
 ##### Example implementation (using Vapor)
@@ -113,13 +107,13 @@ Scenario: A user wants to log in on a website using WebAuthn.
 #### Explanation
 
 1. When tapping the "Login" button the client sends a request to
-   the backend. The backend responds to this request with a call to `beginAuthentication()` which then in turn
+   the relying party. The relying party responds to this request with a call to ``WebAuthnManager/beginAuthentication(timeout:allowCredentials:userVerification:)`` which then in turn
    returns a new ``PublicKeyCredentialRequestOptions``. This must be sent back to the client so it can pass it to
    `navigator.credentials.get()`.
-2. Whatever `navigator.credentials.get()` returns will be sent back to the backend, parsing it into
+2. Whatever `navigator.credentials.get()` returns will be sent back to the relying party, parsing it into
    ``AuthenticationCredential``.
    ```swift
-   let authenticationCredential = try req.content.decode(AuthenticationCredential.self)
+   let authenticationCredential = try JSONDecoder().decode(AuthenticationCredential.self)
    ```
 3. Next the backend calls
    ``WebAuthnManager/finishAuthentication(credential:expectedChallenge:credentialPublicKey:credentialCurrentSignCount:requireUserVerification:)``.
@@ -134,7 +128,7 @@ Scenario: A user wants to log in on a website using WebAuthn.
    will return a `VerifiedAuthentication` with the updated sign count and a few other pieces of information to be
    persisted. Use this to update the credential in the database.
 
-#### Example implementation
+#### Example implementation (using Vapor)
 
 ```swift
 // this endpoint will be called on clicking "Login"
@@ -155,9 +149,12 @@ authSessionRoutes.post("authenticate") { req -> HTTPStatus in
     let verifiedAuthentication = try req.webAuthn.finishAuthentication(
         credential: data,
         expectedChallenge: challenge,
-        credentialPublicKey: [UInt8](credential.publicKey.base64URLDecodedData!),
-        credentialCurrentSignCount: 0
+        credentialPublicKey: credential.publicKey,
+        credentialCurrentSignCount: credential.currentSignCount
     )
+
+    credential.currentSignCount = verifiedAuthentication.newSignCount
+    try await credential.save(on: req.db)
 
     req.auth.login(credential.user)
 

@@ -132,8 +132,6 @@ public struct WebAuthnManager {
     /// Generate options for retrieving a credential via navigator.credentials.get()
     ///
     /// - Parameters:
-    ///   - challenge: Optionally generate a challenge on your own. Defaults to `nil` which will let the library
-    ///     generate it.
     ///   - timeout: How long the browser should give the user to choose an authenticator. This value
     ///     is a *hint* and may be ignored by the browser. Defaults to 60 seconds.
     ///   - allowCredentials: A list of credentials registered to the user.

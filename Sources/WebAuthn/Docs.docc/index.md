@@ -23,7 +23,7 @@ the corresponding user in a database.
 ### Essentials
 
 - ``WebAuthnManager``
-- ``WebAuthnConfig``
+- ``WebAuthnManager/Config``
 - ``PublicKeyCredentialUserEntity``
 
 ### Responses
