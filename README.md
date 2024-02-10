@@ -10,7 +10,7 @@ easy to leverage the power of WebAuthn.
 Add the following entry in your `Package.swift` to start using `WebAuthn`:
 
 ```swift
-.package(url: "https://github.com/swift-server/webauthn-swift.git", from: "1.0.0-alpha")
+.package(url: "https://github.com/swift-server/webauthn-swift.git", from: "1.0.0-alpha.1")
 ```
 
 and `WebAuthn` dependency to your target:
