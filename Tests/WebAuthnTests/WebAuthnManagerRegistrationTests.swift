@@ -14,7 +14,7 @@
 
 @testable import WebAuthn
 import XCTest
-import SwiftCBOR
+import PotentCBOR
 
 // swiftlint:disable:next type_body_length
 final class WebAuthnManagerRegistrationTests: XCTestCase {

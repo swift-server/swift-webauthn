@@ -12,8 +12,9 @@
 //
 //===----------------------------------------------------------------------===//
 
+import Foundation
 @testable import WebAuthn
-import SwiftCBOR
+import PotentCBOR
 
 struct TestCredentialPublicKey {
     var kty: CBOR?
@@ -23,7 +24,7 @@ struct TestCredentialPublicKey {
     var yCoordinate: CBOR?
 
     var byteArrayRepresentation: [UInt8] {
-        var value: [CBOR: CBOR] = [:]
+        var value = CBOR.Map()
         if let kty {
             value[COSEKey.kty.cbor] = kty
         }
@@ -39,7 +40,8 @@ struct TestCredentialPublicKey {
         if let yCoordinate {
             value[COSEKey.y.cbor] = yCoordinate
         }
-        return CBOR.map(value).encode()
+        let data = try! CBORSerialization.data(from: .map(value))
+        return [UInt8](data)
     }
 }
 
@@ -83,13 +85,13 @@ struct TestCredentialPublicKeyBuilder {
 
     func xCoordinate(_ xCoordinate: [UInt8]) -> Self {
         var temp = self
-        temp.wrapped.xCoordinate = .byteString(xCoordinate)
+        temp.wrapped.xCoordinate = .byteString(Data(xCoordinate))
         return temp
     }
 
     func yCoordiante(_ yCoordinate: [UInt8]) -> Self {
         var temp = self
-        temp.wrapped.yCoordinate = .byteString(yCoordinate)
+        temp.wrapped.yCoordinate = .byteString(Data(yCoordinate))
         return temp
     }
 }

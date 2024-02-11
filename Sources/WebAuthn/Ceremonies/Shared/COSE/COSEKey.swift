@@ -12,7 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-import SwiftCBOR
+import PotentCBOR
 
 enum COSEKey {
     // swiftlint:disable identifier_name
