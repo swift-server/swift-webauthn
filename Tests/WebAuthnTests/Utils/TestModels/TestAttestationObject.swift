@@ -12,10 +12,9 @@
 //
 //===----------------------------------------------------------------------===//
 
+import Foundation
 import WebAuthn
-import SwiftCBOR
-
-// protocol AttestationObjectParameter: CBOR {}
+import PotentCBOR
 
 struct TestAttestationObject {
     var fmt: CBOR?
@@ -23,7 +22,7 @@ struct TestAttestationObject {
     var authData: CBOR?
 
     var cborEncoded: [UInt8] {
-        var attestationObject: [CBOR: CBOR] = [:]
+        var attestationObject = CBOR.Map()
         if let fmt {
             attestationObject[.utf8String("fmt")] = fmt
         }
@@ -33,8 +32,8 @@ struct TestAttestationObject {
         if let authData {
             attestationObject[.utf8String("authData")] = authData
         }
-
-        return [UInt8](CBOR.map(attestationObject).encode())
+        let bytes = try! CBORSerialization.data(from: CBOR.map(attestationObject))
+        return [UInt8](bytes)
     }
 }
 
@@ -49,7 +48,7 @@ struct TestAttestationObjectBuilder {
         var temp = self
         temp.wrapped.fmt = .utf8String("none")
         temp.wrapped.attStmt = .map([:])
-        temp.wrapped.authData = .byteString(TestAuthDataBuilder().validMock().build().byteArrayRepresentation)
+        temp.wrapped.authData = .byteString(Data(TestAuthDataBuilder().validMock().build().byteArrayRepresentation))
         return temp
     }
 
@@ -111,19 +110,19 @@ struct TestAttestationObjectBuilder {
 
     func emptyAuthData() -> Self {
         var temp = self
-        temp.wrapped.authData = .byteString([])
+        temp.wrapped.authData = .byteString(Data())
         return temp
     }
 
     func zeroAuthData(byteCount: Int) -> Self {
         var temp = self
-        temp.wrapped.authData = .byteString([UInt8](repeating: 0, count: byteCount))
+        temp.wrapped.authData = .byteString(Data(repeating: 0, count: byteCount))
         return temp
     }
 
     func authData(_ builder: TestAuthDataBuilder) -> Self {
         var temp = self
-        temp.wrapped.authData = .byteString(builder.build().byteArrayRepresentation)
+        temp.wrapped.authData = .byteString(Data(builder.build().byteArrayRepresentation))
         return temp
     }
 

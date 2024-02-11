@@ -15,7 +15,7 @@
 import Crypto
 import _CryptoExtras
 import Foundation
-import SwiftCBOR
+import PotentCBOR
 
 protocol PublicKey {
     var algorithm: COSEAlgorithmIdentifier { get }
@@ -40,7 +40,10 @@ enum CredentialPublicKey {
     }
 
     init(publicKeyBytes: [UInt8]) throws {
-        guard let publicKeyObject = try CBOR.decode(publicKeyBytes) else {
+        var publicKeyObject: CBOR
+        do {
+            publicKeyObject = try CBORSerialization.cbor(from: Data(publicKeyBytes))
+        } catch {
             throw WebAuthnError.badPublicKeyBytes
         }
 
@@ -222,11 +225,10 @@ struct OKPPublicKey: PublicKey {
         }
         self.curve = curve
         // X Coordinate is key -2, or NegativeInt 1 for SwiftCBOR
-        guard let xCoordRaw = publicKeyObject[.negativeInt(1)],
-            case let .byteString(xCoordinateBytes) = xCoordRaw else {
+        guard let xCoordinateBytes = publicKeyObject[.negativeInt(1)]?.bytesStringValue else {
             throw WebAuthnError.invalidXCoordinate
         }
-        xCoordinate = xCoordinateBytes
+        xCoordinate = [UInt8](xCoordinateBytes)
     }
 
     func verify(signature: Data, data: Data) throws {

@@ -13,7 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 import Foundation
-import SwiftCBOR
+import PotentCBOR
 
 /// The response from the authenticator device for the creation of a new public key credential.
 ///
@@ -56,17 +56,17 @@ struct ParsedAuthenticatorAttestationResponse {
 
         // Step 11. (assembling attestationObject)
         let attestationObjectData = Data(rawResponse.attestationObject)
-        guard let decodedAttestationObject = try? CBOR.decode([UInt8](attestationObjectData)) else {
+        guard let decodedAttestationObject = try? CBORSerialization.cbor(from: attestationObjectData) else {
             throw WebAuthnError.invalidAttestationObject
         }
 
-        guard let authData = decodedAttestationObject["authData"],
-            case let .byteString(authDataBytes) = authData else {
+        guard let authData = decodedAttestationObject["authData"]?.bytesStringValue else {
             throw WebAuthnError.invalidAuthData
         }
-        guard let formatCBOR = decodedAttestationObject["fmt"],
-            case let .utf8String(format) = formatCBOR,
-            let attestationFormat = AttestationFormat(rawValue: format) else {
+
+        guard let format = decodedAttestationObject["fmt"]?.utf8StringValue,
+            let attestationFormat = AttestationFormat(rawValue: format)
+        else {
             throw WebAuthnError.invalidFmt
         }
 
@@ -75,8 +75,8 @@ struct ParsedAuthenticatorAttestationResponse {
         }
 
         attestationObject = AttestationObject(
-            authenticatorData: try AuthenticatorData(bytes: Data(authDataBytes)),
-            rawAuthenticatorData: Data(authDataBytes),
+            authenticatorData: try AuthenticatorData(bytes: authData),
+            rawAuthenticatorData: authData,
             format: attestationFormat,
             attestationStatement: attestationStatement
         )

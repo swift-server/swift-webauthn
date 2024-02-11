@@ -14,7 +14,7 @@
 
 @testable import WebAuthn
 import XCTest
-import SwiftCBOR
+import PotentCBOR
 import Crypto
 
 final class WebAuthnManagerAuthenticationTests: XCTestCase {
