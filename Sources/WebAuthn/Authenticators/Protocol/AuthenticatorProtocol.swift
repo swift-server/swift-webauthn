@@ -124,6 +124,9 @@ extension AuthenticatorProtocol {
     public func makeCredentials(
         with registration: AttestationRegistrationRequest
     ) async throws -> CredentialSource {
+        guard let chosenCredentialParameters = registration.publicKeyCredentialParameters.first(where: supportedPublicKeyCredentialParameters.contains(_:))
+        else { throw WebAuthnError.noSupportedCredentialParameters }
+        
         throw WebAuthnError.unsupported
     }
 }

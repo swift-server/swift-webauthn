@@ -14,7 +14,7 @@
 
 import Foundation
 
-/// Main entrypoint for WebAuthn operations.
+/// Main entrypoint for WebAuthn relying party (aka server-based) operations.
 ///
 /// Use this struct to perform registration and authentication ceremonies.
 ///

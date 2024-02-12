@@ -22,6 +22,11 @@ public struct KeyPairAuthenticator: AuthenticatorProtocol, Sendable {
     public let canPerformUserVerification: Bool = true
     public let canStoreCredentialSourceClientSide: Bool = true
     
+    /// The specific subset the client fully supports, in case more are added over time.
+    static let implementedPublicKeyCredentialParameterSubset: Set<PublicKeyCredentialParameters> = [
+        PublicKeyCredentialParameters(alg: .algES256),
+    ]
+    
     /// Initialize a key-pair based authenticator with a globally unique ID representing your application.
     /// - Note: To generate an AAGUID, run `% uuidgen` in your terminal. This value should generally not change across installations or versions of your app, and should be the same for every user.
     /// - Parameter attestationGloballyUniqueID: The AAGUID associated with the authenticator.
@@ -34,7 +39,7 @@ public struct KeyPairAuthenticator: AuthenticatorProtocol, Sendable {
     ) {
         self.attestationGloballyUniqueID = attestationGloballyUniqueID
         self.attachmentModality = attachmentModality
-        self.supportedPublicKeyCredentialParameters = supportedPublicKeyCredentialParameters
+        self.supportedPublicKeyCredentialParameters = supportedPublicKeyCredentialParameters.intersection(Self.implementedPublicKeyCredentialParameterSubset)
     }
     
     public func generateCredentialSource(
