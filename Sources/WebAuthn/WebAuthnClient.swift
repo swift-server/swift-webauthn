@@ -150,9 +150,94 @@ public struct WebAuthnClient {
         // Skip.
         
         /// Step 25. While lifetimeTimer has not expired, perform the following actions depending upon lifetimeTimer, and the state and response for each authenticator in authenticators:
-        // Skip.
-        
-        throw WebAuthnError.unsupported
+        do {
+            ///     → If lifetimeTimer expires,
+            ///         For each authenticator in issuedRequests invoke the authenticatorCancel operation on authenticator and remove authenticator from issuedRequests.
+            ///     → If the user exercises a user agent user-interface option to cancel the process,
+            ///         For each authenticator in issuedRequests invoke the authenticatorCancel operation on authenticator and remove authenticator from issuedRequests. Throw a "NotAllowedError" DOMException.
+            ///     → If options.signal is present and aborted,
+            ///         For each authenticator in issuedRequests invoke the authenticatorCancel operation on authenticator and remove authenticator from issuedRequests. Then throw the options.signal’s abort reason.
+            ///     → If an authenticator becomes available on this client device,
+            /// See ``KeyPairAuthenticator/makeCredentials(with:)`` for full implementation
+            ///     → If an authenticator ceases to be available on this client device,
+            ///         Remove authenticator from issuedRequests.
+            ///     → If any authenticator returns a status indicating that the user cancelled the operation,
+            ///         1. Remove authenticator from issuedRequests.
+            ///         2. For each remaining authenticator in issuedRequests invoke the authenticatorCancel operation on authenticator and remove it from issuedRequests.
+            ///             NOTE: Authenticators may return an indication of "the user cancelled the entire operation". How a user agent manifests this state to users is unspecified.
+            ///     → If any authenticator returns an error status equivalent to "InvalidStateError",
+            ///         1. Remove authenticator from issuedRequests.
+            ///         2. For each remaining authenticator in issuedRequests invoke the authenticatorCancel operation on authenticator and remove it from issuedRequests.
+            ///         3. Throw an "InvalidStateError" DOMException.
+            ///             NOTE: This error status is handled separately because the authenticator returns it only if excludeCredentialDescriptorList identifies a credential bound to the authenticator and the user has consented to the operation. Given this explicit consent, it is acceptable for this case to be distinguishable to the Relying Party.
+            ///     → If any authenticator returns an error status not equivalent to "InvalidStateError",
+            ///         Remove authenticator from issuedRequests.
+            ///         NOTE: This case does not imply user consent for the operation, so details about the error are hidden from the Relying Party in order to prevent leak of potentially identifying information. See § 14.5.1 Registration Ceremony Privacy for details.
+            
+            try await attestRegistration(AttestationRegistrationRequest(
+                options: options,
+                publicKeyCredentialParameters: publicKeyCredentialParameters,
+                clientDataHash: clientDataHash
+            ) { attestationObject in
+                throw WebAuthnError.unsupported
+            })
+            
+            ///     → If any authenticator indicates success,
+            ///         1. Remove authenticator from issuedRequests. This authenticator is now the selected authenticator.
+            ///         2. Let credentialCreationData be a struct whose items are:
+            ///             attestationObjectResult
+            ///                 whose value is the bytes returned from the successful authenticatorMakeCredential operation.
+            ///                 NOTE: this value is attObj, as defined in § 6.5.4 Generating an Attestation Object.
+            ///             clientDataJSONResult
+            ///                 whose value is the bytes of clientDataJSON.
+            ///             attestationConveyancePreferenceOption
+            ///                 whose value is the value of pkOptions.attestation.
+            ///             clientExtensionResults
+            ///                 whose value is an AuthenticationExtensionsClientOutputs object containing extension identifier → client extension output entries. The entries are created by running each extension’s client extension processing algorithm to create the client extension outputs, for each client extension in pkOptions.extensions.
+            ///         3. Let constructCredentialAlg be an algorithm that takes a global object global, and whose steps are:
+            ///             1. If credentialCreationData.attestationConveyancePreferenceOption’s value is
+            ///                 → none
+            ///                     Replace potentially uniquely identifying information with non-identifying versions of the same:
+            ///                         1. If the aaguid in the attested credential data is 16 zero bytes, credentialCreationData.attestationObjectResult.fmt is "packed", and "x5c" is absent from credentialCreationData.attestationObjectResult, then self attestation is being used and no further action is needed.
+            ///                         2. Otherwise
+            ///                             1. Replace the aaguid in the attested credential data with 16 zero bytes.
+            ///                             2. Set the value of credentialCreationData.attestationObjectResult.fmt to "none", and set the value of credentialCreationData.attestationObjectResult.attStmt to be an empty CBOR map. (See § 8.7 None Attestation Statement Format and § 6.5.4 Generating an Attestation Object).
+            ///                 → indirect
+            ///                     The client MAY replace the aaguid and attestation statement with a more privacy-friendly and/or more easily verifiable version of the same data (for example, by employing an Anonymization CA).
+            ///                 → direct or enterprise
+            ///                     Convey the authenticator's AAGUID and attestation statement, unaltered, to the Relying Party.
+            ///         5. Let attestationObject be a new ArrayBuffer, created using global’s %ArrayBuffer%, containing the bytes of credentialCreationData.attestationObjectResult’s value.
+            ///         6. Let id be attestationObject.authData.attestedCredentialData.credentialId.
+            ///         7. Let pubKeyCred be a new PublicKeyCredential object associated with global whose fields are:
+            ///             [[identifier]]
+            ///                 id
+            ///             authenticatorAttachment
+            ///                 The AuthenticatorAttachment value matching the current authenticator attachment modality of authenticator.
+            ///             response
+            ///                 A new AuthenticatorAttestationResponse object associated with global whose fields are:
+            ///                     clientDataJSON
+            ///                         A new ArrayBuffer, created using global’s %ArrayBuffer%, containing the bytes of credentialCreationData.clientDataJSONResult.
+            ///                     attestationObject
+            ///                         attestationObject
+            ///                     [[transports]]
+            ///                         A sequence of zero or more unique DOMStrings, in lexicographical order, that the authenticator is believed to support. The values SHOULD be members of AuthenticatorTransport, but client platforms MUST ignore unknown values.
+            ///                         If a user agent does not wish to divulge this information it MAY substitute an arbitrary sequence designed to preserve privacy. This sequence MUST still be valid, i.e. lexicographically sorted and free of duplicates. For example, it may use the empty sequence. Either way, in this case the user agent takes the risk that Relying Party behavior may be suboptimal.
+            ///                         If the user agent does not have any transport information, it SHOULD set this field to the empty sequence.
+            ///                         NOTE: How user agents discover transports supported by a given authenticator is outside the scope of this specification, but may include information from an attestation certificate (for example [FIDO-Transports-Ext]), metadata communicated in an authenticator protocol such as CTAP2, or special-case knowledge about a platform authenticator.
+            ///             [[clientExtensionsResults]]
+            ///                 A new ArrayBuffer, created using global’s %ArrayBuffer%, containing the bytes of credentialCreationData.clientExtensionResults.
+            ///         8. Return pubKeyCred.
+            ///     4. For each remaining authenticator in issuedRequests invoke the authenticatorCancel operation on authenticator and remove it from issuedRequests.
+            ///     5. Return constructCredentialAlg and terminate this algorithm.
+            
+            throw WebAuthnError.unsupported
+        } catch {
+            /// Step 35. Throw a "NotAllowedError" DOMException. In order to prevent information leak that could identify the user without consent, this step MUST NOT be executed before lifetimeTimer has expired. See § 14.5.1 Registration Ceremony Privacy for details.
+            /// During the above process, the user agent SHOULD show some UI to the user to guide them in the process of selecting and authorizing an authenticator.
+            
+            /// Propagate the error originally thrown.
+            throw error
+        }
     }
 }
 

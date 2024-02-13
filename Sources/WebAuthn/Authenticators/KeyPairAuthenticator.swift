@@ -13,7 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 import Foundation
-import Crypto
+@preconcurrency import Crypto
 
 public struct KeyPairAuthenticator: AuthenticatorProtocol, Sendable {
     public let attestationGloballyUniqueID: AAGUID
@@ -25,7 +25,20 @@ public struct KeyPairAuthenticator: AuthenticatorProtocol, Sendable {
     /// The specific subset the client fully supports, in case more are added over time.
     static let implementedPublicKeyCredentialParameterSubset: Set<PublicKeyCredentialParameters> = [
         PublicKeyCredentialParameters(alg: .algES256),
+        PublicKeyCredentialParameters(alg: .algES384),
+        PublicKeyCredentialParameters(alg: .algES512),
     ]
+    
+    /// Generate credentials for the full subset the implementation supports.
+    ///
+    /// This list must match those supported in ``KeyPairAuthenticator/implementedPublicKeyCredentialParameterSubset``.
+    static func generateCredentialSourceKey(for chosenCredentialParameters: PublicKeyCredentialParameters) -> CredentialSource.Key {
+        switch chosenCredentialParameters.alg {
+        case .algES256: .es256(P256.Signing.PrivateKey(compactRepresentable: false))
+        case .algES384: .es384(P384.Signing.PrivateKey(compactRepresentable: false))
+        case .algES512: .es521(P521.Signing.PrivateKey(compactRepresentable: false))
+        }
+    }
     
     /// Initialize a key-pair based authenticator with a globally unique ID representing your application.
     /// - Note: To generate an AAGUID, run `% uuidgen` in your terminal. This value should generally not change across installations or versions of your app, and should be the same for every user.
@@ -48,7 +61,13 @@ public struct KeyPairAuthenticator: AuthenticatorProtocol, Sendable {
         relyingPartyID: PublicKeyCredentialRelyingPartyEntity.ID,
         userHandle: PublicKeyCredentialUserEntity.ID
     ) async throws -> CredentialSource {
-        throw WebAuthnError.unsupported
+        CredentialSource(
+            id: UUID(),
+            key: Self.generateCredentialSourceKey(for: credentialParameters),
+            relyingPartyID: relyingPartyID,
+            userHandle: userHandle, 
+            counter: 0
+        )
     }
     
     public func filteredCredentialDescriptors(
@@ -72,17 +91,46 @@ public struct KeyPairAuthenticator: AuthenticatorProtocol, Sendable {
 
 extension KeyPairAuthenticator {
     public struct CredentialSource: AuthenticatorCredentialSourceProtocol, Sendable {
+        public enum Key: Sendable {
+            case es256(P256.Signing.PrivateKey)
+            case es384(P384.Signing.PrivateKey)
+            case es521(P521.Signing.PrivateKey)
+        }
+        
         public var id: UUID
+        public var key: Key
         public var relyingPartyID: PublicKeyCredentialRelyingPartyEntity.ID
         public var userHandle: PublicKeyCredentialUserEntity.ID
         public var counter: UInt32
         
         public var credentialParameters: PublicKeyCredentialParameters {
-            PublicKeyCredentialParameters(alg: .algES256)
+            switch key {
+            case .es256: PublicKeyCredentialParameters(alg: .algES256)
+            case .es384: PublicKeyCredentialParameters(alg: .algES384)
+            case .es521: PublicKeyCredentialParameters(alg: .algES512)
+            }
         }
         
         public var rawKeyData: Data {
-            Data()
+            switch key {
+            case .es256(let privateKey): privateKey.rawRepresentation
+            case .es384(let privateKey): privateKey.rawRepresentation
+            case .es521(let privateKey): privateKey.rawRepresentation
+            }
+        }
+        
+        public init(
+            id: ID,
+            key: Key,
+            relyingPartyID: PublicKeyCredentialRelyingPartyEntity.ID,
+            userHandle: PublicKeyCredentialUserEntity.ID,
+            counter: UInt32
+        ) {
+            self.id = id
+            self.key = key
+            self.relyingPartyID = relyingPartyID
+            self.userHandle = userHandle
+            self.counter = 0
         }
         
         public init(
@@ -97,6 +145,11 @@ extension KeyPairAuthenticator {
             else { throw WebAuthnError.unsupportedCredentialPublicKeyType }
             
             self.id = id
+            switch credentialParameters.alg {
+            case .algES256: key = .es256(try P256.Signing.PrivateKey(rawRepresentation: rawKeyData))
+            case .algES384: key = .es384(try P384.Signing.PrivateKey(rawRepresentation: rawKeyData))
+            case .algES512: key = .es521(try P521.Signing.PrivateKey(rawRepresentation: rawKeyData))
+            }
             self.relyingPartyID = relyingPartyID
             self.userHandle = userHandle
             self.counter = counter
@@ -106,7 +159,12 @@ extension KeyPairAuthenticator {
             authenticatorData: [UInt8],
             clientDataHash: SHA256Digest
         ) throws -> [UInt8] {
-            throw WebAuthnError.unsupported
+            let digest = authenticatorData + clientDataHash
+            return switch key {
+            case .es256(let privateKey): Array(try privateKey.signature(for: digest).derRepresentation)
+            case .es384(let privateKey): Array(try privateKey.signature(for: digest).derRepresentation)
+            case .es521(let privateKey): Array(try privateKey.signature(for: digest).derRepresentation)
+            }
         }
     }
 }
