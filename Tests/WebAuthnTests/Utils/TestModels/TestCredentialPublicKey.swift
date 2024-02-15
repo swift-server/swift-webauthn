@@ -23,23 +23,23 @@ struct TestCredentialPublicKey {
     var yCoordinate: CBOR?
 
     var byteArrayRepresentation: [UInt8] {
-        var value: [CBOR: CBOR] = [:]
+        var value: [(COSEKey, CBOR)] = []
         if let kty {
-            value[COSEKey.kty.cbor] = kty
+            value.append((COSEKey.kty, kty))
         }
         if let alg {
-            value[COSEKey.alg.cbor] = alg
+            value.append((COSEKey.alg, alg))
         }
         if let crv {
-            value[COSEKey.crv.cbor] = crv
+            value.append((COSEKey.crv, crv))
         }
         if let xCoordinate {
-            value[COSEKey.x.cbor] = xCoordinate
+            value.append((COSEKey.x, xCoordinate))
         }
         if let yCoordinate {
-            value[COSEKey.y.cbor] = yCoordinate
+            value.append((COSEKey.y, yCoordinate))
         }
-        return CBOR.map(value).encode()
+        return CBOR.encodeSortedPairs(value)
     }
 }
 
