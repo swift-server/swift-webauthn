@@ -22,6 +22,29 @@ public struct AttestationObject: Sendable {
     let rawAuthenticatorData: [UInt8]
     let format: AttestationFormat
     let attestationStatement: CBOR
+    
+    init(
+        authenticatorData: AuthenticatorData,
+        rawAuthenticatorData: [UInt8],
+        format: AttestationFormat,
+        attestationStatement: CBOR
+    ) {
+        self.authenticatorData = authenticatorData
+        self.rawAuthenticatorData = rawAuthenticatorData
+        self.format = format
+        self.attestationStatement = attestationStatement
+    }
+    
+    init(
+        authenticatorData: AuthenticatorData,
+        format: AttestationFormat,
+        attestationStatement: CBOR
+    ) {
+        self.authenticatorData = authenticatorData
+        self.rawAuthenticatorData = authenticatorData.bytes
+        self.format = format
+        self.attestationStatement = attestationStatement
+    }
 
     func verify(
         relyingPartyID: String,

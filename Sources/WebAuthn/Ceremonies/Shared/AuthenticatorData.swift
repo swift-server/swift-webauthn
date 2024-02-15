@@ -120,6 +120,29 @@ extension AuthenticatorData {
 
         return (data, length)
     }
+    
+    public var bytes: [UInt8] {
+        assert(relyingPartyIDHash.count == 32, "AuthenticatorData contains relyingPartyIDHash of length \(relyingPartyIDHash.count), which will likely not be decodable.")
+        var bytes: [UInt8] = []
+        
+        bytes += relyingPartyIDHash
+        bytes += flags.bytes
+        bytes += withUnsafeBytes(of: UInt32(counter).bigEndian) { Array($0) }
+        
+        assert((!flags.attestedCredentialData && attestedData == nil) || (flags.attestedCredentialData && attestedData != nil), "AuthenticatorData contains mismatch between attestedCredentialData flag and attestedData, which will likely not be decodable.")
+        if flags.attestedCredentialData, let attestedData {
+            bytes += attestedData.authenticatorAttestationGUID.bytes
+            bytes += withUnsafeBytes(of: UInt16(attestedData.credentialID.count).bigEndian) { Array($0) }
+            bytes += attestedData.credentialID
+            bytes += attestedData.publicKey
+        }
+        
+        assert((!flags.extensionDataIncluded && extData == nil) || (flags.extensionDataIncluded && extData != nil), "AuthenticatorData contains mismatch between extensionDataIncluded flag and extData, which will likely not be decodable.")
+        if flags.extensionDataIncluded, let extData {
+            bytes += extData
+        }
+        return bytes
+    }
 }
 
 /// A helper type to determine how many bytes were consumed when decoding CBOR items.
