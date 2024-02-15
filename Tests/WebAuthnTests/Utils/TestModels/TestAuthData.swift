@@ -62,7 +62,7 @@ struct TestAuthDataBuilder {
     func validMock() -> Self {
         self
             .rpIDHash(fromRpID: "example.com")
-            .flags(0b01000101)
+            .flags(0b11000101)
             .counter([0b00000000, 0b00000000, 0b00000000, 0b00000000])
             .attestedCredData(
                 aaguid: [UInt8](repeating: 0, count: 16),
@@ -139,6 +139,7 @@ struct TestAuthDataBuilder {
 
     func noExtensionData() -> Self {
         var temp = self
+        temp.wrapped.flags = temp.wrapped.flags.map{ $0 & 0b01111111 }
         temp.wrapped.extensions = nil
         return temp
     }
