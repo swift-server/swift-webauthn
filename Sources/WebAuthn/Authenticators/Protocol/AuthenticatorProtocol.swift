@@ -167,30 +167,50 @@ extension AuthenticatorProtocol {
         ///                 Let userVerification be false.
         ///     → is set to discouraged
         ///         Let userVerification be false.
-        let shouldPerformUserVerification = false
+//        let shouldPerformUserVerification = false
         
         /// Step 16. Let enterpriseAttestationPossible be a Boolean value, as follows. If pkOptions.attestation
         ///     → is set to enterprise
         ///         Let enterpriseAttestationPossible be true if the user agent wishes to support enterprise attestation for pkOptions.rp.id (see Step 8, above). Otherwise false.
         ///     → otherwise
         ///         Let enterpriseAttestationPossible be false.
-        let isEnterpriseAttestationPossible = false
+//        let isEnterpriseAttestationPossible = false
         
         /// Step 19. Let attestationFormats be a list of strings, initialized to the value of pkOptions.attestationFormats.
+//        let attestationFormats: [AttestationFormat] = []
+        
         /// Step 20. If pkOptions.attestation
         ///     → is set to none
         ///         Set attestationFormats be the single-element list containing the string “none”
         guard case .none = registration.options.attestation else { throw WebAuthnError.attestationFormatNotSupported }
         
         /// Step 22. Let excludeCredentialDescriptorList be a new list.
+//        let excludeCredentialDescriptorList: [PublicKeyCredentialDescriptor] = []
         /// Step 23. For each credential descriptor C in pkOptions.excludeCredentials:
         ///     1. If C.transports is not empty, and authenticator is connected over a transport not mentioned in C.transports, the client MAY continue.
         ///     2. Otherwise, Append C to excludeCredentialDescriptorList.
+        // Skip.
+        
         ///     3. Invoke the authenticatorMakeCredential operation on authenticator with clientDataHash, pkOptions.rp, pkOptions.user, requireResidentKey, userVerification, credTypesAndPubKeyAlgs, excludeCredentialDescriptorList, enterpriseAttestationPossible, attestationFormats, and authenticatorExtensions as parameters.
+        /*
+        registration.clientDataHash;
+        registration.options.relyingParty
+        registration.options.user
+        requiresResidentKey
+        shouldPerformUserVerification
+        registration.publicKeyCredentialParameters
+        excludeCredentialDescriptorList
+        isEnterpriseAttestationPossible
+        attestationFormats
+         */
+        
         /// Step 24. Append authenticator to issuedRequests.
+        // Skip.
         
         /// See [WebAuthn Level 3 Editor's Draft §6.3.2. The authenticatorMakeCredential Operation](https://w3c.github.io/webauthn/#sctn-op-make-cred)
         /// Step 1. Check if all the supplied parameters are syntactically well-formed and of the correct length. If not, return an error code equivalent to "UnknownError" and terminate the operation.
+        // Skip.
+        
         /// Step 2. Check if at least one of the specified combinations of PublicKeyCredentialType and cryptographic parameters in credTypesAndPubKeyAlgs is supported. If not, return an error code equivalent to "NotSupportedError" and terminate the operation.
         guard let chosenCredentialParameters = registration.publicKeyCredentialParameters.first(where: supportedPublicKeyCredentialParameters.contains(_:))
         else { throw WebAuthnError.noSupportedCredentialParameters }
@@ -202,12 +222,20 @@ extension AuthenticatorProtocol {
         ///         → does not consent to create a new credential
         ///             return an error code equivalent to "NotAllowedError" and terminate the operation.
         ///         NOTE: The purpose of this authorization gesture is not to proceed with creating a credential, but for privacy reasons to authorize disclosure of the fact that descriptor.id is bound to this authenticator. If the user consents, the client and Relying Party can detect this and guide the user to use a different authenticator. If the user does not consent, the authenticator does not reveal that descriptor.id is bound to it, and responds as if the user simply declined consent to create a credential.
+        // Skip.
+        
         /// Step 4. If requireResidentKey is true and the authenticator cannot store a client-side discoverable public key credential source, return an error code equivalent to "ConstraintError" and terminate the operation.
+        // Skip.
+        
         /// Step 5. If requireUserVerification is true and the authenticator cannot perform user verification, return an error code equivalent to "ConstraintError" and terminate the operation.
+        // Skip.
+        
         /// Step 6. Collect an authorization gesture confirming user consent for creating a new credential. The prompt for the authorization gesture is shown by the authenticator if it has its own output capability, or by the user agent otherwise. The prompt SHOULD display rpEntity.id, rpEntity.name, userEntity.name and userEntity.displayName, if possible.
         ///     → If requireUserVerification is true, the authorization gesture MUST include user verification.
         ///     → If requireUserPresence is true, the authorization gesture MUST include a test of user presence.
         ///     → If the user does not consent or if user verification fails, return an error code equivalent to "NotAllowedError" and terminate the operation.
+        // Skip.
+        
         /// Step 7. Once the authorization gesture has been completed and user consent has been obtained, generate a new credential object:
         ///     1. Let (publicKey, privateKey) be a new pair of cryptographic keys using the combination of PublicKeyCredentialType and cryptographic parameters represented by the first item in credTypesAndPubKeyAlgs that is supported by this authenticator.
         ///     2. Let userHandle be userEntity.id.
@@ -235,7 +263,11 @@ extension AuthenticatorProtocol {
         )
         
         /// Step 8. If any error occurred while creating the new credential object, return an error code equivalent to "UnknownError" and terminate the operation.
+        // Skip.
+        
         /// Step 9. Let processedExtensions be the result of authenticator extension processing for each supported extension identifier → authenticator extension input in extensions.
+        // Skip.
+        
         /// Step 10. If the authenticator:
         ///     → is a U2F device
         ///         let the signature counter value for the new credential be zero. (U2F devices may support signature counters but do not return a counter when making a credential. See [FIDO-U2F-Message-Formats].)
@@ -245,16 +277,45 @@ extension AuthenticatorProtocol {
         ///         allocate the counter, associate it with the new credential, and initialize the counter value as zero.
         ///     → does not support a signature counter
         ///         let the signature counter value for the new credential be constant at zero.
+        let counter: UInt32 = credentialSource.counter
+        
         /// Step 15. Let attestedCredentialData be the attested credential data byte array including the credentialId and publicKey.
+        let attestedCredentialData = AttestedCredentialData(
+            authenticatorAttestationGUID: attestationGloballyUniqueID,
+            credentialID: credentialSource.id.bytes,
+            publicKey: credentialSource.publicKey.bytes
+        )
+        
         /// Step 16. Let attestationFormat be the first supported attestation statement format identifier from attestationFormats, taking into account enterpriseAttestationPossible. If attestationFormats contains no supported value, then let attestationFormat be the attestation statement format identifier most preferred by this authenticator.
+        let attestationFormat = preferredAttestationFormat(from: [.none])
+        
         /// Step 17. Let authenticatorData be the byte array specified in § 6.1 Authenticator Data, including attestedCredentialData as the attestedCredentialData and processedExtensions, if any, as the extensions.
+        let authenticatorData = AuthenticatorData(
+            relyingPartyIDHash: SHA256.hash(data: Array(registration.options.relyingParty.id.utf8)),
+            flags: AuthenticatorFlags(
+                userPresent: true, // TODO: Make flags
+                userVerified: true, // TODO: Make flags
+                isBackupEligible: true,
+                isCurrentlyBackedUp: true
+            ),
+            counter: counter,
+            attestedData: attestedCredentialData,
+            extData: nil
+        )
+        
         /// Step 18. Create an attestation object for the new credential using the procedure specified in § 6.5.4 Generating an Attestation Object, the attestation statement format attestationFormat, and the values authenticatorData and hash, as well as taking into account the value of enterpriseAttestationPossible. For more details on attestation, see § 6.5 Attestation.
+        let attestationStatement = try await signAttestationStatement(
+            attestationFormat: attestationFormat,
+            authenticatorData: authenticatorData.bytes,
+            clientDataHash: registration.clientDataHash
+        )
+        
         /// On successful completion of this operation, the authenticator returns the attestation object to the client.
-//        try await registration.attemptRegistration.submitAttestationObject(
-//            attestationFormat: <#T##AttestationFormat#>,
-//            authenticatorData: <#T##AuthenticatorData#>,
-//            attestationStatement: <#T##CBOR#>
-//        )
+        try await registration.attemptRegistration.submitAttestationObject(
+            attestationFormat: attestationFormat,
+            authenticatorData: authenticatorData,
+            attestationStatement: attestationStatement
+        )
         
         return credentialSource
     }

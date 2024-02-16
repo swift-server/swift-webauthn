@@ -23,6 +23,8 @@ public protocol AuthenticatorCredentialSourceProtocol: Sendable, Identifiable wh
     var userHandle: PublicKeyCredentialUserEntity.ID { get }
     var counter: UInt32 { get }
     
+    var publicKey: PublicKey { get }
+    
     func signAssertion(
         authenticatorData: [UInt8],
         clientDataHash: SHA256Digest

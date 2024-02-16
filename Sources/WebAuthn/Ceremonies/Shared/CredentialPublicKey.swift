@@ -17,10 +17,12 @@ import _CryptoExtras
 import Foundation
 import SwiftCBOR
 
-protocol PublicKey: Sendable {
+public protocol PublicKey: Sendable {
     var algorithm: COSEAlgorithmIdentifier { get }
     /// Verify a signature was signed with the private key corresponding to the public key.
     func verify(signature: some DataProtocol, data: some DataProtocol) throws
+    
+    var bytes: [UInt8] { get }
 }
 
 enum CredentialPublicKey: Sendable {

@@ -59,6 +59,7 @@ public struct AttestationObject: Sendable {
             throw WebAuthnError.relyingPartyIDHashDoesNotMatch
         }
 
+        // TODO: Make flag
         guard authenticatorData.flags.userPresent else {
             throw WebAuthnError.userPresentFlagNotSet
         }

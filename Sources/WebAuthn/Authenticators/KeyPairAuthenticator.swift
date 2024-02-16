@@ -119,6 +119,14 @@ extension KeyPairAuthenticator {
             }
         }
         
+        public var publicKey: PublicKey {
+            switch key {
+            case .es256(let privateKey): EC2PublicKey(privateKey.publicKey)
+            case .es384(let privateKey): EC2PublicKey(privateKey.publicKey)
+            case .es521(let privateKey): EC2PublicKey(privateKey.publicKey)
+            }
+        }
+        
         public init(
             id: ID,
             key: Key,

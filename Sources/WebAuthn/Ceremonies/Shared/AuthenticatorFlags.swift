@@ -33,12 +33,12 @@ public struct AuthenticatorFlags: Equatable, Sendable {
         case extensionDataIncluded = 7
     }
 
-    var userPresent: Bool
-    var userVerified: Bool
-    var isBackupEligible: Bool
-    var isCurrentlyBackedUp: Bool
-    var attestedCredentialData: Bool
-    var extensionDataIncluded: Bool
+    var userPresent: Bool = false
+    var userVerified: Bool = false
+    var isBackupEligible: Bool = false
+    var isCurrentlyBackedUp: Bool = false
+    var attestedCredentialData: Bool = false
+    var extensionDataIncluded: Bool = false
 
     var deviceType: VerifiedAuthentication.CredentialDeviceType {
         isBackupEligible ? .multiDevice : .singleDevice
