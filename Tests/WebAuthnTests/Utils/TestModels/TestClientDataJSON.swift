@@ -17,7 +17,7 @@ import WebAuthn
 
 struct TestClientDataJSON: Encodable {
     var type = "webauthn.create"
-    var challenge: URLEncodedBase64 = TestConstants.mockChallenge.base64URLEncodedString()
+    var challenge: URLEncodedBase64 = TestConstants.mockChallenge.base64URLEncoded()
     var origin = "https://example.com"
     var crossOrigin = false
     var randomOtherKey = "123"

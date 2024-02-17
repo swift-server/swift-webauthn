@@ -56,7 +56,7 @@ struct TestAuthDataBuilder {
     }
 
     func buildAsBase64URLEncoded() -> URLEncodedBase64 {
-        build().byteArrayRepresentation.base64URLEncodedString()
+        build().byteArrayRepresentation.base64URLEncoded()
     }
 
     func validMock() -> Self {

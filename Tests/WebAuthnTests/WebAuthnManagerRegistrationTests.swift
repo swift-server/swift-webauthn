@@ -66,7 +66,7 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
 
     func testFinishRegistrationFailsIfChallengeDoesNotMatch() async throws {
         var clientDataJSON = TestClientDataJSON()
-        clientDataJSON.challenge = [0, 2, 4].base64URLEncodedString()
+        clientDataJSON.challenge = [0, 2, 4].base64URLEncoded()
         try await assertThrowsError(
             await finishRegistration(
                 challenge: [UInt8]("definitely another challenge".utf8),
@@ -311,7 +311,7 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
         )
         XCTAssertNotNil(credential)
 
-        XCTAssertEqual(credential.id, credentialID.base64EncodedString().asString())
+        XCTAssertEqual(credential.id, credentialID.base64URLEncoded().value)
         XCTAssertEqual(credential.publicKey, credentialPublicKey)
     }
 
@@ -340,7 +340,7 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
         try await webAuthnManager.finishRegistration(
             challenge: challenge,
             credentialCreationData: RegistrationCredential(
-                id: rawID.base64URLEncodedString(),
+                id: rawID.base64URLEncoded(),
                 type: type,
                 rawID: rawID,
                 attestationResponse: AuthenticatorAttestationResponse(

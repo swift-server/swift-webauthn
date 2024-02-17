@@ -58,7 +58,7 @@ struct TestAttestationObjectBuilder {
     }
 
     func buildBase64URLEncoded() -> URLEncodedBase64 {
-        build().cborEncoded.base64URLEncodedString()
+        build().cborEncoded.base64URLEncoded()
     }
 
     // MARK: fmt

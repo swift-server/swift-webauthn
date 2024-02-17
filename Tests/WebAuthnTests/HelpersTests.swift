@@ -22,11 +22,11 @@ final class HelpersTests: XCTestCase {
         let expectedBase64 = "AQABAAEBAAEAAQEAAAABAA=="
         let expectedBase64URL = "AQABAAEBAAEAAQEAAAABAA"
 
-        let base64Encoded = input.base64EncodedString()
-        let base64URLEncoded = input.base64URLEncodedString()
+        let base64Encoded = input.base64Encoded()
+        let base64URLEncoded = input.base64URLEncoded()
 
-        XCTAssertEqual(expectedBase64, base64Encoded.asString())
-        XCTAssertEqual(expectedBase64URL, base64URLEncoded.asString())
+        XCTAssertEqual(expectedBase64, base64Encoded.value)
+        XCTAssertEqual(expectedBase64URL, base64URLEncoded.value)
     }
 
     func testEncodeBase64Codable() throws {

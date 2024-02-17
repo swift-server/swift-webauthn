@@ -153,7 +153,7 @@ final class WebAuthnManagerAuthenticationTests: XCTestCase {
             credentialCurrentSignCount: oldSignCount
         )
 
-        XCTAssertEqual(verifiedAuthentication.credentialID, credentialID.base64URLEncodedString())
+        XCTAssertEqual(verifiedAuthentication.credentialID, credentialID.base64URLEncoded())
         XCTAssertEqual(verifiedAuthentication.newSignCount, oldSignCount + 1)
     }
 
@@ -174,7 +174,7 @@ final class WebAuthnManagerAuthenticationTests: XCTestCase {
     ) throws -> VerifiedAuthentication {
         try webAuthnManager.finishAuthentication(
             credential: AuthenticationCredential(
-                id: credentialID.base64URLEncodedString(),
+                id: credentialID.base64URLEncoded(),
                 rawID: credentialID,
                 response: AuthenticatorAssertionResponse(
                     clientDataJSON: clientDataJSON,

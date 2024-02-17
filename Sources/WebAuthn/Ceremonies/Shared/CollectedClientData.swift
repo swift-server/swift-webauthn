@@ -37,7 +37,7 @@ public struct CollectedClientData: Codable, Hashable {
 
     func verify(storedChallenge: [UInt8], ceremonyType: CeremonyType, relyingPartyOrigin: String) throws {
         guard type == ceremonyType else { throw CollectedClientDataVerifyError.ceremonyTypeDoesNotMatch }
-        guard challenge == storedChallenge.base64URLEncodedString() else {
+        guard challenge == storedChallenge.base64URLEncoded() else {
             throw CollectedClientDataVerifyError.challengeDoesNotMatch
         }
         guard origin == relyingPartyOrigin else { throw CollectedClientDataVerifyError.originDoesNotMatch }
