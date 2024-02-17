@@ -147,40 +147,57 @@ public struct WebAuthnClient {
         // Skip.
         
         /// Step 24. Start lifetimeTimer.
-        // Skip.
+        let timeoutTask = Task { try? await Task.sleep(for: timeout) }
         
         /// Step 25. While lifetimeTimer has not expired, perform the following actions depending upon lifetimeTimer, and the state and response for each authenticator in authenticators:
         do {
-            ///     → If lifetimeTimer expires,
-            ///         For each authenticator in issuedRequests invoke the authenticatorCancel operation on authenticator and remove authenticator from issuedRequests.
-            ///     → If the user exercises a user agent user-interface option to cancel the process,
-            ///         For each authenticator in issuedRequests invoke the authenticatorCancel operation on authenticator and remove authenticator from issuedRequests. Throw a "NotAllowedError" DOMException.
-            ///     → If options.signal is present and aborted,
-            ///         For each authenticator in issuedRequests invoke the authenticatorCancel operation on authenticator and remove authenticator from issuedRequests. Then throw the options.signal’s abort reason.
-            ///     → If an authenticator becomes available on this client device,
-            /// See ``KeyPairAuthenticator/makeCredentials(with:)`` for full implementation
-            ///     → If an authenticator ceases to be available on this client device,
-            ///         Remove authenticator from issuedRequests.
-            ///     → If any authenticator returns a status indicating that the user cancelled the operation,
-            ///         1. Remove authenticator from issuedRequests.
-            ///         2. For each remaining authenticator in issuedRequests invoke the authenticatorCancel operation on authenticator and remove it from issuedRequests.
-            ///             NOTE: Authenticators may return an indication of "the user cancelled the entire operation". How a user agent manifests this state to users is unspecified.
-            ///     → If any authenticator returns an error status equivalent to "InvalidStateError",
-            ///         1. Remove authenticator from issuedRequests.
-            ///         2. For each remaining authenticator in issuedRequests invoke the authenticatorCancel operation on authenticator and remove it from issuedRequests.
-            ///         3. Throw an "InvalidStateError" DOMException.
-            ///             NOTE: This error status is handled separately because the authenticator returns it only if excludeCredentialDescriptorList identifies a credential bound to the authenticator and the user has consented to the operation. Given this explicit consent, it is acceptable for this case to be distinguishable to the Relying Party.
-            ///     → If any authenticator returns an error status not equivalent to "InvalidStateError",
-            ///         Remove authenticator from issuedRequests.
-            ///         NOTE: This case does not imply user consent for the operation, so details about the error are hidden from the Relying Party in order to prevent leak of potentially identifying information. See § 14.5.1 Registration Ceremony Privacy for details.
-            
-            try await attestRegistration(AttestationRegistrationRequest(
-                options: options,
-                publicKeyCredentialParameters: publicKeyCredentialParameters,
-                clientDataHash: clientDataHash
-            ) { attestationObject in
-                throw WebAuthnError.unsupported
-            })
+            /// Let the caller do what it needs to do to coordinate with authenticators, so long as at least one of them calls the attestation callback.
+            let result: AttestationObject = try await withCancellableFirstSuccessfulContinuation { [attestRegistration, publicKeyCredentialParameters] continuation in
+                /// → If lifetimeTimer expires,
+                ///     For each authenticator in issuedRequests invoke the authenticatorCancel operation on authenticator and remove authenticator from issuedRequests.
+                Task {
+                    /// Let the timer run in the background to cancel the continuation if it runs over.
+                    await timeoutTask.value
+                    continuation.cancel() // TODO: Should be a timeout error
+                }
+                
+                /// → If the user exercises a user agent user-interface option to cancel the process,
+                ///     For each authenticator in issuedRequests invoke the authenticatorCancel operation on authenticator and remove authenticator from issuedRequests. Throw a "NotAllowedError" DOMException.
+                // Implemented in catch statement below.
+                
+                /// → If options.signal is present and aborted,
+                ///     For each authenticator in issuedRequests invoke the authenticatorCancel operation on authenticator and remove authenticator from issuedRequests. Then throw the options.signal’s abort reason.
+                // Skip.
+                
+                ///     → If an authenticator becomes available on this client device,
+                /// See ``KeyPairAuthenticator/makeCredentials(with:)`` for full implementation
+                /// → If an authenticator ceases to be available on this client device,
+                ///     Remove authenticator from issuedRequests.
+                /// → If any authenticator returns a status indicating that the user cancelled the operation,
+                ///     1. Remove authenticator from issuedRequests.
+                ///     2. For each remaining authenticator in issuedRequests invoke the authenticatorCancel operation on authenticator and remove it from issuedRequests.
+                ///         NOTE: Authenticators may return an indication of "the user cancelled the entire operation". How a user agent manifests this state to users is unspecified.
+                // User can cancel the main task instead.
+                
+                /// → If any authenticator returns an error status equivalent to "InvalidStateError",
+                ///     1. Remove authenticator from issuedRequests.
+                ///     2. For each remaining authenticator in issuedRequests invoke the authenticatorCancel operation on authenticator and remove it from issuedRequests.
+                ///     3. Throw an "InvalidStateError" DOMException.
+                ///         NOTE: This error status is handled separately because the authenticator returns it only if excludeCredentialDescriptorList identifies a credential bound to the authenticator and the user has consented to the operation. Given this explicit consent, it is acceptable for this case to be distinguishable to the Relying Party.
+                // TODO: Need to catch this specific type of error
+                /// → If any authenticator returns an error status not equivalent to "InvalidStateError",
+                ///         Remove authenticator from issuedRequests.
+                ///         NOTE: This case does not imply user consent for the operation, so details about the error are hidden from the Relying Party in order to prevent leak of potentially identifying information. See § 14.5.1 Registration Ceremony Privacy for details.
+                
+                /// Kick off the attestation process, waiting for one to succeed before the timeout.
+                try await attestRegistration(AttestationRegistrationRequest(
+                    options: options,
+                    publicKeyCredentialParameters: publicKeyCredentialParameters,
+                    clientDataHash: clientDataHash
+                ) { attestationObject in
+                    continuation.resume(returning: attestationObject)
+                })
+            }
             
             ///     → If any authenticator indicates success,
             ///         1. Remove authenticator from issuedRequests. This authenticator is now the selected authenticator.
@@ -234,7 +251,13 @@ public struct WebAuthnClient {
         } catch {
             /// Step 35. Throw a "NotAllowedError" DOMException. In order to prevent information leak that could identify the user without consent, this step MUST NOT be executed before lifetimeTimer has expired. See § 14.5.1 Registration Ceremony Privacy for details.
             /// During the above process, the user agent SHOULD show some UI to the user to guide them in the process of selecting and authorizing an authenticator.
-            
+            await withTaskCancellationHandler {
+                /// Make sure to wait until the timeout finishes if an error did occur.
+                await timeoutTask.value
+            } onCancel: {
+                /// However, if the user cancelled the process, stop the timer early.
+                timeoutTask.cancel()
+            }
             /// Propagate the error originally thrown.
             throw error
         }
