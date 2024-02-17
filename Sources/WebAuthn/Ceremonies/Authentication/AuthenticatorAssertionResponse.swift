@@ -83,7 +83,7 @@ struct ParsedAuthenticatorAssertionResponse {
 
         rawAuthenticatorData = Data(authenticatorAssertionResponse.authenticatorData)
         authenticatorData = try AuthenticatorData(bytes: rawAuthenticatorData)
-        signature = authenticatorAssertionResponse.signature.base64URLEncoded()
+        signature = URLEncodedBase64(bytes: authenticatorAssertionResponse.signature)
         userHandle = authenticatorAssertionResponse.userHandle
     }
 
@@ -127,7 +127,7 @@ struct ParsedAuthenticatorAssertionResponse {
         let signatureBase = rawAuthenticatorData + clientDataHash
 
         let credentialPublicKey = try CredentialPublicKey(publicKeyBytes: credentialPublicKey)
-        guard let decodedBytes = signature.urlDecoded.decodedBytes else { throw WebAuthnError.invalidSignature }
+        guard let decodedBytes = EncodedBase64(base64URL: signature).decodedBytes else { throw WebAuthnError.invalidSignature }
         try credentialPublicKey.verify(signature: Data(decodedBytes), data: signatureBase)
     }
 }

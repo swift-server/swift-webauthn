@@ -115,11 +115,11 @@ public struct WebAuthnManager {
         guard try await confirmCredentialIDNotRegisteredYet(parsedData.id.value) else {
             throw WebAuthnError.credentialIDAlreadyExists
         }
-
+        
         // Step 25.
         return Credential(
             type: parsedData.type,
-            id: parsedData.id.urlDecoded.value,
+            id: EncodedBase64(base64URL: parsedData.id).value,
             publicKey: attestedCredentialData.publicKey,
             signCount: parsedData.response.attestationObject.authenticatorData.counter,
             backupEligible: parsedData.response.attestationObject.authenticatorData.flags.isBackupEligible,

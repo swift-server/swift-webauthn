@@ -21,16 +21,15 @@ final class HelpersTests: XCTestCase {
         let input: [UInt8] = [1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 1, 0]
         let expectedBase64 = "AQABAAEBAAEAAQEAAAABAA=="
         let expectedBase64URL = "AQABAAEBAAEAAQEAAAABAA"
-
-        let base64Encoded = input.base64Encoded()
-        let base64URLEncoded = input.base64URLEncoded()
-
+        let base64Encoded = EncodedBase64(bytes: input)
+        let base64URLEncoded = URLEncodedBase64(bytes: input)
+        
         XCTAssertEqual(expectedBase64, base64Encoded.value)
         XCTAssertEqual(expectedBase64URL, base64URLEncoded.value)
     }
 
     func testEncodeBase64Codable() throws {
-        let base64 = EncodedBase64("AQABAAEBAAEAAQEAAAABAA==")
+        let base64 = EncodedBase64(base64Encoded: "AQABAAEBAAEAAQEAAAABAA==")
         let json = try JSONEncoder().encode(base64)
         let decodedBase64 = try JSONDecoder().decode(EncodedBase64.self, from: json)
         XCTAssertEqual(base64, decodedBase64)

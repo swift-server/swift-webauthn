@@ -44,8 +44,8 @@ public struct PublicKeyCredentialCreationOptions: Encodable {
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
-
-        try container.encode(challenge.base64URLEncoded(), forKey: .challenge)
+        
+        try container.encode(URLEncodedBase64(bytes: challenge), forKey: .challenge)
         try container.encode(user, forKey: .user)
         try container.encode(relyingParty, forKey: .relyingParty)
         try container.encode(publicKeyCredentialParameters, forKey: .publicKeyCredentialParameters)
@@ -139,8 +139,8 @@ public struct PublicKeyCredentialUserEntity: Encodable {
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
-
-        try container.encode(id.base64URLEncoded(), forKey: .id)
+        
+        try container.encode(URLEncodedBase64(bytes: id), forKey: .id)
         try container.encode(name, forKey: .name)
         try container.encode(displayName, forKey: .displayName)
     }
