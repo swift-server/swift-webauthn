@@ -43,21 +43,23 @@ public struct RegistrationCredential: Sendable {
     }
 }
 
-extension RegistrationCredential: Decodable {
+extension RegistrationCredential: Codable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
         id = try container.decode(URLEncodedBase64.self, forKey: .id)
         type = try container.decode(CredentialType.self, forKey: .type)
-        guard let rawID = try container.decode(URLEncodedBase64.self, forKey: .rawID).decodedBytes else {
-            throw DecodingError.dataCorruptedError(
-                forKey: .rawID,
-                in: container,
-                debugDescription: "Failed to decode base64url encoded rawID into bytes"
-            )
-        }
-        self.rawID = rawID
+        rawID = try container.decodeBytesFromURLEncodedBase64(forKey: .rawID)
         attestationResponse = try container.decode(AuthenticatorAttestationResponse.self, forKey: .attestationResponse)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        
+        try container.encode(id, forKey: .id)
+        try container.encode(rawID.base64URLEncodedString(), forKey: .rawID)
+        try container.encode(type, forKey: .type)
+        try container.encode(attestationResponse, forKey: .attestationResponse)
     }
 
     private enum CodingKeys: String, CodingKey {

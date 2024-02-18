@@ -30,12 +30,19 @@ public struct AuthenticatorAttestationResponse: Sendable {
     public let attestationObject: [UInt8]
 }
 
-extension AuthenticatorAttestationResponse: Decodable {
+extension AuthenticatorAttestationResponse: Codable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
         clientDataJSON = try container.decodeBytesFromURLEncodedBase64(forKey: .clientDataJSON)
         attestationObject = try container.decodeBytesFromURLEncodedBase64(forKey: .attestationObject)
+    }
+    
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        
+        try container.encode(clientDataJSON.base64URLEncodedString(), forKey: .clientDataJSON)
+        try container.encode(attestationObject.base64URLEncodedString(), forKey: .attestationObject)
     }
 
     private enum CodingKeys: String, CodingKey {
