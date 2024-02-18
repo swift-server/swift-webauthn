@@ -64,9 +64,7 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
         ).build().cborEncoded
 
         let registrationResponse = RegistrationCredential(
-            id: mockCredentialID.base64URLEncodedString(),
-            type: .publicKey,
-            rawID: mockCredentialID,
+            id: mockCredentialID,
             attestationResponse: AuthenticatorAttestationResponse(
                 clientDataJSON: mockClientDataJSON.jsonBytes,
                 attestationObject: mockAttestationObject

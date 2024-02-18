@@ -18,10 +18,10 @@ import Crypto
 
 /// Contains the cryptographic attestation that a new key pair was created by that authenticator.
 public struct AttestationObject: Sendable {
-    let authenticatorData: AuthenticatorData
-    let rawAuthenticatorData: [UInt8]
-    let format: AttestationFormat
-    let attestationStatement: CBOR
+    var authenticatorData: AuthenticatorData
+    var rawAuthenticatorData: [UInt8]
+    var format: AttestationFormat
+    var attestationStatement: CBOR
     
     init(
         authenticatorData: AuthenticatorData,
@@ -44,6 +44,37 @@ public struct AttestationObject: Sendable {
         self.rawAuthenticatorData = authenticatorData.bytes
         self.format = format
         self.attestationStatement = attestationStatement
+    }
+    
+    init(bytes: [UInt8]) throws {
+        guard let decodedAttestationObject = try? CBOR.decode(bytes, options: CBOROptions(maximumDepth: 16))
+        else { throw WebAuthnError.invalidAttestationObject }
+
+        guard 
+            let authData = decodedAttestationObject["authData"],
+            case let .byteString(authDataBytes) = authData
+        else { throw WebAuthnError.invalidAuthData }
+        self.authenticatorData = try AuthenticatorData(bytes: authDataBytes)
+        self.rawAuthenticatorData = authDataBytes
+        
+        guard
+            let formatCBOR = decodedAttestationObject["fmt"],
+            case let .utf8String(format) = formatCBOR,
+            let attestationFormat = AttestationFormat(rawValue: format)
+        else { throw WebAuthnError.invalidFmt }
+        self.format = attestationFormat
+
+        guard let attestationStatement = decodedAttestationObject["attStmt"]
+        else { throw WebAuthnError.missingAttStmt }
+        self.attestationStatement = attestationStatement
+    }
+    
+    var bytes: [UInt8] {
+        CBOR.encode([
+            "authData": CBOR.byteString(authenticatorData.bytes),
+            "fmt": CBOR.utf8String(format.rawValue),
+            "attStmt": attestationStatement,
+        ])
     }
 
     func verify(
