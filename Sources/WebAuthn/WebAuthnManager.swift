@@ -28,23 +28,23 @@ import Foundation
 /// When the client has received the response from the authenticator, pass the response to
 /// `finishAuthentication()`.
 public struct WebAuthnManager {
-    private let config: Config
+    private let configuration: Configuration
 
     private let challengeGenerator: ChallengeGenerator
 
     /// Create a new WebAuthnManager using the given configuration and challenge generator.
     ///
     /// - Parameters:
-    ///   - config: The configuration to use for this manager.
+    ///   - configuration: The configuration to use for this manager.
     ///   - challengeGenerator: The challenge generator to use for this manager. Defaults to a live generator.
-    public init(config: Config, challengeGenerator: ChallengeGenerator = .live) {
-        self.config = config
+    public init(configuration: Configuration, challengeGenerator: ChallengeGenerator = .live) {
+        self.configuration = configuration
         self.challengeGenerator = challengeGenerator
     }
 
     /// Generate a new set of registration data to be sent to the client.
     ///
-    /// This method will use the Relying Party information from the WebAuthnManager's config  to create ``PublicKeyCredentialCreationOptions``
+    /// This method will use the Relying Party information from the WebAuthnManager's configuration  to create ``PublicKeyCredentialCreationOptions``
     /// - Parameters:
     ///   - user: The user to register.
     ///   - timeout: How long the browser should give the user to choose an authenticator. This value
@@ -64,7 +64,7 @@ public struct WebAuthnManager {
         return PublicKeyCredentialCreationOptions(
             challenge: challenge,
             user: user,
-            relyingParty: .init(id: config.relyingPartyID, name: config.relyingPartyName),
+            relyingParty: .init(id: configuration.relyingPartyID, name: configuration.relyingPartyName),
             publicKeyCredentialParameters: publicKeyCredentialParameters,
             timeout: timeout,
             attestation: attestation
@@ -98,8 +98,8 @@ public struct WebAuthnManager {
         let attestedCredentialData = try await parsedData.verify(
             storedChallenge: challenge,
             verifyUser: requireUserVerification,
-            relyingPartyID: config.relyingPartyID,
-            relyingPartyOrigin: config.relyingPartyOrigin,
+            relyingPartyID: configuration.relyingPartyID,
+            relyingPartyOrigin: configuration.relyingPartyOrigin,
             supportedPublicKeyAlgorithms: supportedPublicKeyAlgorithms,
             pemRootCertificatesByFormat: pemRootCertificatesByFormat
         )
@@ -143,7 +143,7 @@ public struct WebAuthnManager {
         return PublicKeyCredentialRequestOptions(
             challenge: challenge,
             timeout: timeout,
-            rpId: config.relyingPartyID,
+            rpId: configuration.relyingPartyID,
             allowCredentials: allowCredentials,
             userVerification: userVerification
         )
@@ -172,8 +172,8 @@ public struct WebAuthnManager {
         let parsedAssertion = try ParsedAuthenticatorAssertionResponse(from: credential.response)
         try parsedAssertion.verify(
             expectedChallenge: expectedChallenge,
-            relyingPartyOrigin: config.relyingPartyOrigin,
-            relyingPartyID: config.relyingPartyID,
+            relyingPartyOrigin: configuration.relyingPartyOrigin,
+            relyingPartyID: configuration.relyingPartyID,
             requireUserVerification: requireUserVerification,
             credentialPublicKey: credentialPublicKey,
             credentialCurrentSignCount: credentialCurrentSignCount

@@ -26,12 +26,12 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
     let relyingPartyOrigin = "https://example.com"
 
     override func setUp() {
-        let config = WebAuthnManager.Config(
+        let configuration = WebAuthnManager.Configuration(
             relyingPartyID: relyingPartyID,
             relyingPartyName: relyingPartyDisplayName,
             relyingPartyOrigin: relyingPartyOrigin
         )
-        webAuthnManager = .init(config: config, challengeGenerator: .mock(generate: challenge))
+        webAuthnManager = .init(configuration: configuration, challengeGenerator: .mock(generate: challenge))
     }
 
     // MARK: - beginRegistration()

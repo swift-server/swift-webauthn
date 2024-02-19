@@ -25,11 +25,10 @@ Configure your Relying Party with a `WebAuthnManager` instance:
 
 ```swift
 let webAuthnManager = WebAuthnManager(
-    config: WebAuthnConfig(
-        relyingPartyDisplayName: "My Fancy Web App",
+    configuration: WebAuthnManager.Configuration(
         relyingPartyID: "example.com",
-        relyingPartyOrigin: "https://example.com",
-        timeout: 600
+        relyingPartyName: "My Fancy Web App",
+        relyingPartyOrigin: "https://example.com"
     )
 )
 ```

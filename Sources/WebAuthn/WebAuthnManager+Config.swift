@@ -15,8 +15,8 @@
 import Foundation
 
 extension WebAuthnManager {
-    /// Config represents the WebAuthn configuration.
-    public struct Config {
+    /// Configuration represents the WebAuthn configuration.
+    public struct Configuration {
         /// The relying party id is based on the host's domain.
         /// It does not include a scheme or port (like the `relyingPartyOrigin`).
         /// For example, if the origin is https://login.example.com:1337, then _login.example.com_ or _example.com_ are
@@ -29,7 +29,7 @@ extension WebAuthnManager {
         /// The domain, with HTTP protocol (e.g. "https://example.com")
         public let relyingPartyOrigin: String
 
-        /// Creates a new `WebAuthnConfig` with information about the Relying Party
+        /// Creates a new ``WebAuthnManager.Configuration`` with information about the Relying Party
         /// - Parameters:
         ///   - relyingPartyID: The relying party id is based on the host's domain. (e.g. _login.example.com_)
         ///   - relyingPartyName: Name for the Relying Party. Can be any string.

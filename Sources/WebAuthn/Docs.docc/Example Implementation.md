@@ -36,7 +36,7 @@ Configure your backend with a ``WebAuthnManager`` instance:
 
 ```swift
 let webAuthnManager = WebAuthnManager(
-    config: .init(
+    configuration: .init(
         relyingPartyID: "example.com",
         relyingPartyName: "My Fancy Web App",
         relyingPartyOrigin: "https://example.com"
