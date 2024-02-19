@@ -14,7 +14,7 @@
 
 import Foundation
 
-public protocol AuthenticatorCredentialSourceIdentifier: Hashable {
+public protocol AuthenticatorCredentialSourceIdentifier: Hashable, Sendable {
     init?(bytes: some BidirectionalCollection<UInt8>)
     var bytes: [UInt8] { get }
 }

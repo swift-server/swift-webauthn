@@ -20,6 +20,8 @@ import Crypto
 /// - Important: Unless you specifically need to implement a custom WebAuthn client, it is vastly preferable to reach for the built-in [AuthenticationServices](https://developer.apple.com/documentation/authenticationservices) framework instead, which provides out-of-the-box support for a user's [Passkey](https://developer.apple.com/documentation/authenticationservices/public-private_key_authentication/supporting_passkeys). However, this is not always possible or preferrable to use this credential, especially when you want to implement silent account creation, and wish to build it off of WebAuthn. For those cases, `WebAuthnClient` is available.
 ///
 /// Registration: To create a registration credential, first ask the relying party (aka the server) for ``PublicKeyCredentialCreationOptions``, then pass those to ``createRegistrationCredential(options:minTimeout:maxTimeout:origin:supportedPublicKeyCredentialParameters:attestRegistration:)`` along with a closure that can generate credentials from configured ``AuthenticatorProtocol`` types such as ``KeyPairAuthenticator`` by passing the provided ``AttestationRegistration`` to ``AuthenticatorProtocol/makeCredentials(with:)``, making sure to persist the resulting ``AuthenticatorProtocol/CredentialSource`` in some way. Finally, pass the resulting ``RegistrationCredential`` back to the relying party to finish registration.
+/// Authentication: To retrieve an authentication credential, first ask the relying party (aka the server) for ``PublicKeyCredentialRequestOptions``, then pass those to ``getAuthenticationCredential(options:minTimeout:maxTimeout:origin:assertAuthentication:)`` along with a closure that can validate credentials from configured ``AuthenticatorProtocol`` types such as ``KeyPairAuthenticator`` by passing the provided ``AssertionAuthentication`` to ``AuthenticatorProtocol/validateCredentials(with:)``, making sure to persist the resulting ``AuthenticatorProtocol/CredentialSource`` in some way. Finally, pass the resulting ``AuthenticationCredential`` back to the relying party to finish registration.
+///
 public struct WebAuthnClient {
     public init() {}
     
@@ -287,6 +289,24 @@ public struct WebAuthnClient {
             throw error
         }
     }
+    
+    public func assertAuthenticationCredential(
+        options: PublicKeyCredentialRequestOptions,
+        /// Recommended Range: https://w3c.github.io/webauthn/#recommended-range-and-default-for-a-webauthn-ceremony-timeout
+        minTimeout: Duration = .seconds(300),
+        maxTimeout: Duration = .seconds(600),
+        origin: String,
+//        mediation: ,
+        assertAuthentication: (_ authentication: AssertionAuthenticationRequest) async throws -> ()
+    ) async throws -> AuthenticationCredential {
+        /*
+         1. Perform setup and massage inputs
+         2. Prepare callback for assertion that an authenticator can call
+         3. Have authenticator validate and sign a provided credential that matches it, calling the authentication callback
+         4. Prepare final deliverable and cancel in-progress authenticators
+         */
+        throw WebAuthnError.unsupported
+    }
 }
 
 // MARK: Convenience Registration and Authentication
@@ -364,5 +384,92 @@ extension WebAuthnClient {
         else { throw WebAuthnError.missingCredentialSourceDespiteSuccess }
         
         return (registrationCredential, credentialSources)
+    }
+    
+    @inlinable
+    public func assertAuthenticationCredential<Authenticator: AuthenticatorProtocol>(
+        options: PublicKeyCredentialRequestOptions,
+        /// Recommended Range: https://w3c.github.io/webauthn/#recommended-range-and-default-for-a-webauthn-ceremony-timeout
+        minTimeout: Duration = .seconds(300),
+        maxTimeout: Duration = .seconds(600),
+        origin: String,
+//        mediation: ,
+        authenticator: Authenticator,
+        credentialStore: CredentialStore<Authenticator>
+    ) async throws -> (
+        authenticationCredential: AuthenticationCredential,
+        updatedCredentialSource: Authenticator.CredentialSource
+    ) {
+        var credentialSource: Authenticator.CredentialSource?
+        let authenticationCredential = try await assertAuthenticationCredential(
+            options: options,
+            minTimeout: minTimeout,
+            maxTimeout: maxTimeout,
+            origin: origin
+        ) { authentication in
+            credentialSource = try await authenticator.assertCredentials(
+                authenticationRequest: authentication,
+                credentials: credentialStore
+            )
+        }
+        
+        guard let credentialSource
+        else { throw WebAuthnError.missingCredentialSourceDespiteSuccess }
+        
+        return (authenticationCredential, credentialSource)
+    }
+    
+    @inlinable
+    public func assertAuthenticationCredential<each Authenticator: AuthenticatorProtocol & Sendable>(
+        options: PublicKeyCredentialRequestOptions,
+        /// Recommended Range: https://w3c.github.io/webauthn/#recommended-range-and-default-for-a-webauthn-ceremony-timeout
+        minTimeout: Duration = .seconds(300),
+        maxTimeout: Duration = .seconds(600),
+        origin: String,
+//        mediation: ,
+        authenticators: repeat each Authenticator,
+        credentialStores: repeat CredentialStore<(each Authenticator)>
+    ) async throws -> (
+        authenticationCredential: AuthenticationCredential,
+        updatedCredentialSources: (repeat Result<(each Authenticator).CredentialSource, Error>)
+    ) {
+        /// Wrapper function since `repeat` doesn't currently support complex expressions
+        @Sendable func authenticate<LocalAuthenticator: AuthenticatorProtocol & Sendable>(
+            authenticator: LocalAuthenticator,
+            authentication: AssertionAuthenticationRequest,
+            credentials: CredentialStore<LocalAuthenticator>
+        ) -> Task<LocalAuthenticator.CredentialSource, Error> {
+            Task {
+                try await authenticator.assertCredentials(
+                    authenticationRequest: authentication,
+                    credentials: credentials
+                )
+            }
+        }
+        
+        var credentialSources: (repeat Result<(each Authenticator).CredentialSource, Error>)?
+        let authenticationCredential = try await assertAuthenticationCredential(
+            options: options,
+            minTimeout: minTimeout,
+            maxTimeout: maxTimeout,
+            origin: origin
+        ) { authentication in
+            /// Run each authenticator in parallel as child tasks, so we can automatically propagate cancellation to each of them should it occur.
+            let tasks = (repeat authenticate(
+                authenticator: each authenticators,
+                authentication: authentication,
+                credentials: each credentialStores
+            ))
+            await withTaskCancellationHandler {
+                credentialSources = (repeat await (each tasks).result)
+            } onCancel: {
+                repeat (each tasks).cancel()
+            }
+        }
+        
+        guard let credentialSources
+        else { throw WebAuthnError.missingCredentialSourceDespiteSuccess }
+        
+        return (authenticationCredential, credentialSources)
     }
 }

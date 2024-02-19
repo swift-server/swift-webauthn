@@ -12,9 +12,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-import Crypto
+@preconcurrency import Crypto
 
-public struct AssertionAuthenticationRequest {
+public struct AssertionAuthenticationRequest: Sendable {
     public var options: PublicKeyCredentialRequestOptions
     public var clientDataHash: SHA256Digest
     public var attemptAuthentication: Callback
@@ -22,7 +22,7 @@ public struct AssertionAuthenticationRequest {
     init(
         options: PublicKeyCredentialRequestOptions,
         clientDataHash: SHA256Digest,
-        attemptAuthentication: @escaping (_ assertionResults: Results) async throws -> ()
+        attemptAuthentication: @Sendable @escaping (_ assertionResults: Results) async throws -> ()
     ) {
         self.options = options
         self.clientDataHash = clientDataHash
@@ -31,9 +31,9 @@ public struct AssertionAuthenticationRequest {
 }
 
 extension AssertionAuthenticationRequest {
-    public struct Callback {
+    public struct Callback: Sendable {
         /// The internal callback the attestation should call.
-        var callback: (_ assertionResults: Results) async throws -> ()
+        var callback: @Sendable (_ assertionResults: Results) async throws -> ()
         
         /// Submit the results of asserting a user's authentication request.
         ///
