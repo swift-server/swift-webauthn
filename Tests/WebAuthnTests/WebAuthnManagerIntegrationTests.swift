@@ -106,7 +106,7 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
             userVerification: userVerification
         )
 
-        XCTAssertEqual(authenticationOptions.rpId, configuration.relyingPartyID)
+        XCTAssertEqual(authenticationOptions.relyingPartyID, configuration.relyingPartyID)
         XCTAssertEqual(authenticationOptions.timeout, authenticationTimeout)
         XCTAssertEqual(authenticationOptions.challenge, mockChallenge)
         XCTAssertEqual(authenticationOptions.userVerification, userVerification)

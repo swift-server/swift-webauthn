@@ -44,7 +44,7 @@ final class WebAuthnManagerAuthenticationTests: XCTestCase {
 
         XCTAssertEqual(options.challenge, challenge)
         XCTAssertEqual(options.timeout, .seconds(1234))
-        XCTAssertEqual(options.rpId, relyingPartyID)
+        XCTAssertEqual(options.relyingPartyID, relyingPartyID)
         XCTAssertEqual(options.allowCredentials, allowCredentials)
         XCTAssertEqual(options.userVerification, .preferred)
     }
