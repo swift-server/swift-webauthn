@@ -291,6 +291,47 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
             expect: WebAuthnError.credentialRawIDTooLong
         )
     }
+    
+    func testFinishAuthenticationFailsIfCredentialIDTooLong() async throws {
+        /// This should succeed as it's on the border of being acceptable
+        _ = try await finishRegistration(
+            attestationObject: TestAttestationObjectBuilder()
+                .validMock()
+                .authData(
+                    TestAuthDataBuilder()
+                        .validMock()
+                        .attestedCredData(
+                            aaguid: Array(repeating: 0, count: 16),
+                            credentialIDLength: [0b000_00011, 0b1111_1111],
+                            credentialID: Array(repeating: 0, count: 1023),
+                            credentialPublicKey: TestCredentialPublicKeyBuilder().validMock().buildAsByteArray()
+                        )
+                )
+                .build()
+                .cborEncoded
+        )
+        
+        /// While this one should throw
+        try await assertThrowsError(
+            await finishRegistration(
+                attestationObject: TestAttestationObjectBuilder()
+                    .validMock()
+                    .authData(
+                        TestAuthDataBuilder()
+                            .validMock()
+                            .attestedCredData(
+                                aaguid: Array(repeating: 0, count: 16),
+                                credentialIDLength: [0b000_00100, 0b0000_0000],
+                                credentialID: Array(repeating: 0, count: 1024),
+                                credentialPublicKey: TestCredentialPublicKeyBuilder().validMock().buildAsByteArray()
+                            )
+                    )
+                    .build()
+                    .cborEncoded
+            ),
+            expect: WebAuthnError.credentialIDTooLong
+        )
+    }
 
     func testFinishRegistrationSucceeds() async throws {
         let credentialID: [UInt8] = [0, 1, 0, 1, 0, 1]
