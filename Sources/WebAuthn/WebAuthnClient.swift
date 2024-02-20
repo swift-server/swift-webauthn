@@ -299,6 +299,139 @@ public struct WebAuthnClient {
 //        mediation: ,
         assertAuthentication: (_ authentication: AssertionAuthenticationRequest) async throws -> ()
     ) async throws -> AuthenticationCredential {
+        /// See https://w3c.github.io/webauthn/#sctn-discover-from-external-source
+        /// Step 1. Assert: options.publicKey is present.
+        /// Step 2. Let pkOptions be the value of options.publicKey.
+        /// Step 3. If options.mediation is present with the value conditional:
+        ///     1. Let credentialIdFilter be the value of pkOptions.allowCredentials.
+        ///     2. Set pkOptions.allowCredentials to empty.
+        ///         NOTE: This prevents non-discoverable credentials from being used during conditional requests.
+        ///     3. Set a timer lifetimeTimer to a value of infinity.
+        ///         NOTE: lifetimeTimer is set to a value of infinity so that the user has the entire lifetime of the Document to interact with any input form control tagged with a "webauthn" autofill detail token. For example, upon the user clicking in such an input field, the user agent can render a list of discovered credentials for the user to select from, and perhaps also give the user the option to "try another way".
+        /// Step 4. Else:
+        ///     1. Let credentialIdFilter be an empty list.
+        ///     2. If pkOptions.timeout is present, check if its value lies within a reasonable range as defined by the client and if not, correct it to the closest value lying within that range. Set a timer lifetimeTimer to this adjusted value. If pkOptions.timeout is not present, then set lifetimeTimer to a client-specific default.
+        ///         See the recommended range and default for a WebAuthn ceremony timeout for guidance on deciding a reasonable range and default for pkOptions.timeout.
+        ///         NOTE: The user agent should take cognitive guidelines into considerations regarding timeout for users with special needs.
+        /// Step 5. Let callerOrigin be origin. If callerOrigin is an opaque origin, throw a "NotAllowedError" DOMException.
+        /// Step 6. Let effectiveDomain be the callerOrigin’s effective domain. If effective domain is not a valid domain, then throw a "SecurityError" DOMException.
+        ///     NOTE: An effective domain may resolve to a host, which can be represented in various manners, such as domain, ipv4 address, ipv6 address, opaque host, or empty host. Only the domain format of host is allowed here. This is for simplification and also is in recognition of various issues with using direct IP address identification in concert with PKI-based security.
+        /// Step 7. If pkOptions.rpId is not present, then set rpId to effectiveDomain.
+        ///     Otherwise:
+        ///         1. If pkOptions.rpId is not a registrable domain suffix of and is not equal to effectiveDomain, throw a "SecurityError" DOMException.
+        ///         2. Set rpId to pkOptions.rpId.
+        ///             NOTE: rpId represents the caller’s RP ID. The RP ID defaults to being the caller’s origin's effective domain unless the caller has explicitly set pkOptions.rpId when calling get().
+        /// Step 8. Let clientExtensions be a new map and let authenticatorExtensions be a new map.
+        /// Step 9. If pkOptions.extensions is present, then for each extensionId → clientExtensionInput of pkOptions.extensions:
+        ///     1. If extensionId is not supported by this client platform or is not an authentication extension, then continue.
+        ///     2. Set clientExtensions[extensionId] to clientExtensionInput.
+        ///     3. If extensionId is not an authenticator extension, then continue.
+        ///     4. Let authenticatorExtensionInput be the (CBOR) result of running extensionId’s client extension processing algorithm on clientExtensionInput. If the algorithm returned an error, continue.
+        ///     5. Set authenticatorExtensions[extensionId] to the base64url encoding of authenticatorExtensionInput.
+        /// Step 10. Let collectedClientData be a new CollectedClientData instance whose fields are:
+        ///     type
+        ///         The string "webauthn.get".
+        ///     challenge
+        ///         The base64url encoding of pkOptions.challenge
+        ///     origin
+        ///         The serialization of callerOrigin.
+        ///     topOrigin
+        ///         The serialization of callerOrigin’s top-level origin if the sameOriginWithAncestors argument passed to this internal method is false, else undefined.
+        ///     crossOrigin
+        ///         The inverse of the value of the sameOriginWithAncestors argument passed to this internal method.
+        /// Step 11. Let clientDataJSON be the JSON-compatible serialization of client data constructed from collectedClientData.
+        /// Step 12. Let clientDataHash be the hash of the serialized client data represented by clientDataJSON.
+        /// Step 13. If options.signal is present and aborted, throw the options.signal’s abort reason.
+        /// Step 14. Let issuedRequests be a new ordered set.
+        /// Step 15. Let savedCredentialIds be a new map.
+        /// Step 16. Let authenticators represent a value which at any given instant is a set of client platform-specific handles, where each item identifies an authenticator presently available on this client platform at that instant.
+        ///     NOTE: What qualifies an authenticator as "available" is intentionally unspecified; this is meant to represent how authenticators can be hot-plugged into (e.g., via USB) or discovered (e.g., via NFC or Bluetooth) by the client by various mechanisms, or permanently built into the client.
+        /// Step 17. Let silentlyDiscoveredCredentials be a new map whose entries are of the form: DiscoverableCredentialMetadata → authenticator.
+        /// Step 18. Consider the value of hints and craft the user interface accordingly, as the user-agent sees fit.
+        /// Step 19. Start lifetimeTimer.
+        /// Step 20. While lifetimeTimer has not expired, perform the following actions depending upon lifetimeTimer, and the state and response for each authenticator in authenticators:
+        ///     → If lifetimeTimer expires,
+        ///         For each authenticator in issuedRequests invoke the authenticatorCancel operation on authenticator and remove authenticator from issuedRequests.
+        ///     → If the user exercises a user agent user-interface option to cancel the process,
+        ///         For each authenticator in issuedRequests invoke the authenticatorCancel operation on authenticator and remove authenticator from issuedRequests. Throw a "NotAllowedError" DOMException.
+        ///     → If options.signal is present and aborted,
+        ///         For each authenticator in issuedRequests invoke the authenticatorCancel operation on authenticator and remove authenticator from issuedRequests. Then throw the options.signal’s abort reason.
+        ///     → If options.mediation is conditional and the user interacts with an input or textarea form control with an autocomplete attribute whose non-autofill credential type is "webauthn",
+        ///         Note: The "webauthn" autofill detail token must appear immediately after the last autofill detail token of type "Normal" or "Contact". For example:
+        ///             "username webauthn"
+        ///             "current-password webauthn"
+        ///         1. If silentlyDiscoveredCredentials is not empty:
+        ///             1. Prompt the user to optionally select a DiscoverableCredentialMetadata (credentialMetadata) from silentlyDiscoveredCredentials.
+        ///                 NOTE: The prompt shown SHOULD include values from credentialMetadata’s otherUI such as name and displayName.
+        ///             2. If the user selects a credentialMetadata,
+        ///                 1. Let publicKeyOptions be a temporary copy of pkOptions.
+        ///                 2. Let authenticator be the value of silentlyDiscoveredCredentials[credentialMetadata].
+        ///                 3. Set publicKeyOptions.allowCredentials to be a list containing a single PublicKeyCredentialDescriptor item whose id's value is set to credentialMetadata’s id's value and whoseid value is set to credentialMetadata’s type.
+        ///                 4. Execute the issuing a credential request to an authenticator algorithm with authenticator, savedCredentialIds, publicKeyOptions, rpId, clientDataHash, and authenticatorExtensions.
+        ///                     If this returns false, continue.
+        ///                 5. Append authenticator to issuedRequests.
+        ///     → If options.mediation is not conditional, issuedRequests is empty, pkOptions.allowCredentials is not empty, and no authenticator will become available for any public key credentials therein,
+        ///         Indicate to the user that no eligible credential could be found. When the user acknowledges the dialog, throw a "NotAllowedError" DOMException.
+        ///         NOTE: One way a client platform can determine that no authenticator will become available is by examining the transports members of the present PublicKeyCredentialDescriptor items of pkOptions.allowCredentials, if any. For example, if all PublicKeyCredentialDescriptor items list only internal, but all platform authenticators have been tried, then there is no possibility of satisfying the request. Alternatively, all PublicKeyCredentialDescriptor items may list transports that the client platform does not support.
+        ///     → If an authenticator becomes available on this client device,
+        ///         NOTE: This includes the case where an authenticator was available upon lifetimeTimer initiation.
+        ///         1. If options.mediation is conditional and the authenticator supports the silentCredentialDiscovery operation:
+        ///             1. Let collectedDiscoveredCredentialMetadata be the result of invoking the silentCredentialDiscovery operation on authenticator with rpId as parameter.
+        ///             2. For each credentialMetadata of collectedDiscoveredCredentialMetadata:
+        ///                 1. If credentialIdFilter is empty or credentialIdFilter contains an item whose id's value is set to credentialMetadata’s id, set silentlyDiscoveredCredentials[credentialMetadata] to authenticator.
+        ///                     NOTE: A request will be issued to this authenticator upon user selection of a credential via interaction with a particular UI context (see here for details).
+        ///         2. Else:
+        ///             1. Execute the issuing a credential request to an authenticator algorithm with authenticator, savedCredentialIds, pkOptions, rpId, clientDataHash, and authenticatorExtensions.
+        ///                 If this returns false, continue.
+        ///                 NOTE: This branch is taken if options.mediation is conditional and the authenticator does not support the silentCredentialDiscovery operation to allow use of such authenticators during a conditional user mediation request.
+        ///             2. Append authenticator to issuedRequests.
+        ///     → If an authenticator ceases to be available on this client device,
+        ///         Remove authenticator from issuedRequests.
+        ///     → If any authenticator returns a status indicating that the user cancelled the operation,
+        ///         1. Remove authenticator from issuedRequests.
+        ///         2. For each remaining authenticator in issuedRequests invoke the authenticatorCancel operation on authenticator and remove it from issuedRequests.
+        ///             NOTE: Authenticators may return an indication of "the user cancelled the entire operation". How a user agent manifests this state to users is unspecified.
+        ///     → If any authenticator returns an error status,
+        ///         Remove authenticator from issuedRequests.
+        ///     → If any authenticator indicates success,
+        ///         1. Remove authenticator from issuedRequests.
+        ///         2. Let assertionCreationData be a struct whose items are:
+        ///             credentialIdResult
+        ///                 If savedCredentialIds[authenticator] exists, set the value of credentialIdResult to be the bytes of savedCredentialIds[authenticator]. Otherwise, set the value of credentialIdResult to be the bytes of the credential ID returned from the successful authenticatorGetAssertion operation, as defined in § 6.3.3 The authenticatorGetAssertion Operation.
+        ///             clientDataJSONResult
+        ///                 whose value is the bytes of clientDataJSON.
+        ///             authenticatorDataResult
+        ///                 whose value is the bytes of the authenticator data returned by the authenticator.
+        ///             signatureResult
+        ///                 whose value is the bytes of the signature value returned by the authenticator.
+        ///             userHandleResult
+        ///                 If the authenticator returned a user handle, set the value of userHandleResult to be the bytes of the returned user handle. Otherwise, set the value of userHandleResult to null.
+        ///             clientExtensionResults
+        ///                 whose value is an AuthenticationExtensionsClientOutputs object containing extension identifier → client extension output entries. The entries are created by running each extension’s client extension processing algorithm to create the client extension outputs, for each client extension in pkOptions.extensions.
+        ///         3. If credentialIdFilter is not empty and credentialIdFilter does not contain an item whose id's value is set to the value of credentialIdResult, continue.
+        ///         4. If credentialIdFilter is empty and userHandleResult is null, continue.
+        ///         5. Let constructAssertionAlg be an algorithm that takes a global object global, and whose steps are:
+        ///             1. Let pubKeyCred be a new PublicKeyCredential object associated with global whose fields are:
+        ///                 [[identifier]]
+        ///                     A new ArrayBuffer, created using global’s %ArrayBuffer%, containing the bytes of assertionCreationData.credentialIdResult.
+        ///                 authenticatorAttachment
+        ///                     The AuthenticatorAttachment value matching the current authenticator attachment modality of authenticator.
+        ///                 response
+        ///                     A new AuthenticatorAssertionResponse object associated with global whose fields are:
+        ///                         clientDataJSON
+        ///                             A new ArrayBuffer, created using global’s %ArrayBuffer%, containing the bytes of assertionCreationData.clientDataJSONResult.
+        ///                         authenticatorData
+        ///                             A new ArrayBuffer, created using global’s %ArrayBuffer%, containing the bytes of assertionCreationData.authenticatorDataResult.
+        ///                         signature
+        ///                             A new ArrayBuffer, created using global’s %ArrayBuffer%, containing the bytes of assertionCreationData.signatureResult.
+        ///                         userHandle
+        ///                             If assertionCreationData.userHandleResult is null, set this field to null. Otherwise, set this field to a new ArrayBuffer, created using global’s %ArrayBuffer%, containing the bytes of assertionCreationData.userHandleResult.
+        ///                 [[clientExtensionsResults]]
+        ///                     A new ArrayBuffer, created using global’s %ArrayBuffer%, containing the bytes of assertionCreationData.clientExtensionResults.
+        ///             2. Return pubKeyCred.
+        ///         6. For each remaining authenticator in issuedRequests invoke the authenticatorCancel operation on authenticator and remove it from issuedRequests.
+        ///         7. Return constructAssertionAlg and terminate this algorithm.
+        /// Step 31. Throw a "NotAllowedError" DOMException. In order to prevent information leak that could identify the user without consent, this step MUST NOT be executed before lifetimeTimer has expired. See § 14.5.2 Authentication Ceremony Privacy for details.
         /*
          1. Perform setup and massage inputs
          2. Prepare callback for assertion that an authenticator can call
