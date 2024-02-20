@@ -19,7 +19,7 @@ import Foundation
 /// When encoding using `Encodable`, the byte arrays are encoded as base64url.
 ///
 /// - SeeAlso: https://www.w3.org/TR/webauthn-2/#dictionary-assertion-options
-public struct PublicKeyCredentialRequestOptions: Encodable, Sendable {
+public struct PublicKeyCredentialRequestOptions: Sendable {
     /// A challenge that the authenticator signs, along with other data, when producing an authentication assertion
     ///
     /// When encoding using `Encodable` this is encoded as base64url.
@@ -45,7 +45,19 @@ public struct PublicKeyCredentialRequestOptions: Encodable, Sendable {
     public let userVerification: UserVerificationRequirement?
 
     // let extensions: [String: Any]
+}
 
+extension PublicKeyCredentialRequestOptions: Codable {
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        challenge = try container.decodeBytesFromURLEncodedBase64(forKey: .challenge)
+        timeout = try container.decodeIfPresent(UInt32.self, forKey: .timeout).map { .milliseconds($0) }
+        relyingPartyID = try container.decode(String.self, forKey: .rpID)
+        allowCredentials = try container.decodeIfPresent([PublicKeyCredentialDescriptor].self, forKey: .allowCredentials)
+        userVerification = try container.decodeIfPresent(UserVerificationRequirement.self, forKey: .userVerification)
+    }
+    
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
 
@@ -68,10 +80,10 @@ public struct PublicKeyCredentialRequestOptions: Encodable, Sendable {
 /// Information about a generated credential.
 ///
 /// When encoding using `Encodable`, `id` is encoded as base64url.
-public struct PublicKeyCredentialDescriptor: Equatable, Encodable, Sendable {
+public struct PublicKeyCredentialDescriptor: Equatable, Codable, Sendable {
     /// Defines hints as to how clients might communicate with a particular authenticator in order to obtain an
     /// assertion for a specific credential
-    public enum AuthenticatorTransport: String, Equatable, Encodable, Sendable {
+    public enum AuthenticatorTransport: String, Equatable, Codable, Sendable {
         /// Indicates the respective authenticator can be contacted over removable USB.
         case usb
         /// Indicates the respective authenticator can be contacted over Near Field Communication (NFC).
@@ -107,6 +119,14 @@ public struct PublicKeyCredentialDescriptor: Equatable, Encodable, Sendable {
         self.id = id
         self.transports = transports
     }
+    
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        type = try container.decode(CredentialType.self, forKey: .type)
+        id = try container.decodeBytesFromURLEncodedBase64(forKey: .id)
+        transports = try container.decode([AuthenticatorTransport].self, forKey: .transports)
+    }
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
@@ -125,7 +145,7 @@ public struct PublicKeyCredentialDescriptor: Equatable, Encodable, Sendable {
 
 /// The Relying Party may require user verification for some of its operations but not for others, and may use this
 /// type to express its needs.
-public enum UserVerificationRequirement: String, Encodable, Sendable {
+public enum UserVerificationRequirement: String, Codable, Sendable {
     /// The Relying Party requires user verification for the operation and will fail the overall ceremony if the
     /// user wasn't verified.
     case required
