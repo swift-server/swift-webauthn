@@ -49,7 +49,7 @@ public struct AuthenticatorAssertionResponse: Sendable {
     public let attestationObject: [UInt8]?
 }
 
-extension AuthenticatorAssertionResponse: Decodable {
+extension AuthenticatorAssertionResponse: Codable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
@@ -58,6 +58,16 @@ extension AuthenticatorAssertionResponse: Decodable {
         signature = try container.decodeBytesFromURLEncodedBase64(forKey: .signature)
         userHandle = try container.decodeBytesFromURLEncodedBase64IfPresent(forKey: .userHandle)
         attestationObject = try container.decodeBytesFromURLEncodedBase64IfPresent(forKey: .attestationObject)
+    }
+    
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        
+        try container.encode(clientDataJSON.base64URLEncodedString(), forKey: .clientDataJSON)
+        try container.encode(authenticatorData.base64URLEncodedString(), forKey: .authenticatorData)
+        try container.encode(signature.base64URLEncodedString(), forKey: .signature)
+        try container.encodeIfPresent(userHandle?.base64URLEncodedString(), forKey: .userHandle)
+        try container.encodeIfPresent(attestationObject?.base64URLEncodedString(), forKey: .attestationObject)
     }
 
     private enum CodingKeys: String, CodingKey {
