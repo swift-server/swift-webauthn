@@ -235,7 +235,7 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
             await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
                     .validMock()
-                    .authData(TestAuthDataBuilder().validMock().rpIDHash(fromRpID: "invalid-id.com"))
+                    .authData(TestAuthDataBuilder().validMock().relyingPartyIDHash(fromRelyingPartyID: "invalid-id.com"))
                     .build()
                     .cborEncoded
             ),

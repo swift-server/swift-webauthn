@@ -102,11 +102,11 @@ struct ParsedAuthenticatorAssertionResponse {
             relyingPartyOrigin: relyingPartyOrigin
         )
 
-        guard let expectedRpIDData = relyingPartyID.data(using: .utf8) else {
+        guard let expectedRelyingPartyIDData = relyingPartyID.data(using: .utf8) else {
             throw WebAuthnError.invalidRelyingPartyID
         }
-        let expectedRpIDHash = SHA256.hash(data: expectedRpIDData)
-        guard expectedRpIDHash == authenticatorData.relyingPartyIDHash else {
+        let expectedRelyingPartyIDHash = SHA256.hash(data: expectedRelyingPartyIDData)
+        guard expectedRelyingPartyIDHash == authenticatorData.relyingPartyIDHash else {
             throw WebAuthnError.relyingPartyIDHashDoesNotMatch
         }
 

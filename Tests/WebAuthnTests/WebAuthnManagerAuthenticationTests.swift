@@ -76,7 +76,7 @@ final class WebAuthnManagerAuthenticationTests: XCTestCase {
             finishAuthentication(
                 authenticatorData: TestAuthDataBuilder()
                     .validAuthenticationMock()
-                    .rpIDHash(fromRpID: "wrong-id.org")
+                    .relyingPartyIDHash(fromRelyingPartyID: "wrong-id.org")
                     .build()
                     .byteArrayRepresentation
             ),
