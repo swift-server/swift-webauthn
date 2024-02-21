@@ -37,7 +37,7 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
 
         let registrationOptions = webAuthnManager.beginRegistration(
             user: mockUser,
-            timeoutInSeconds: timeout,
+            timeout: timeout,
             attestation: attestationPreference,
             publicKeyCredentialParameters: publicKeyCredentialParameters
         )
@@ -49,7 +49,7 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
         XCTAssertEqual(registrationOptions.attestation, attestationPreference)
         XCTAssertEqual(registrationOptions.relyingParty.id, config.relyingPartyID)
         XCTAssertEqual(registrationOptions.relyingParty.name, config.relyingPartyName)
-        XCTAssertEqual(registrationOptions.timeoutInMilliseconds, UInt32(timeout * 1000))
+        XCTAssertEqual(registrationOptions.timeout, timeout)
         XCTAssertEqual(registrationOptions.publicKeyCredentialParameters, publicKeyCredentialParameters)
 
         // Now send `registrationOptions` to client, which in turn will send the authenticator's response back to us:
@@ -107,7 +107,7 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
         )
 
         XCTAssertEqual(authenticationOptions.rpId, config.relyingPartyID)
-        XCTAssertEqual(authenticationOptions.timeout, UInt32(authenticationTimeout * 1000)) // timeout is in milliseconds
+        XCTAssertEqual(authenticationOptions.timeout, authenticationTimeout)
         XCTAssertEqual(authenticationOptions.challenge, mockChallenge)
         XCTAssertEqual(authenticationOptions.userVerification, userVerification)
         XCTAssertEqual(authenticationOptions.allowCredentials, rememberedCredentials)

@@ -17,16 +17,20 @@ import Foundation
 /// The `PublicKeyCredentialRequestOptions` gets passed to the WebAuthn API (`navigator.credentials.get()`)
 ///
 /// When encoding using `Encodable`, the byte arrays are encoded as base64url.
+///
+/// - SeeAlso: https://www.w3.org/TR/webauthn-2/#dictionary-assertion-options
 public struct PublicKeyCredentialRequestOptions: Encodable {
     /// A challenge that the authenticator signs, along with other data, when producing an authentication assertion
     ///
     /// When encoding using `Encodable` this is encoded as base64url.
     public let challenge: [UInt8]
 
-    /// The number of milliseconds that the Relying Party is willing to wait for the call to complete. The value is treated
-    /// as a hint, and may be overridden by the client.
+    /// A time, in seconds, that the caller is willing to wait for the call to complete. This is treated as a
+    /// hint, and may be overridden by the client.
+    ///
+    /// - Note: When encoded, this value is represented in milleseconds as a ``UInt32``.
     /// See https://www.w3.org/TR/webauthn-2/#dictionary-assertion-options
-    public let timeout: UInt32?
+    public let timeout: TimeInterval?
 
     /// The Relying Party ID.
     public let rpId: String?
@@ -43,7 +47,8 @@ public struct PublicKeyCredentialRequestOptions: Encodable {
         var container = encoder.container(keyedBy: CodingKeys.self)
 
         try container.encode(challenge.base64URLEncodedString(), forKey: .challenge)
-        try container.encodeIfPresent(timeout, forKey: .timeout)
+        let timeoutInMilliseconds = timeout.map { UInt32($0 * 1000) }
+        try container.encodeIfPresent(timeoutInMilliseconds, forKey: .timeout)
         try container.encodeIfPresent(rpId, forKey: .rpId)
         try container.encodeIfPresent(allowCredentials, forKey: .allowCredentials)
         try container.encodeIfPresent(userVerification, forKey: .userVerification)
