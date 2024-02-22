@@ -30,7 +30,7 @@ public struct PublicKeyCredentialRequestOptions: Encodable {
     ///
     /// - Note: When encoded, this value is represented in milleseconds as a ``UInt32``.
     /// See https://www.w3.org/TR/webauthn-2/#dictionary-assertion-options
-    public let timeout: TimeInterval?
+    public let timeout: Duration?
 
     /// The Relying Party ID.
     public let rpId: String?
@@ -47,8 +47,7 @@ public struct PublicKeyCredentialRequestOptions: Encodable {
         var container = encoder.container(keyedBy: CodingKeys.self)
 
         try container.encode(challenge.base64URLEncodedString(), forKey: .challenge)
-        let timeoutInMilliseconds = timeout.map { UInt32($0 * 1000) }
-        try container.encodeIfPresent(timeoutInMilliseconds, forKey: .timeout)
+        try container.encodeIfPresent(timeout?.milliseconds, forKey: .timeout)
         try container.encodeIfPresent(rpId, forKey: .rpId)
         try container.encodeIfPresent(allowCredentials, forKey: .allowCredentials)
         try container.encodeIfPresent(userVerification, forKey: .userVerification)

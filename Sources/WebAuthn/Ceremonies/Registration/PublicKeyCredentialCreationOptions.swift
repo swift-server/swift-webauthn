@@ -42,7 +42,7 @@ public struct PublicKeyCredentialCreationOptions: Encodable {
     /// hint, and may be overridden by the client.
     ///
     /// - Note: When encoded, this value is represented in milleseconds as a ``UInt32``.
-    public let timeout: TimeInterval?
+    public let timeout: Duration?
 
     /// Sets the Relying Party's preference for attestation conveyance. At the time of writing only `none` is
     /// supported.
@@ -55,8 +55,7 @@ public struct PublicKeyCredentialCreationOptions: Encodable {
         try container.encode(user, forKey: .user)
         try container.encode(relyingParty, forKey: .relyingParty)
         try container.encode(publicKeyCredentialParameters, forKey: .publicKeyCredentialParameters)
-        let timeoutInMilliseconds = timeout.map { UInt32($0 * 1000) }
-        try container.encodeIfPresent(timeoutInMilliseconds, forKey: .timeout)
+        try container.encodeIfPresent(timeout?.milliseconds, forKey: .timeout)
         try container.encode(attestation, forKey: .attestation)
     }
 

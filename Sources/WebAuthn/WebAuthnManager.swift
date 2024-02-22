@@ -55,7 +55,7 @@ public struct WebAuthnManager {
     /// - Returns: Registration options ready for the browser.
     public func beginRegistration(
         user: PublicKeyCredentialUserEntity,
-        timeout: TimeInterval? = 3600,
+        timeout: Duration? = .seconds(3600),
         attestation: AttestationConveyancePreference = .none,
         publicKeyCredentialParameters: [PublicKeyCredentialParameters] = .supported
     ) -> PublicKeyCredentialCreationOptions {
@@ -134,7 +134,7 @@ public struct WebAuthnManager {
     ///     "user verified" flag.
     /// - Returns: Authentication options ready for the browser.
     public func beginAuthentication(
-        timeout: TimeInterval? = 60,
+        timeout: Duration? = .seconds(60),
         allowCredentials: [PublicKeyCredentialDescriptor]? = nil,
         userVerification: UserVerificationRequirement = .preferred
     ) throws -> PublicKeyCredentialRequestOptions {

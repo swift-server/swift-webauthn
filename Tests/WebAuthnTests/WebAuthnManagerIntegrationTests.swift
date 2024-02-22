@@ -31,7 +31,7 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
 
         // Step 1.: Begin Registration
         let mockUser = PublicKeyCredentialUserEntity.mock
-        let timeout: TimeInterval = 1234
+        let timeout: Duration = .seconds(1234)
         let attestationPreference = AttestationConveyancePreference.none
         let publicKeyCredentialParameters: [PublicKeyCredentialParameters] = .supported
 
@@ -93,7 +93,7 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
         XCTAssertEqual(credential.publicKey, mockCredentialPublicKey)
 
         // Step 3.: Begin Authentication
-        let authenticationTimeout: TimeInterval = 4567
+        let authenticationTimeout: Duration = .seconds(4567)
         let userVerification: UserVerificationRequirement = .preferred
         let rememberedCredentials = [PublicKeyCredentialDescriptor(
             type: "public-key",
