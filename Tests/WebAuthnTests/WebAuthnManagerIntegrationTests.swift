@@ -65,7 +65,7 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
 
         let registrationResponse = RegistrationCredential(
             id: mockCredentialID.base64URLEncodedString(),
-            type: "public-key",
+            type: .publicKey,
             rawID: mockCredentialID,
             attestationResponse: AuthenticatorAttestationResponse(
                 clientDataJSON: mockClientDataJSON.jsonBytes,
@@ -89,14 +89,14 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
         XCTAssertEqual(credential.attestationClientDataJSON.challenge, mockChallenge.base64URLEncodedString())
         XCTAssertEqual(credential.isBackedUp, false)
         XCTAssertEqual(credential.signCount, 0)
-        XCTAssertEqual(credential.type, "public-key")
+        XCTAssertEqual(credential.type, .publicKey)
         XCTAssertEqual(credential.publicKey, mockCredentialPublicKey)
 
         // Step 3.: Begin Authentication
         let authenticationTimeout: Duration = .seconds(4567)
         let userVerification: UserVerificationRequirement = .preferred
         let rememberedCredentials = [PublicKeyCredentialDescriptor(
-            type: "public-key",
+            type: .publicKey,
             id: [UInt8](URLEncodedBase64(credential.id).urlDecoded.decoded!)
         )]
 
@@ -144,7 +144,7 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
                 attestationObject: nil
             ),
             authenticatorAttachment: .platform,
-            type: "public-key"
+            type: .publicKey
         )
 
         // Step 4.: Finish Authentication

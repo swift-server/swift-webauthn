@@ -87,8 +87,8 @@ public struct PublicKeyCredentialDescriptor: Equatable, Encodable {
         case `internal`
     }
 
-    /// Will always be 'public-key'
-    public let type: String
+    /// Will always be ``CredentialType/publicKey``
+    public let type: CredentialType
 
     /// The sequence of bytes representing the credential's ID
     ///
@@ -98,7 +98,11 @@ public struct PublicKeyCredentialDescriptor: Equatable, Encodable {
     /// The types of connections to the client/browser the authenticator supports
     public let transports: [AuthenticatorTransport]
 
-    public init(type: String, id: [UInt8], transports: [AuthenticatorTransport] = []) {
+    public init(
+        type: CredentialType = .publicKey,
+        id: [UInt8],
+        transports: [AuthenticatorTransport] = []
+    ) {
         self.type = type
         self.id = id
         self.transports = transports

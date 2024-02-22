@@ -38,7 +38,7 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
 
     func testBeginRegistrationReturns() throws {
         let user = PublicKeyCredentialUserEntity.mock
-        let publicKeyCredentialParameter = PublicKeyCredentialParameters(type: "public-key", alg: .algES256)
+        let publicKeyCredentialParameter = PublicKeyCredentialParameters(type: .publicKey, alg: .algES256)
         let options = webAuthnManager.beginRegistration(
             user: user,
             publicKeyCredentialParameters: [publicKeyCredentialParameter]
@@ -371,7 +371,7 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
 
     private func finishRegistration(
         challenge: [UInt8] = TestConstants.mockChallenge,
-        type: String = "public-key",
+        type: CredentialType = .publicKey,
         rawID: [UInt8] = "e0fac9350509f71748d83782ccaf6b4c1462c615c70e255da1344e40887c8fcd".hexadecimal!,
         clientDataJSON: [UInt8] = TestClientDataJSON().jsonBytes,
         attestationObject: [UInt8] = TestAttestationObjectBuilder().validMock().build().cborEncoded,

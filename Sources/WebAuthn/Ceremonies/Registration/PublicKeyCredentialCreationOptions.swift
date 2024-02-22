@@ -72,8 +72,8 @@ public struct PublicKeyCredentialCreationOptions: Encodable {
 // MARK: - Credential parameters
 /// From §5.3 (https://w3c.github.io/TR/webauthn/#dictionary-credential-params)
 public struct PublicKeyCredentialParameters: Equatable, Encodable {
-    /// The type of credential to be created. At the time of writing always "public-key".
-    public let type: String
+    /// The type of credential to be created. At the time of writing always ``CredentialType/publicKey``.
+    public let type: CredentialType
     /// The cryptographic signature algorithm with which the newly generated credential will be used, and thus also
     /// the type of asymmetric key pair to be generated, e.g., RSA or Elliptic Curve.
     public let alg: COSEAlgorithmIdentifier
@@ -81,10 +81,10 @@ public struct PublicKeyCredentialParameters: Equatable, Encodable {
     /// Creates a new `PublicKeyCredentialParameters` instance.
     ///
     /// - Parameters:
-    ///   - type: The type of credential to be created. At the time of writing always "public-key".
+    ///   - type: The type of credential to be created. At the time of writing always ``CredentialType/publicKey``.
     ///   - alg: The cryptographic signature algorithm to be used with the newly generated credential.
     ///     For example RSA or Elliptic Curve.
-    public init(type: String = "public-key", alg: COSEAlgorithmIdentifier) {
+    public init(type: CredentialType = .publicKey, alg: COSEAlgorithmIdentifier) {
         self.type = type
         self.alg = alg
     }
@@ -94,7 +94,7 @@ extension Array where Element == PublicKeyCredentialParameters {
     /// A list of `PublicKeyCredentialParameters` WebAuthn Swift currently supports.
     public static var supported: [Element] {
         COSEAlgorithmIdentifier.allCases.map {
-            Element.init(type: "public-key", alg: $0)
+            Element.init(type: .publicKey, alg: $0)
         }
     }
 }

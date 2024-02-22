@@ -31,8 +31,8 @@ public struct AuthenticationCredential {
     /// navigator.credentials.get() methods successfully complete
     public let authenticatorAttachment: AuthenticatorAttachment?
 
-    /// Value will always be "public-key" (for now)
-    public let type: String
+    /// Value will always be ``CredentialType/publicKey`` (for now)
+    public let type: CredentialType
 }
 
 extension AuthenticationCredential: Decodable {
@@ -43,7 +43,7 @@ extension AuthenticationCredential: Decodable {
         rawID = try container.decodeBytesFromURLEncodedBase64(forKey: .rawID)
         response = try container.decode(AuthenticatorAssertionResponse.self, forKey: .response)
         authenticatorAttachment = try container.decodeIfPresent(AuthenticatorAttachment.self, forKey: .authenticatorAttachment)
-        type = try container.decode(String.self, forKey: .type)
+        type = try container.decode(CredentialType.self, forKey: .type)
     }
 
     private enum CodingKeys: String, CodingKey {

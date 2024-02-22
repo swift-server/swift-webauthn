@@ -17,8 +17,8 @@ import Foundation
 /// After a successful registration ceremony we pass this data back to the relying party. It contains all needed
 /// information about a WebAuthn credential for storage in e.g. a database.
 public struct Credential {
-    /// Value will always be "public-key" (for now)
-    public let type: String
+    /// Value will always be ``CredentialType/publicKey`` (for now)
+    public let type: CredentialType
 
     /// base64 encoded String of the credential ID bytes
     public let id: String
