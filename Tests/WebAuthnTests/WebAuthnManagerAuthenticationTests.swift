@@ -165,7 +165,7 @@ final class WebAuthnManagerAuthenticationTests: XCTestCase {
         signature: [UInt8] = TestECCKeyPair.signature,
         userHandle: [UInt8]? = "36323638424436452d303831452d344331312d413743332d334444304146333345433134".hexadecimal!,
         attestationObject: [UInt8]? = nil,
-        authenticatorAttachment: String? = "platform",
+        authenticatorAttachment: AuthenticatorAttachment? = .platform,
         type: String = "public-key",
         expectedChallenge: [UInt8] = TestConstants.mockChallenge,
         credentialPublicKey: [UInt8] = TestCredentialPublicKeyBuilder().validMock().buildAsByteArray(),

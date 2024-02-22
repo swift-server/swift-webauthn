@@ -143,7 +143,7 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
                 userHandle: mockUser.id,
                 attestationObject: nil
             ),
-            authenticatorAttachment: "platform",
+            authenticatorAttachment: .platform,
             type: "public-key"
         )
 
