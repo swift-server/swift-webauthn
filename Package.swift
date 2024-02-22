@@ -1,4 +1,4 @@
-// swift-tools-version:5.6
+// swift-tools-version:5.9
 //===----------------------------------------------------------------------===//
 //
 // This source file is part of the WebAuthn Swift open source project
@@ -18,7 +18,7 @@ import PackageDescription
 let package = Package(
     name: "webauthn-swift",
     platforms: [
-        .macOS(.v12)
+        .macOS(.v13)
     ],
     products: [
         .library(name: "WebAuthn", targets: ["WebAuthn"])
