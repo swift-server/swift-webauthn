@@ -36,7 +36,7 @@ public struct PublicKeyCredentialRequestOptions: Encodable {
     ///
     /// This is configured on ``WebAuthnManager`` before its ``WebAuthnManager/beginAuthentication(timeout:allowCredentials:userVerification:)`` method is called.
     /// - Note: When encoded, this field appears as `rpId` to match the expectations of `navigator.credentials.get()`.
-    public let relyingPartyID: String?
+    public let relyingPartyID: String
 
     /// Optionally used by the client to find authenticators eligible for this authentication ceremony.
     public let allowCredentials: [PublicKeyCredentialDescriptor]?
@@ -51,7 +51,7 @@ public struct PublicKeyCredentialRequestOptions: Encodable {
 
         try container.encode(challenge.base64URLEncodedString(), forKey: .challenge)
         try container.encodeIfPresent(timeout?.milliseconds, forKey: .timeout)
-        try container.encodeIfPresent(relyingPartyID, forKey: .rpID)
+        try container.encode(relyingPartyID, forKey: .rpID)
         try container.encodeIfPresent(allowCredentials, forKey: .allowCredentials)
         try container.encodeIfPresent(userVerification, forKey: .userVerification)
     }
