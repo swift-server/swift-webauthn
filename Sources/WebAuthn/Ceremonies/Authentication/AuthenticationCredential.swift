@@ -33,6 +33,19 @@ public struct AuthenticationCredential: Sendable {
 
     /// Value will always be ``CredentialType/publicKey`` (for now)
     public let type: CredentialType
+
+    init(
+        type: CredentialType = .publicKey,
+        id: [UInt8],
+        authenticatorAttachment: AuthenticatorAttachment?,
+        response: AuthenticatorAssertionResponse
+    ) {
+        self.id = id.base64URLEncodedString()
+        self.rawID = id
+        self.response = response
+        self.authenticatorAttachment = authenticatorAttachment
+        self.type = type
+    }
 }
 
 extension AuthenticationCredential: Codable {

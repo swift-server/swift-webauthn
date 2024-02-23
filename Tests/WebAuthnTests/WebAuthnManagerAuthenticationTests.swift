@@ -174,17 +174,16 @@ final class WebAuthnManagerAuthenticationTests: XCTestCase {
     ) throws -> VerifiedAuthentication {
         try webAuthnManager.finishAuthentication(
             credential: AuthenticationCredential(
-                id: credentialID.base64URLEncodedString(),
-                rawID: credentialID,
+                type: type,
+                id: credentialID,
+                authenticatorAttachment: authenticatorAttachment,
                 response: AuthenticatorAssertionResponse(
                     clientDataJSON: clientDataJSON,
                     authenticatorData: authenticatorData,
                     signature: signature,
                     userHandle: userHandle,
                     attestationObject: attestationObject
-                ),
-                authenticatorAttachment: authenticatorAttachment,
-                type: type
+                )
             ),
             expectedChallenge: expectedChallenge,
             credentialPublicKey: credentialPublicKey,

@@ -132,17 +132,15 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
         let signature = try TestECCKeyPair.signature(data: signatureBase).derRepresentation
 
         let authenticationCredential = AuthenticationCredential(
-            id: mockCredentialID.base64URLEncodedString(),
-            rawID: mockCredentialID,
+            id: mockCredentialID,
+            authenticatorAttachment: .platform,
             response: AuthenticatorAssertionResponse(
                 clientDataJSON: clientData,
                 authenticatorData: authenticatorData,
                 signature: [UInt8](signature),
                 userHandle: mockUser.id,
                 attestationObject: nil
-            ),
-            authenticatorAttachment: .platform,
-            type: .publicKey
+            )
         )
 
         // Step 4.: Finish Authentication
