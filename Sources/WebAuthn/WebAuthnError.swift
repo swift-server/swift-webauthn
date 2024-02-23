@@ -66,13 +66,15 @@ public struct WebAuthnError: Error, Hashable, Sendable {
         case invalidExponent
         case unsupportedCOSEAlgorithmForRSAPublicKey
         case unsupported
-        
+
         // MARK: WebAuthnClient
         case noSupportedCredentialParameters
         case missingCredentialSourceDespiteSuccess
 
         // MARK: Authenticator
         case unsupportedCredentialPublicKeyType
+        case requiredUserVerificationNotSupported
+        case noCredentialsAvailable
         case authorizationGestureNotAllowed
     }
     
@@ -140,5 +142,7 @@ public struct WebAuthnError: Error, Hashable, Sendable {
 
     // MARK: Authenticator
     public static let unsupportedCredentialPublicKeyType = Self(reason: .unsupportedCredentialPublicKeyType)
+    public static let requiredUserVerificationNotSupported = Self(reason: .requiredUserVerificationNotSupported)
+    public static let noCredentialsAvailable = Self(reason: .noCredentialsAvailable)
     public static let authorizationGestureNotAllowed = Self(reason: .authorizationGestureNotAllowed)
 }

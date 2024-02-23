@@ -19,6 +19,8 @@ public struct KeyPairAuthenticator: AuthenticatorProtocol, Sendable {
     public let attestationGloballyUniqueID: AAGUID
     public let attachmentModality: AuthenticatorAttachment
     public let supportedPublicKeyCredentialParameters: Set<PublicKeyCredentialParameters>
+    
+    /// As the credentials are directly supplied by the caller, ``KeyPairAuthenticator``s are always capable of performing user verification, though they can be initialized to indicate silent authorization was performed if relevant.
     public let canPerformUserVerification: Bool = true
     public let canStoreCredentialSourceClientSide: Bool = true
     

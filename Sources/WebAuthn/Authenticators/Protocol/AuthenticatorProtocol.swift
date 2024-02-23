@@ -345,6 +345,145 @@ extension AuthenticatorProtocol {
         authenticationRequest: AssertionAuthenticationRequest,
         credentials: CredentialStore<Self>
     ) async throws -> CredentialSource {
-        throw WebAuthnError.unsupported
+        /// [WebAuthn Level 3 Editor's Draft §5.1.4.2. Issuing a Credential Request to an Authenticator](https://w3c.github.io/webauthn/#sctn-issuing-cred-request-to-authenticator)
+        /// Step 1. If pkOptions.userVerification is set to required and the authenticator is not capable of performing user verification, return false.
+        if authenticationRequest.options.userVerification == .required && !canPerformUserVerification {
+            throw WebAuthnError.requiredUserVerificationNotSupported
+        }
+        
+        /// Step 2. Let userVerification be the effective user verification requirement for assertion, a Boolean value, as follows. If pkOptions.userVerification
+        let requestsUserVerification = switch authenticationRequest.options.userVerification {
+            /// → is set to required
+            ///     Let userVerification be true.
+        case .required: true
+            /// → is set to preferred
+            ///     If the authenticator
+            ///         → is capable of user verification
+            ///             Let userVerification be true.
+            ///         → is not capable of user verification
+            ///             Let userVerification be false.
+        case .preferred: canPerformUserVerification
+            /// → is set to discouraged
+            ///     Let userVerification be false.
+        case .discouraged: false
+            /// Default to preferred case: [WebAuthn Level 3 Editor's Draft §5.5. Options for Assertion Generation (dictionary PublicKeyCredentialRequestOptions)](https://w3c.github.io/webauthn/#dom-publickeycredentialrequestoptions-userverification)
+        default: canPerformUserVerification
+        }
+        
+        /// Step 8. If pkOptions.allowCredentials
+        let allowedCredentialDescriptorList: [PublicKeyCredentialDescriptor] = if let allowCredentials = authenticationRequest.options.allowCredentials, !allowCredentials.isEmpty {
+            /// → is not empty
+            ///     1. Let allowCredentialDescriptorList be a new list.
+            ///     2. Execute a client platform-specific procedure to determine which, if any, public key credentials described by pkOptions.allowCredentials are bound to this authenticator, by matching with rpId, pkOptions.allowCredentials.id, and pkOptions.allowCredentials.type. Set allowCredentialDescriptorList to this filtered list.
+            ///     3. If allowCredentialDescriptorList is empty, return false.
+            ///     4. Let distinctTransports be a new ordered set.
+            ///     5. If allowCredentialDescriptorList has exactly one value, set savedCredentialIds[authenticator] to allowCredentialDescriptorList[0].id’s value (see here in § 6.3.3 The authenticatorGetAssertion Operation for more information).
+            ///     6. For each credential descriptor C in allowCredentialDescriptorList, append each value, if any, of C.transports to distinctTransports.
+            ///         NOTE: This will aggregate only distinct values of transports (for this authenticator) in distinctTransports due to the properties of ordered sets.
+            ///     7. If distinctTransports
+            ///         → is not empty
+            ///             The client selects one transport value from distinctTransports, possibly incorporating local configuration knowledge of the appropriate transport to use with authenticator in making its selection.
+            ///             Then, using transport, invoke the authenticatorGetAssertion operation on authenticator, with rpId, clientDataHash, allowCredentialDescriptorList, userVerification, and authenticatorExtensions as parameters.
+            ///         → is empty
+            ///             Using local configuration knowledge of the appropriate transport to use with authenticator, invoke the authenticatorGetAssertion operation on authenticator with rpId, clientDataHash, allowCredentialDescriptorList, userVerification, and authenticatorExtensions as parameters.
+            filteredCredentialDescriptors(
+                credentialDescriptors: allowCredentials,
+                relyingPartyID: authenticationRequest.options.relyingPartyID
+            )
+        } else {
+            /// → is empty
+            ///     Using local configuration knowledge of the appropriate transport to use with authenticator, invoke the authenticatorGetAssertion operation on authenticator with rpId, clientDataHash, userVerification, and authenticatorExtensions as parameters.
+            ///         NOTE: In this case, the Relying Party did not supply a list of acceptable credential descriptors. Thus, the authenticator is being asked to exercise any credential it may possess that is scoped to the Relying Party, as identified by rpId.
+            []
+        }
+        
+        /// Step 11. Return true.
+        // Skip.
+        
+        /// [WebAuthn Level 3 Editor's Draft §6.3.3. The authenticatorGetAssertion Operation](https://w3c.github.io/webauthn/#authenticatorgetassertion)
+        /// Step 1. Check if all the supplied parameters are syntactically well-formed and of the correct length. If not, return an error code equivalent to "UnknownError" and terminate the operation.
+        // Skip.
+        
+        /// Step 2. Let credentialOptions be a new empty set of public key credential sources.
+        /// Step 3. If allowCredentialDescriptorList was supplied, then for each descriptor of allowCredentialDescriptorList:
+        ///     1. Let credSource be the result of looking up descriptor.id in this authenticator.
+        ///     2. If credSource is not null, append it to credentialOptions.
+        /// Step 4. Otherwise (allowCredentialDescriptorList was not supplied), for each key → credSource of this authenticator’s credentials map, append credSource to credentialOptions.
+        var credentialOptions = if !allowedCredentialDescriptorList.isEmpty {
+            allowedCredentialDescriptorList.compactMap { credentialDescriptor -> CredentialSource? in
+                guard
+                    credentialDescriptor.type == .publicKey,
+                    let id = CredentialSource.ID(bytes: credentialDescriptor.id)
+                else { return nil }
+                
+                return credentials[id]
+            }
+        } else {
+            Array(credentials.values)
+        }
+        
+        /// Step 5. Remove any items from credentialOptions whose rpId is not equal to rpId.
+        credentialOptions.removeAll { $0.relyingPartyID != authenticationRequest.options.relyingPartyID }
+        
+        /// Step 6. If credentialOptions is now empty, return an error code equivalent to "NotAllowedError" and terminate the operation.
+        guard !credentialOptions.isEmpty
+        else { throw WebAuthnError.noCredentialsAvailable }
+        
+        /// Step 7. Prompt the user to select a public key credential source selectedCredential from credentialOptions. Collect an authorization gesture confirming user consent for using selectedCredential. The prompt for the authorization gesture may be shown by the authenticator if it has its own output capability, or by the user agent otherwise.
+        ///     If requireUserVerification is true, the authorization gesture MUST include user verification.
+        ///     If requireUserPresence is true, the authorization gesture MUST include a test of user presence.
+        ///     If the user does not consent, return an error code equivalent to "NotAllowedError" and terminate the operation.
+        let selectedCredential = try await collectAuthorizationGesture(
+            requiresUserVerification: requestsUserVerification,
+            requiresUserPresence: true, // TODO: Make option
+            credentialOptions: credentialOptions
+        )
+        
+        /// Step 8. Let processedExtensions be the result of authenticator extension processing for each supported extension identifier → authenticator extension input in extensions.
+        // Skip.
+        
+        /// Step 9. Increment the credential associated signature counter or the global signature counter value, depending on which approach is implemented by the authenticator, by some positive value. If the authenticator does not implement a signature counter, let the signature counter value remain constant at zero.
+        // Done already in Step 7.
+        
+        /// Step 10. Let authenticatorData be the byte array specified in § 6.1 Authenticator Data including processedExtensions, if any, as the extensions and excluding attestedCredentialData.
+        let authenticatorData = AuthenticatorData(
+            relyingPartyIDHash: SHA256.hash(data: Array(authenticationRequest.options.relyingPartyID.utf8)),
+            flags: AuthenticatorFlags(
+                userPresent: true,
+                userVerified: true,
+                isBackupEligible: true,
+                isCurrentlyBackedUp: true,
+                attestedCredentialData: false,
+                extensionDataIncluded: false
+            ), // TODO: Add first four flags to credential source/collection gesture
+            counter: 0 // TODO: Add to credential source requirement
+        ).bytes
+        
+        /// Step 11. Let signature be the assertion signature of the concatenation authenticatorData || hash using the privateKey of selectedCredential as shown in Figure , below. A simple, undelimited concatenation is safe to use here because the authenticator data describes its own length. The hash of the serialized client data (which potentially has a variable length) is always the last element.
+        /// Step 12. If any error occurred while generating the assertion signature, return an error code equivalent to "UnknownError" and terminate the operation.
+        let signature = try await selectedCredential.signAssertion(
+            authenticatorData: authenticatorData,
+            clientDataHash: authenticationRequest.clientDataHash
+        )
+
+        /// Step 13. Return to the user agent:
+        ///     selectedCredential.id, if either a list of credentials (i.e., allowCredentialDescriptorList) of length 2 or greater was supplied by the client, or no such list was supplied.
+        ///         NOTE: If, within allowCredentialDescriptorList, the client supplied exactly one credential and it was successfully employed, then its credential ID is not returned since the client already knows it. This saves transmitting these bytes over what may be a constrained connection in what is likely a common case.
+        ///     authenticatorData
+        ///     signature
+        ///     selectedCredential.userHandle
+        ///         NOTE: In cases where allowCredentialDescriptorList was supplied the returned userHandle value may be null, see: userHandleResult.
+        try await authenticationRequest.attemptAuthentication.submitAssertionResults(
+            credentialID: selectedCredential.id.bytes,
+            authenticatorData: authenticatorData,
+            signature: signature,
+            userHandle: selectedCredential.userHandle,
+            authenticatorAttachment: .platform // TODO: Make option
+        )
+        
+        /// If the authenticator cannot find any credential corresponding to the specified Relying Party that matches the specified criteria, it terminates the operation and returns an error.
+        // Already done.
+        
+        return selectedCredential
     }
 }
