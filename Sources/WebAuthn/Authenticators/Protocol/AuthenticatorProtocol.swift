@@ -15,6 +15,8 @@
 import Crypto
 import SwiftCBOR
 
+public typealias CredentialStore<A: AuthenticatorProtocol> = [A.CredentialSource.ID : A.CredentialSource]
+
 public protocol AuthenticatorProtocol<CredentialSource> {
     associatedtype CredentialSource: AuthenticatorCredentialSourceProtocol
     
@@ -89,6 +91,21 @@ public protocol AuthenticatorProtocol<CredentialSource> {
         requiresUserVerification: Bool,
         requiresUserPresence: Bool,
         credentialOptions: [CredentialSource]
+    ) async throws -> CredentialSource
+    
+    /// Request that an authenticator assert one of the specified credentials.
+    ///
+    /// - Note: If the authenticator fails, other authenticators should continue until either one succeeds, or the parent task is cancelled.
+    ///
+    /// - SeeAlso: [WebAuthn Level 3 Editor's Draft §5.1.4.2. Issuing a Credential Request to an Authenticator](https://w3c.github.io/webauthn/#sctn-issuing-cred-request-to-authenticator)
+    /// - SeeAlso: [WebAuthn Level 3 Editor's Draft §6.3.3. The authenticatorGetAssertion Operation](https://w3c.github.io/webauthn/#authenticatorgetassertion)
+    /// - Parameters:
+    ///   - authenticationRequest: The authentication request from the relying party.
+    ///   - credentials: The set of credentials the authenticator should match against.
+    /// - Returns: An updated credential source upon successful authentication.
+    func assertCredentials(
+        authenticationRequest: AssertionAuthenticationRequest,
+        credentials: CredentialStore<Self>
     ) async throws -> CredentialSource
 }
 
@@ -318,5 +335,16 @@ extension AuthenticatorProtocol {
         )
         
         return credentialSource
+    }
+}
+
+// MARK: Authentication
+
+extension AuthenticatorProtocol {
+    public func assertCredentials(
+        authenticationRequest: AssertionAuthenticationRequest,
+        credentials: CredentialStore<Self>
+    ) async throws -> CredentialSource {
+        throw WebAuthnError.unsupported
     }
 }
