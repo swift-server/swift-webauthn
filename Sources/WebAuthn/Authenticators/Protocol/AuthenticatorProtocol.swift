@@ -58,6 +58,11 @@ public protocol AuthenticatorProtocol<CredentialSource> {
         clientDataHash: SHA256.Digest
     ) async throws -> CBOR
     
+    /// Make credentials for the specified registration request, returning the credential source that the caller should store for subsequent authentication.
+    ///
+    /// - Important: Depending on the authenticator being used, the credential source may contain private keys, and must be stored sequirely, such as in the user's Keychain, or in a Hardware Security Module appropriate with the level of security you wish to secure your user's account with.
+    func makeCredentials(with registration: AttestationRegistrationRequest) async throws -> CredentialSource
+    
     /// Filter the provided credential descriptors to determine which, if any, should be handled by this authenticator.
     /// 
     /// This method should execute a client platform-specific procedure to determine which, if any, public key credentials described by `pkOptions.allowCredentials` are bound to this authenticator, by matching with `rpId`, `pkOptions.allowCredentials.id`, and `pkOptions.allowCredentials.type`
@@ -110,5 +115,15 @@ extension AuthenticatorProtocol {
         relyingPartyID: PublicKeyCredentialRelyingPartyEntity.ID
     ) -> [PublicKeyCredentialDescriptor] {
         return credentialDescriptors
+    }
+}
+
+// MARK: Registration
+
+extension AuthenticatorProtocol {
+    public func makeCredentials(
+        with registration: AttestationRegistrationRequest
+    ) async throws -> CredentialSource {
+        throw WebAuthnError.unsupported
     }
 }
