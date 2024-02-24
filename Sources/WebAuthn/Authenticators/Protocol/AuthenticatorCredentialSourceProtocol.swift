@@ -12,11 +12,19 @@
 //
 //===----------------------------------------------------------------------===//
 
+import Foundation
+import Crypto
+
 public protocol AuthenticatorCredentialSourceProtocol: Sendable, Identifiable where ID: AuthenticatorCredentialSourceIdentifier {
     
     var id: ID { get }
+    var credentialParameters: PublicKeyCredentialParameters { get }
+    var relyingPartyID: PublicKeyCredentialRelyingPartyEntity.ID { get }
+    var userHandle: PublicKeyCredentialUserEntity.ID { get }
+    var counter: UInt32 { get }
     
-    init(
-        id: ID
-    ) throws
+    func signAssertion(
+        authenticatorData: [UInt8],
+        clientDataHash: SHA256Digest
+    ) async throws -> [UInt8]
 }
