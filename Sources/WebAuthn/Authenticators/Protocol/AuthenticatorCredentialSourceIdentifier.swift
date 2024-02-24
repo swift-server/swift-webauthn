@@ -12,11 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-public protocol AuthenticatorCredentialSourceProtocol: Sendable, Identifiable where ID: AuthenticatorCredentialSourceIdentifier {
-    
-    var id: ID { get }
-    
-    init(
-        id: ID
-    ) throws
+public protocol AuthenticatorCredentialSourceIdentifier: Hashable {
+    init?(bytes: some BidirectionalCollection<UInt8>)
+    var bytes: [UInt8] { get }
 }
