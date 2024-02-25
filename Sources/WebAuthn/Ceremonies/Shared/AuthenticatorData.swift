@@ -25,6 +25,23 @@ public struct AuthenticatorData: Equatable, Sendable {
     /// For attestation signatures this value will be set. For assertion signatures not.
     let attestedData: AttestedCredentialData?
     let extData: [UInt8]?
+
+    init(
+        relyingPartyIDHash: SHA256Digest,
+        flags: AuthenticatorFlags,
+        counter: UInt32,
+        attestedData: AttestedCredentialData? = nil,
+        extData: [UInt8]? = nil
+    ) {
+        self.relyingPartyIDHash = Array(relyingPartyIDHash)
+        var flags = flags
+        flags.attestedCredentialData = attestedData != nil
+        flags.extensionDataIncluded = extData != nil
+        self.flags = flags
+        self.counter = counter
+        self.attestedData = attestedData
+        self.extData = extData
+    }
 }
 
 extension AuthenticatorData {
