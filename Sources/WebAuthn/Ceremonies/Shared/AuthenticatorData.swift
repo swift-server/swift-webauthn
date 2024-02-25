@@ -19,12 +19,12 @@ import SwiftCBOR
 /// Data created and/ or used by the authenticator during authentication/ registration.
 /// The data contains, for example, whether a user was present or verified.
 public struct AuthenticatorData: Equatable, Sendable {
-    let relyingPartyIDHash: [UInt8]
-    let flags: AuthenticatorFlags
-    let counter: UInt32
+    var relyingPartyIDHash: [UInt8]
+    var flags: AuthenticatorFlags
+    var counter: UInt32
     /// For attestation signatures this value will be set. For assertion signatures not.
-    let attestedData: AttestedCredentialData?
-    let extData: [UInt8]?
+    var attestedData: AttestedCredentialData?
+    var extData: [UInt8]?
 
     init(
         relyingPartyIDHash: SHA256Digest,
