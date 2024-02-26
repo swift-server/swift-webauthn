@@ -71,7 +71,7 @@ public struct PublicKeyCredentialCreationOptions: Encodable, Sendable {
 
 // MARK: - Credential parameters
 /// From §5.3 (https://w3c.github.io/TR/webauthn/#dictionary-credential-params)
-public struct PublicKeyCredentialParameters: Equatable, Encodable, Sendable {
+public struct PublicKeyCredentialParameters: Hashable, Encodable, Sendable {
     /// The type of credential to be created. At the time of writing always ``CredentialType/publicKey``.
     public let type: CredentialType
     /// The cryptographic signature algorithm with which the newly generated credential will be used, and thus also
@@ -96,6 +96,13 @@ extension Array where Element == PublicKeyCredentialParameters {
         COSEAlgorithmIdentifier.allCases.map {
             Element.init(type: .publicKey, alg: $0)
         }
+    }
+}
+
+extension Set where Element == PublicKeyCredentialParameters {
+    /// A list of `PublicKeyCredentialParameters` WebAuthn Swift currently supports.
+    public static var supported: Self {
+        Set([PublicKeyCredentialParameters].supported)
     }
 }
 
