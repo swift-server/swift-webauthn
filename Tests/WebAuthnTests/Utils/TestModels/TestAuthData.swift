@@ -65,7 +65,6 @@ struct TestAuthDataBuilder {
             .flags(0b11000101)
             .counter([0b00000000, 0b00000000, 0b00000000, 0b00000000])
             .attestedCredData(
-                aaguid: [UInt8](repeating: 0, count: 16),
                 credentialIDLength: [0b00000000, 0b00000001],
                 credentialID: [0b00000001],
                 credentialPublicKey: TestCredentialPublicKeyBuilder().validMock().buildAsByteArray()
@@ -110,18 +109,17 @@ struct TestAuthDataBuilder {
         return temp
     }
 
-    /// aaguid length = 16
     /// credentialIDLength length = 2
     /// credentialID length = credentialIDLength
     /// credentialPublicKey = variable
     func attestedCredData(
-        aaguid: [UInt8] = [UInt8](repeating: 0, count: 16),
+        authenticatorAttestationGUID: AAGUID = .anonymous,
         credentialIDLength: [UInt8] = [0b00000000, 0b00000001],
         credentialID: [UInt8] = [0b00000001],
         credentialPublicKey: [UInt8]
     ) -> Self {
         var temp = self
-        temp.wrapped.attestedCredData = aaguid + credentialIDLength + credentialID + credentialPublicKey
+        temp.wrapped.attestedCredData = authenticatorAttestationGUID.bytes + credentialIDLength + credentialID + credentialPublicKey
         return temp
     }
 
