@@ -160,4 +160,142 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
 
         // We did it!
     }
+    
+    func testClientRegistrationAndAuthentication() async throws {
+        let challenge: [UInt8] = [1, 0, 1]
+        let relyingPartyDisplayName = "Testy test"
+        let relyingPartyID = "example.com"
+        let relyingPartyOrigin = "https://example.com"
+        
+        let server = WebAuthnManager(
+            configuration: .init(
+                relyingPartyID: relyingPartyID,
+                relyingPartyName: relyingPartyDisplayName,
+                relyingPartyOrigin: relyingPartyOrigin
+            ),
+            challengeGenerator: .mock(generate: challenge)
+        )
+        
+        let client = WebAuthnClient()
+        let aaguid = AAGUID(uuid: UUID())
+        let authenticator = KeyPairAuthenticator(attestationGloballyUniqueID: aaguid)
+        
+        let credentialCreationOptions = server.beginRegistration(user: .init(id: [1, 2, 3], name: "123", displayName: "One Two Three"))
+        
+        let (registrationCredential, credentialSource) = try await client.createRegistrationCredential(
+            options: credentialCreationOptions,
+            origin: relyingPartyOrigin,
+            authenticator: authenticator
+        )
+        
+        XCTAssertEqual(registrationCredential.type, .publicKey)
+        XCTAssertEqual(registrationCredential.rawID.count, 16)
+        XCTAssertEqual(registrationCredential.id, registrationCredential.rawID.base64URLEncodedString())
+        
+        let parsedAttestationResponse = try ParsedAuthenticatorAttestationResponse(from: registrationCredential.attestationResponse)
+        XCTAssertEqual(parsedAttestationResponse.clientData.type, .create)
+        XCTAssertEqual(parsedAttestationResponse.clientData.challenge.decodedBytes, [1, 0, 1])
+        XCTAssertEqual(parsedAttestationResponse.clientData.origin, "https://example.com")
+        
+        XCTAssertEqual(parsedAttestationResponse.attestationObject.authenticatorData.relyingPartyIDHash, [163, 121, 166, 246, 238, 175, 185, 165, 94, 55, 140, 17, 128, 52, 226, 117, 30, 104, 47, 171, 159, 45, 48, 171, 19, 210, 18, 85, 134, 206, 25, 71])
+        XCTAssertEqual(parsedAttestationResponse.attestationObject.authenticatorData.flags.bytes, [0b01011101])
+        XCTAssertEqual(parsedAttestationResponse.attestationObject.authenticatorData.counter, 0)
+        XCTAssertNotNil(parsedAttestationResponse.attestationObject.authenticatorData.attestedData)
+        XCTAssertEqual(parsedAttestationResponse.attestationObject.authenticatorData.attestedData?.authenticatorAttestationGUID, AAGUID.anonymous)
+        XCTAssertEqual(parsedAttestationResponse.attestationObject.authenticatorData.attestedData?.credentialID, credentialSource.id.bytes)
+        XCTAssertEqual(parsedAttestationResponse.attestationObject.authenticatorData.extData, nil)
+        
+        let publicKey = try CredentialPublicKey(publicKeyBytes: parsedAttestationResponse.attestationObject.authenticatorData.attestedData?.publicKey ?? [])
+        if case .ec2(let key) = publicKey {
+            XCTAssertEqual(key.algorithm, .algES256)
+            XCTAssertEqual(key.curve, .p256)
+            XCTAssertEqual(key.xCoordinate.count, 32)
+            XCTAssertEqual(key.yCoordinate.count, 32)
+            XCTAssertEqual(key.rawRepresentation, (credentialSource.publicKey as? EC2PublicKey)?.rawRepresentation)
+        } else {
+            XCTFail("Unexpected publicKey format")
+        }
+        
+        XCTAssertEqual(parsedAttestationResponse.attestationObject.format, .none)
+        XCTAssertEqual(parsedAttestationResponse.attestationObject.attestationStatement, [:])
+        
+        XCTAssertEqual(credentialSource.relyingPartyID, "example.com")
+        XCTAssertEqual(credentialSource.userHandle, [1, 2, 3])
+        XCTAssertEqual(credentialSource.counter, 0)
+        if case .es256(let privateKey) = credentialSource.key {
+            XCTAssertEqual(Array(privateKey.publicKey.rawRepresentation), (credentialSource.publicKey as? EC2PublicKey)?.rawRepresentation)
+        } else {
+            XCTFail("Unexpected credentialSource.key format")
+        }
+        
+        let registeredCredential = try await server.finishRegistration(
+            challenge: challenge,
+            credentialCreationData: registrationCredential
+        ) { credentialID in
+            XCTAssertEqual(credentialID, credentialSource.id.bytes.base64URLEncodedString().asString())
+            return true
+        }
+        
+        XCTAssertEqual(registeredCredential.type, .publicKey)
+        XCTAssertEqual(registeredCredential.id, credentialSource.id.bytes.base64EncodedString().asString())
+        XCTAssertEqual(registeredCredential.publicKey, (credentialSource.publicKey as? EC2PublicKey)?.bytes)
+        XCTAssertEqual(registeredCredential.signCount, 0)
+        XCTAssertEqual(registeredCredential.backupEligible, true)
+        XCTAssertEqual(registeredCredential.isBackedUp, true)
+        
+        let credentialRequestOptions = try server.beginAuthentication()
+        
+        XCTAssertEqual(credentialRequestOptions.challenge, [1, 0, 1])
+        XCTAssertEqual(credentialRequestOptions.timeout, .milliseconds(60000))
+        XCTAssertEqual(credentialRequestOptions.relyingPartyID, "example.com")
+        XCTAssertNil(credentialRequestOptions.allowCredentials)
+        XCTAssertEqual(credentialRequestOptions.userVerification, .preferred)
+        
+        let (authenticationCredential, updatedCredentialSource) = try await client.assertAuthenticationCredential(
+            options: credentialRequestOptions,
+            origin: relyingPartyOrigin,
+            authenticator: authenticator,
+            credentialStore: [credentialSource.id : credentialSource]
+        )
+        
+        XCTAssertEqual(authenticationCredential.type, .publicKey)
+        XCTAssertEqual(authenticationCredential.rawID.count, 16)
+        XCTAssertEqual(authenticationCredential.id, authenticationCredential.rawID.base64URLEncodedString())
+        XCTAssertEqual(authenticationCredential.authenticatorAttachment, .platform)
+        
+        let parsedAssertionResponse = try ParsedAuthenticatorAssertionResponse(from: authenticationCredential.response)
+        XCTAssertEqual(parsedAssertionResponse.clientData.type, .assert)
+        XCTAssertEqual(parsedAssertionResponse.clientData.challenge.decodedBytes, [1, 0, 1])
+        XCTAssertEqual(parsedAssertionResponse.clientData.origin, "https://example.com")
+        
+        XCTAssertEqual(parsedAssertionResponse.authenticatorData.relyingPartyIDHash, [163, 121, 166, 246, 238, 175, 185, 165, 94, 55, 140, 17, 128, 52, 226, 117, 30, 104, 47, 171, 159, 45, 48, 171, 19, 210, 18, 85, 134, 206, 25, 71])
+        XCTAssertEqual(parsedAssertionResponse.authenticatorData.flags.bytes, [0b00011101])
+        XCTAssertEqual(parsedAssertionResponse.authenticatorData.counter, 0)
+        XCTAssertNil(parsedAssertionResponse.authenticatorData.attestedData)
+        XCTAssertNil(parsedAssertionResponse.authenticatorData.extData)
+        
+        XCTAssertNotNil(parsedAssertionResponse.signature.decodedBytes)
+        XCTAssertEqual(parsedAssertionResponse.userHandle, [1, 2, 3])
+        
+        XCTAssertEqual(credentialSource.id, updatedCredentialSource.id)
+        XCTAssertEqual(updatedCredentialSource.relyingPartyID, "example.com")
+        XCTAssertEqual(updatedCredentialSource.userHandle, [1, 2, 3])
+        XCTAssertEqual(updatedCredentialSource.counter, 0)
+        if case .es256(let privateKey) = updatedCredentialSource.key {
+            XCTAssertEqual(Array(privateKey.publicKey.rawRepresentation), (updatedCredentialSource.publicKey as? EC2PublicKey)?.rawRepresentation)
+        } else {
+            XCTFail("Unexpected credentialSource.key format")
+        }
+        
+        let verifiedAuthentication = try server.finishAuthentication(
+            credential: authenticationCredential,
+            expectedChallenge: challenge,
+            credentialPublicKey: registeredCredential.publicKey, credentialCurrentSignCount: registeredCredential.signCount
+        )
+        
+        XCTAssertEqual(verifiedAuthentication.credentialID.urlDecoded.asString(), registeredCredential.id)
+        XCTAssertEqual(verifiedAuthentication.newSignCount, 0)
+        XCTAssertEqual(verifiedAuthentication.credentialDeviceType, .multiDevice)
+        XCTAssertEqual(verifiedAuthentication.credentialBackedUp, true)
+    }
 }
