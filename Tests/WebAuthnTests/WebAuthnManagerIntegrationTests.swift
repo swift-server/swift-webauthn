@@ -19,7 +19,7 @@ import Crypto
 final class WebAuthnManagerIntegrationTests: XCTestCase {
     // swiftlint:disable:next function_body_length
     func testRegistrationAndAuthenticationSucceeds() async throws {
-        let config = WebAuthnManager.Config(
+        let configuration = WebAuthnManager.Configuration(
             relyingPartyID: "example.com",
             relyingPartyName: "Example RP",
             relyingPartyOrigin: "https://example.com"
@@ -27,7 +27,7 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
 
         let mockChallenge = [UInt8](repeating: 0, count: 5)
         let challengeGenerator = ChallengeGenerator(generate: { mockChallenge })
-        let webAuthnManager = WebAuthnManager(config: config, challengeGenerator: challengeGenerator)
+        let webAuthnManager = WebAuthnManager(configuration: configuration, challengeGenerator: challengeGenerator)
 
         // Step 1.: Begin Registration
         let mockUser = PublicKeyCredentialUserEntity.mock
@@ -47,8 +47,8 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
         XCTAssertEqual(registrationOptions.user.name, mockUser.name)
         XCTAssertEqual(registrationOptions.user.displayName, mockUser.displayName)
         XCTAssertEqual(registrationOptions.attestation, attestationPreference)
-        XCTAssertEqual(registrationOptions.relyingParty.id, config.relyingPartyID)
-        XCTAssertEqual(registrationOptions.relyingParty.name, config.relyingPartyName)
+        XCTAssertEqual(registrationOptions.relyingParty.id, configuration.relyingPartyID)
+        XCTAssertEqual(registrationOptions.relyingParty.name, configuration.relyingPartyName)
         XCTAssertEqual(registrationOptions.timeout, timeout)
         XCTAssertEqual(registrationOptions.publicKeyCredentialParameters, publicKeyCredentialParameters)
 
@@ -106,7 +106,7 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
             userVerification: userVerification
         )
 
-        XCTAssertEqual(authenticationOptions.rpId, config.relyingPartyID)
+        XCTAssertEqual(authenticationOptions.rpId, configuration.relyingPartyID)
         XCTAssertEqual(authenticationOptions.timeout, authenticationTimeout)
         XCTAssertEqual(authenticationOptions.challenge, mockChallenge)
         XCTAssertEqual(authenticationOptions.userVerification, userVerification)
@@ -115,7 +115,7 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
         // Now send `authenticationOptions` to client, which in turn will send the authenticator's response back to us:
         // The following lines reflect what an authenticator normally produces
         let authenticatorData = TestAuthDataBuilder().validAuthenticationMock()
-            .rpIDHash(fromRpID: config.relyingPartyID)
+            .rpIDHash(fromRpID: configuration.relyingPartyID)
             .counter([0, 0, 0, 1]) // we authenticated once now, so authenticator likely increments the sign counter
             .build()
             .byteArrayRepresentation
