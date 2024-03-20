@@ -47,7 +47,7 @@ public struct WebAuthnManager {
     /// This method will use the Relying Party information from the WebAuthnManager's config  to create ``PublicKeyCredentialCreationOptions``
     /// - Parameters:
     ///   - user: The user to register.
-    ///   - timeoutInSeconds: How long the browser should give the user to choose an authenticator. This value
+    ///   - timeout: How long the browser should give the user to choose an authenticator. This value
     ///     is a *hint* and may be ignored by the browser. Defaults to 60 seconds.
     ///   - attestation: The Relying Party's preference regarding attestation. Defaults to `.none`.
     ///   - publicKeyCredentialParameters: A list of public key algorithms the Relying Party chooses to restrict
@@ -55,23 +55,18 @@ public struct WebAuthnManager {
     /// - Returns: Registration options ready for the browser.
     public func beginRegistration(
         user: PublicKeyCredentialUserEntity,
-        timeoutInSeconds: TimeInterval? = 3600,
+        timeout: Duration? = .seconds(3600),
         attestation: AttestationConveyancePreference = .none,
         publicKeyCredentialParameters: [PublicKeyCredentialParameters] = .supported
     ) -> PublicKeyCredentialCreationOptions {
         let challenge = challengeGenerator.generate()
-
-        var timeoutInMilliseconds: UInt32?
-        if let timeoutInSeconds {
-            timeoutInMilliseconds = UInt32(timeoutInSeconds * 1000)
-        }
 
         return PublicKeyCredentialCreationOptions(
             challenge: challenge,
             user: user,
             relyingParty: .init(id: config.relyingPartyID, name: config.relyingPartyName),
             publicKeyCredentialParameters: publicKeyCredentialParameters,
-            timeoutInMilliseconds: timeoutInMilliseconds,
+            timeout: timeout,
             attestation: attestation
         )
     }
@@ -139,18 +134,15 @@ public struct WebAuthnManager {
     ///     "user verified" flag.
     /// - Returns: Authentication options ready for the browser.
     public func beginAuthentication(
-        timeout: TimeInterval? = 60,
+        timeout: Duration? = .seconds(60),
         allowCredentials: [PublicKeyCredentialDescriptor]? = nil,
         userVerification: UserVerificationRequirement = .preferred
     ) throws -> PublicKeyCredentialRequestOptions {
         let challenge = challengeGenerator.generate()
-        var timeoutInMilliseconds: UInt32? = nil
-        if let timeout {
-            timeoutInMilliseconds = UInt32(timeout * 1000)
-        }
+
         return PublicKeyCredentialRequestOptions(
             challenge: challenge,
-            timeout: timeoutInMilliseconds,
+            timeout: timeout,
             rpId: config.relyingPartyID,
             allowCredentials: allowCredentials,
             userVerification: userVerification

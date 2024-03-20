@@ -37,13 +37,13 @@ final class WebAuthnManagerAuthenticationTests: XCTestCase {
     func testBeginAuthentication() async throws {
         let allowCredentials: [PublicKeyCredentialDescriptor] = [.init(type: "public-key", id: [1, 0, 2, 30])]
         let options = try webAuthnManager.beginAuthentication(
-            timeout: 1234,
+            timeout: .seconds(1234),
             allowCredentials: allowCredentials,
             userVerification: .preferred
         )
 
         XCTAssertEqual(options.challenge, challenge)
-        XCTAssertEqual(options.timeout, 1234000)    // timeout converted to milliseconds
+        XCTAssertEqual(options.timeout, .seconds(1234))
         XCTAssertEqual(options.rpId, relyingPartyID)
         XCTAssertEqual(options.allowCredentials, allowCredentials)
         XCTAssertEqual(options.userVerification, .preferred)
