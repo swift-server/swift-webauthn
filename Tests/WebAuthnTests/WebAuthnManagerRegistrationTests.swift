@@ -200,7 +200,7 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
             await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
                     .validMock()
-                    .authData(TestAuthDataBuilder().validMock().flags(0b11000001).noExtensionData())
+                    .authData(TestAuthDataBuilder().validMock().noExtensionData().flags(0b11000001))
                     .build()
                     .cborEncoded
             ),
@@ -248,7 +248,7 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
             await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
                     .validMock()
-                    .authData(TestAuthDataBuilder().validMock().flags(0b01000000))
+                    .authData(TestAuthDataBuilder().validMock().flags(0b11000000))
                     .build()
                     .cborEncoded
             ),
@@ -261,7 +261,7 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
             await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
                     .validMock()
-                    .authData(TestAuthDataBuilder().validMock().flags(0b01000001))
+                    .authData(TestAuthDataBuilder().validMock().flags(0b11000001))
                     .build()
                     .cborEncoded,
                 requireUserVerification: true

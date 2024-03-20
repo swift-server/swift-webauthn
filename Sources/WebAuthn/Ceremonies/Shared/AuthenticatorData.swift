@@ -14,6 +14,7 @@
 
 import Foundation
 import Crypto
+import SwiftCBOR
 
 /// Data created and/ or used by the authenticator during authentication/ registration.
 /// The data contains, for example, whether a user was present or verified.
@@ -93,7 +94,13 @@ extension AuthenticatorData {
             throw WebAuthnError.credentialIDTooShort
         }
         let credentialID = data[55..<credentialIDEndIndex]
-        let publicKeyBytes = data[credentialIDEndIndex...]
+
+        /// **credentialPublicKey** (variable): The credential public key encoded in COSE_Key format, as defined in Section 7 of [RFC9052], using the CTAP2 canonical CBOR encoding form.
+        /// Assuming valid CBOR, verify the public key's length by decoding the next CBOR item.
+        let inputStream = ByteInputStream(data[credentialIDEndIndex...])
+        let decoder = CBORDecoder(stream: inputStream)
+        _ = try decoder.decodeItem()
+        let publicKeyBytes = data[credentialIDEndIndex..<(data.count - inputStream.remainingBytes)]
 
         let data = AttestedCredentialData(
             aaguid: Array(aaguid),
@@ -105,5 +112,29 @@ extension AuthenticatorData {
         let length = data.aaguid.count + 2 + data.credentialID.count + data.publicKey.count
 
         return (data, length)
+    }
+}
+
+/// A helper type to determine how many bytes were consumed when decoding CBOR items.
+class ByteInputStream: CBORInputStream {
+    private var slice : ArraySlice<UInt8>
+    
+    init(_ slice: Data) {
+        self.slice = Array(slice)[...]
+    }
+    
+    /// The remaining bytes in the original data buffer.
+    var remainingBytes: Int { slice.count }
+    
+    func popByte() throws -> UInt8 {
+        if slice.count < 1 { throw CBORError.unfinishedSequence }
+        return slice.removeFirst()
+    }
+    
+    func popBytes(_ n: Int) throws -> ArraySlice<UInt8> {
+        if slice.count < n { throw CBORError.unfinishedSequence }
+        let result = slice.prefix(n)
+        slice = slice.dropFirst(n)
+        return result
     }
 }
