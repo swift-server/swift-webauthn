@@ -78,24 +78,31 @@ extension AuthenticatorData {
 
     }
 
-    /// Returns: Attested credentials data and the length
+    /// Parse and return the attested credential data and its length.
+    ///
+    /// This is assumed to take place after the first 37 bytes of `data`, which is always of fixed size.
+    /// - SeeAlso: [WebAuthn Level 3 Editor's Draft §6.5.1. Attested Credential Data]( https://w3c.github.io/webauthn/#sctn-attested-credential-data)
     private static func parseAttestedData(_ data: Data) throws -> (AttestedCredentialData, Int) {
-        // We've parsed the first 37 bytes so far, the next bytes now should be the attested credential data
-        // See https://w3c.github.io/webauthn/#sctn-attested-credential-data
+        /// **aaguid** (16): The AAGUID of the authenticator.
         let aaguidLength = 16
         let aaguid = data[37..<(37 + aaguidLength)]  // To byte at index 52
 
+        /// **credentialIdLength** (2): Byte length L of credentialId, 16-bit unsigned big-endian integer. Value MUST be ≤ 1023.
         let idLengthBytes = data[53..<55]  // Length is 2 bytes
         let idLengthData = Data(idLengthBytes)
         let idLength: UInt16 = idLengthData.toInteger(endian: .big)
-        let credentialIDEndIndex = Int(idLength) + 55
 
-        guard data.count >= credentialIDEndIndex else {
-            throw WebAuthnError.credentialIDTooShort
-        }
+        guard idLength <= 1023
+        else { throw WebAuthnError.credentialIDTooLong }
+
+        let credentialIDEndIndex = Int(idLength) + 55
+        guard data.count >= credentialIDEndIndex 
+        else { throw WebAuthnError.credentialIDTooShort }
+
+        /// **credentialId** (L): Credential ID
         let credentialID = data[55..<credentialIDEndIndex]
 
-        /// **credentialPublicKey** (variable): The credential public key encoded in COSE_Key format, as defined in Section 7 of [RFC9052], using the CTAP2 canonical CBOR encoding form.
+        /// **credentialPublicKey** (variable): The credential public key encoded in `COSE_Key` format, as defined in [Section 7](https://tools.ietf.org/html/rfc9052#section-7) of [RFC9052], using the CTAP2 canonical CBOR encoding form.
         /// Assuming valid CBOR, verify the public key's length by decoding the next CBOR item.
         let inputStream = ByteInputStream(data[credentialIDEndIndex...])
         let decoder = CBORDecoder(stream: inputStream)
@@ -108,7 +115,7 @@ extension AuthenticatorData {
             publicKey: Array(publicKeyBytes)
         )
 
-        // 2 is the bytes storing the size of the credential ID
+        /// `2` is the size of **credentialIdLength**
         let length = data.aaguid.count + 2 + data.credentialID.count + data.publicKey.count
 
         return (data, length)
