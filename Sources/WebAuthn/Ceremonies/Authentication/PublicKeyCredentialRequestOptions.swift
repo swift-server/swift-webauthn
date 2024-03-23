@@ -32,8 +32,11 @@ public struct PublicKeyCredentialRequestOptions: Encodable {
     /// See https://www.w3.org/TR/webauthn-2/#dictionary-assertion-options
     public let timeout: Duration?
 
-    /// The Relying Party ID.
-    public let rpId: String?
+    /// The ID of the Relying Party making the request.
+    ///
+    /// This is configured on ``WebAuthnManager`` before its ``WebAuthnManager/beginAuthentication(timeout:allowCredentials:userVerification:)`` method is called.
+    /// - Note: When encoded, this field appears as `rpId` to match the expectations of `navigator.credentials.get()`.
+    public let relyingPartyID: String?
 
     /// Optionally used by the client to find authenticators eligible for this authentication ceremony.
     public let allowCredentials: [PublicKeyCredentialDescriptor]?
@@ -48,7 +51,7 @@ public struct PublicKeyCredentialRequestOptions: Encodable {
 
         try container.encode(challenge.base64URLEncodedString(), forKey: .challenge)
         try container.encodeIfPresent(timeout?.milliseconds, forKey: .timeout)
-        try container.encodeIfPresent(rpId, forKey: .rpId)
+        try container.encodeIfPresent(relyingPartyID, forKey: .rpID)
         try container.encodeIfPresent(allowCredentials, forKey: .allowCredentials)
         try container.encodeIfPresent(userVerification, forKey: .userVerification)
     }
@@ -56,7 +59,7 @@ public struct PublicKeyCredentialRequestOptions: Encodable {
     private enum CodingKeys: String, CodingKey {
         case challenge
         case timeout
-        case rpId
+        case rpID = "rpId"
         case allowCredentials
         case userVerification
     }

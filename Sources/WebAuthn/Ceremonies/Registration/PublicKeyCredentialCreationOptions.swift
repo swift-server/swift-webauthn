@@ -32,7 +32,7 @@ public struct PublicKeyCredentialCreationOptions: Encodable {
     public let user: PublicKeyCredentialUserEntity
 
     /// Contains a name and an identifier for the Relying Party responsible for the request
-    public let relyingParty: PublicKeyCredentialRpEntity
+    public let relyingParty: PublicKeyCredentialRelyingPartyEntity
 
     /// A list of key types and signature algorithms the Relying Party supports. Ordered from most preferred to least
     /// preferred.
@@ -102,9 +102,9 @@ extension Array where Element == PublicKeyCredentialParameters {
 // MARK: - Credential entities
 
 /// From §5.4.2 (https://www.w3.org/TR/webauthn/#sctn-rp-credential-params).
-/// The PublicKeyCredentialRpEntity dictionary is used to supply additional Relying Party attributes when
+/// The PublicKeyCredentialRelyingPartyEntity dictionary is used to supply additional Relying Party attributes when
 /// creating a new credential.
-public struct PublicKeyCredentialRpEntity: Encodable {
+public struct PublicKeyCredentialRelyingPartyEntity: Encodable {
     /// A unique identifier for the Relying Party entity.
     public let id: String
 

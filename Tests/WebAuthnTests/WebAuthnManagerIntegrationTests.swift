@@ -106,7 +106,7 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
             userVerification: userVerification
         )
 
-        XCTAssertEqual(authenticationOptions.rpId, configuration.relyingPartyID)
+        XCTAssertEqual(authenticationOptions.relyingPartyID, configuration.relyingPartyID)
         XCTAssertEqual(authenticationOptions.timeout, authenticationTimeout)
         XCTAssertEqual(authenticationOptions.challenge, mockChallenge)
         XCTAssertEqual(authenticationOptions.userVerification, userVerification)
@@ -115,7 +115,7 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
         // Now send `authenticationOptions` to client, which in turn will send the authenticator's response back to us:
         // The following lines reflect what an authenticator normally produces
         let authenticatorData = TestAuthDataBuilder().validAuthenticationMock()
-            .rpIDHash(fromRpID: configuration.relyingPartyID)
+            .relyingPartyIDHash(fromRelyingPartyID: configuration.relyingPartyID)
             .counter([0, 0, 0, 1]) // we authenticated once now, so authenticator likely increments the sign counter
             .build()
             .byteArrayRepresentation

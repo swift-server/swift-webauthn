@@ -17,7 +17,7 @@ import Crypto
 import WebAuthn
 
 struct TestAuthData {
-    var rpIDHash: [UInt8]?
+    var relyingPartyIDHash: [UInt8]?
     var flags: UInt8?
     var counter: [UInt8]?
     var attestedCredData: [UInt8]?
@@ -25,8 +25,8 @@ struct TestAuthData {
 
     var byteArrayRepresentation: [UInt8] {
         var value: [UInt8] = []
-        if let rpIDHash {
-            value += rpIDHash
+        if let relyingPartyIDHash {
+            value += relyingPartyIDHash
         }
         if let flags {
             value += [flags]
@@ -61,7 +61,7 @@ struct TestAuthDataBuilder {
 
     func validMock() -> Self {
         self
-            .rpIDHash(fromRpID: "example.com")
+            .relyingPartyIDHash(fromRelyingPartyID: "example.com")
             .flags(0b11000101)
             .counter([0b00000000, 0b00000000, 0b00000000, 0b00000000])
             .attestedCredData(
@@ -75,23 +75,23 @@ struct TestAuthDataBuilder {
 
     /// Creates a valid authData
     ///
-    /// rpID = "example.com", user
+    /// relyingPartyID = "example.com", user
     /// flags "extension data included", "user verified" and "user present" are set
     /// sign count is set to 0
     /// random extension data is included
     func validAuthenticationMock() -> Self {
         self
-            .rpIDHash(fromRpID: "example.com")
+            .relyingPartyIDHash(fromRelyingPartyID: "example.com")
             .flags(0b10000101)
             .counter([0b00000000, 0b00000000, 0b00000000, 0b00000000])
             .extensions([UInt8](repeating: 0, count: 20))
     }
 
-    func rpIDHash(fromRpID rpID: String) -> Self {
-        let rpIDData = rpID.data(using: .utf8)!
-        let rpIDHash = SHA256.hash(data: rpIDData)
+    func relyingPartyIDHash(fromRelyingPartyID relyingPartyID: String) -> Self {
+        let relyingPartyIDData = relyingPartyID.data(using: .utf8)!
+        let relyingPartyIDHash = SHA256.hash(data: relyingPartyIDData)
         var temp = self
-        temp.wrapped.rpIDHash = [UInt8](rpIDHash)
+        temp.wrapped.relyingPartyIDHash = [UInt8](relyingPartyIDHash)
         return temp
     }
 
@@ -148,7 +148,7 @@ struct TestAuthDataBuilder {
 extension TestAuthData {
     static var valid: Self {
         TestAuthData(
-            rpIDHash: [1],
+            relyingPartyIDHash: [1],
             flags: 1,
             counter: [1],
             attestedCredData: [2],

@@ -143,7 +143,7 @@ public struct WebAuthnManager {
         return PublicKeyCredentialRequestOptions(
             challenge: challenge,
             timeout: timeout,
-            rpId: configuration.relyingPartyID,
+            relyingPartyID: configuration.relyingPartyID,
             allowCredentials: allowCredentials,
             userVerification: userVerification
         )
