@@ -35,7 +35,7 @@ final class WebAuthnManagerAuthenticationTests: XCTestCase {
     }
 
     func testBeginAuthentication() async throws {
-        let allowCredentials: [PublicKeyCredentialDescriptor] = [.init(type: "public-key", id: [1, 0, 2, 30])]
+        let allowCredentials: [PublicKeyCredentialDescriptor] = [.init(type: .publicKey, id: [1, 0, 2, 30])]
         let options = try webAuthnManager.beginAuthentication(
             timeout: .seconds(1234),
             allowCredentials: allowCredentials,
@@ -165,8 +165,8 @@ final class WebAuthnManagerAuthenticationTests: XCTestCase {
         signature: [UInt8] = TestECCKeyPair.signature,
         userHandle: [UInt8]? = "36323638424436452d303831452d344331312d413743332d334444304146333345433134".hexadecimal!,
         attestationObject: [UInt8]? = nil,
-        authenticatorAttachment: String? = "platform",
-        type: String = "public-key",
+        authenticatorAttachment: AuthenticatorAttachment? = .platform,
+        type: CredentialType = .publicKey,
         expectedChallenge: [UInt8] = TestConstants.mockChallenge,
         credentialPublicKey: [UInt8] = TestCredentialPublicKeyBuilder().validMock().buildAsByteArray(),
         credentialCurrentSignCount: UInt32 = 0,

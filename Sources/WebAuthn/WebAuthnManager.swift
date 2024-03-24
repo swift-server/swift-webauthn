@@ -167,7 +167,8 @@ public struct WebAuthnManager {
         credentialCurrentSignCount: UInt32,
         requireUserVerification: Bool = false
     ) throws -> VerifiedAuthentication {
-        guard credential.type == "public-key" else { throw WebAuthnError.invalidAssertionCredentialType }
+        guard credential.type == .publicKey
+        else { throw WebAuthnError.invalidAssertionCredentialType }
 
         let parsedAssertion = try ParsedAuthenticatorAssertionResponse(from: credential.response)
         try parsedAssertion.verify(

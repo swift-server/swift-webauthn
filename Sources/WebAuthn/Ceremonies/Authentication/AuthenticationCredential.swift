@@ -29,10 +29,10 @@ public struct AuthenticationCredential {
 
     /// Reports the authenticator attachment modality in effect at the time the navigator.credentials.create() or
     /// navigator.credentials.get() methods successfully complete
-    public let authenticatorAttachment: String?
+    public let authenticatorAttachment: AuthenticatorAttachment?
 
-    /// Value will always be "public-key" (for now)
-    public let type: String
+    /// Value will always be ``CredentialType/publicKey`` (for now)
+    public let type: CredentialType
 }
 
 extension AuthenticationCredential: Decodable {
@@ -42,8 +42,8 @@ extension AuthenticationCredential: Decodable {
         id = try container.decode(URLEncodedBase64.self, forKey: .id)
         rawID = try container.decodeBytesFromURLEncodedBase64(forKey: .rawID)
         response = try container.decode(AuthenticatorAssertionResponse.self, forKey: .response)
-        authenticatorAttachment = try container.decodeIfPresent(String.self, forKey: .authenticatorAttachment)
-        type = try container.decode(String.self, forKey: .type)
+        authenticatorAttachment = try container.decodeIfPresent(AuthenticatorAttachment.self, forKey: .authenticatorAttachment)
+        type = try container.decode(CredentialType.self, forKey: .type)
     }
 
     private enum CodingKeys: String, CodingKey {
