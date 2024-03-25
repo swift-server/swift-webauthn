@@ -36,7 +36,7 @@ extension AuthenticatorData {
 
         let relyingPartyIDHash = Array(bytes[..<32])
         let flags = AuthenticatorFlags(bytes[32])
-        let counter: UInt32 = Data(bytes[33..<37]).toInteger(endian: .big)
+        let counter = UInt32(bigEndianBytes: bytes[33..<37])
 
         var remainingCount = bytes.count - minAuthDataLength
 
@@ -90,7 +90,7 @@ extension AuthenticatorData {
         /// **credentialIdLength** (2): Byte length L of credentialId, 16-bit unsigned big-endian integer. Value MUST be ≤ 1023.
         let idLengthBytes = data[53..<55]  // Length is 2 bytes
         let idLengthData = Data(idLengthBytes)
-        let idLength: UInt16 = idLengthData.toInteger(endian: .big)
+        let idLength = UInt16(bigEndianBytes: idLengthData)
 
         guard idLength <= 1023
         else { throw WebAuthnError.credentialIDTooLong }
