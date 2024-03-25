@@ -1,0 +1,18 @@
+version: "3"
+
+services:
+
+  runtime-setup:
+    image: webauthn-swift:22.04-5.10
+    build:
+      args:
+        ubuntu_version: "jammy"
+        swift_version: "5.10"
+
+  test:
+    image: webauthn-swift:22.04-5.10
+    environment: []
+      #- SANITIZER_ARG=--sanitize=thread
+
+  shell:
+    image: webauthn-swift:22.04-5.10
