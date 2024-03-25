@@ -28,7 +28,7 @@ struct AuthenticatorData: Equatable {
 }
 
 extension AuthenticatorData {
-    init(bytes: Data) throws {
+    init(bytes: [UInt8]) throws {
         let minAuthDataLength = 37
         guard bytes.count >= minAuthDataLength else {
             throw WebAuthnError.authDataTooShort
@@ -82,7 +82,7 @@ extension AuthenticatorData {
     ///
     /// This is assumed to take place after the first 37 bytes of `data`, which is always of fixed size.
     /// - SeeAlso: [WebAuthn Level 3 Editor's Draft §6.5.1. Attested Credential Data]( https://w3c.github.io/webauthn/#sctn-attested-credential-data)
-    private static func parseAttestedData(_ data: Data) throws -> (AttestedCredentialData, Int) {
+    private static func parseAttestedData(_ data: [UInt8]) throws -> (AttestedCredentialData, Int) {
         /// **aaguid** (16): The AAGUID of the authenticator.
         let aaguidLength = 16
         let aaguid = data[37..<(37 + aaguidLength)]  // To byte at index 52
@@ -126,8 +126,8 @@ extension AuthenticatorData {
 class ByteInputStream: CBORInputStream {
     private var slice : ArraySlice<UInt8>
     
-    init(_ slice: Data) {
-        self.slice = Array(slice)[...]
+    init(_ slice: ArraySlice<UInt8>) {
+        self.slice = slice
     }
     
     /// The remaining bytes in the original data buffer.

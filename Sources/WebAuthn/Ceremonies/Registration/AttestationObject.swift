@@ -19,7 +19,7 @@ import SwiftCBOR
 /// Contains the cryptographic attestation that a new key pair was created by that authenticator.
 public struct AttestationObject {
     let authenticatorData: AuthenticatorData
-    let rawAuthenticatorData: Data
+    let rawAuthenticatorData: [UInt8]
     let format: AttestationFormat
     let attestationStatement: CBOR
 
