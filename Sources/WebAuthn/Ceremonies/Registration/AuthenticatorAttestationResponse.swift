@@ -56,7 +56,7 @@ struct ParsedAuthenticatorAttestationResponse {
 
         // Step 11. (assembling attestationObject)
         let attestationObjectData = Data(rawResponse.attestationObject)
-        guard let decodedAttestationObject = try? CBOR.decode([UInt8](attestationObjectData)) else {
+        guard let decodedAttestationObject = try? CBOR.decode([UInt8](attestationObjectData), options: CBOROptions(maximumDepth: 16)) else {
             throw WebAuthnError.invalidAttestationObject
         }
 
