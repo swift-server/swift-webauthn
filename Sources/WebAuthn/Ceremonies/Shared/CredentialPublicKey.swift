@@ -20,7 +20,7 @@ import SwiftCBOR
 protocol PublicKey {
     var algorithm: COSEAlgorithmIdentifier { get }
     /// Verify a signature was signed with the private key corresponding to the public key.
-    func verify(signature: Data, data: Data) throws
+    func verify(signature: some DataProtocol, data: some DataProtocol) throws
 }
 
 enum CredentialPublicKey {
@@ -86,7 +86,7 @@ enum CredentialPublicKey {
     }
 
     /// Verify a signature was signed with the private key corresponding to the provided public key.
-    func verify(signature: Data, data: Data) throws {
+    func verify(signature: some DataProtocol, data: some DataProtocol) throws {
         try key.verify(signature: signature, data: data)
     }
 }
@@ -134,7 +134,7 @@ struct EC2PublicKey: PublicKey {
         yCoordinate = Data(yCoordinateBytes)
     }
 
-    func verify(signature: Data, data: Data) throws {
+    func verify(signature: some DataProtocol, data: some DataProtocol) throws {
         switch algorithm {
         case .algES256:
             let ecdsaSignature = try P256.Signing.ECDSASignature(derRepresentation: signature)
@@ -184,7 +184,7 @@ struct RSAPublicKeyData: PublicKey {
         e = Data(eBytes)
     }
 
-    func verify(signature: Data, data: Data) throws {
+    func verify(signature: some DataProtocol, data: some DataProtocol) throws {
         throw WebAuthnError.unsupported
         // let rsaSignature = _RSA.Signing.RSASignature(derRepresentation: signature)
 
@@ -229,7 +229,7 @@ struct OKPPublicKey: PublicKey {
         xCoordinate = xCoordinateBytes
     }
 
-    func verify(signature: Data, data: Data) throws {
+    func verify(signature: some DataProtocol, data: some DataProtocol) throws {
         throw WebAuthnError.unsupported
     }
 }

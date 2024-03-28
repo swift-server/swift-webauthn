@@ -70,18 +70,18 @@ extension AuthenticatorAssertionResponse: Decodable {
 }
 
 struct ParsedAuthenticatorAssertionResponse {
-    let rawClientData: Data
+    let rawClientData: [UInt8]
     let clientData: CollectedClientData
-    let rawAuthenticatorData: Data
+    let rawAuthenticatorData: [UInt8]
     let authenticatorData: AuthenticatorData
     let signature: URLEncodedBase64
     let userHandle: [UInt8]?
 
     init(from authenticatorAssertionResponse: AuthenticatorAssertionResponse) throws {
-        rawClientData = Data(authenticatorAssertionResponse.clientDataJSON)
-        clientData = try JSONDecoder().decode(CollectedClientData.self, from: rawClientData)
+        rawClientData = authenticatorAssertionResponse.clientDataJSON
+        clientData = try JSONDecoder().decode(CollectedClientData.self, from: Data(rawClientData))
 
-        rawAuthenticatorData = Data(authenticatorAssertionResponse.authenticatorData)
+        rawAuthenticatorData = authenticatorAssertionResponse.authenticatorData
         authenticatorData = try AuthenticatorData(bytes: rawAuthenticatorData)
         signature = authenticatorAssertionResponse.signature.base64URLEncodedString()
         userHandle = authenticatorAssertionResponse.userHandle
