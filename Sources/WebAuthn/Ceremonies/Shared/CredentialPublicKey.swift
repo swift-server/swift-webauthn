@@ -50,8 +50,8 @@ enum CredentialPublicKey {
             self = .ec2(EC2PublicKey(
                 algorithm: .algES256,
                 curve: .p256,
-                xCoordinate: Data(Array(publicKeyBytes[1...33])),
-                yCoordinate: Data(Array(publicKeyBytes[33...65]))
+                xCoordinate: Array(publicKeyBytes[1...33]),
+                yCoordinate: Array(publicKeyBytes[33...65])
             ))
             return
         }
@@ -96,13 +96,13 @@ struct EC2PublicKey: PublicKey {
     /// The curve on which we derive the signature from.
     let curve: COSECurve
     /// A byte string 32 bytes in length that holds the x coordinate of the key.
-    let xCoordinate: Data
+    let xCoordinate: [UInt8]
     /// A byte string 32 bytes in length that holds the y coordinate of the key.
-    let yCoordinate: Data
+    let yCoordinate: [UInt8]
 
-    var rawRepresentation: Data { xCoordinate + yCoordinate }
+    var rawRepresentation: [UInt8] { xCoordinate + yCoordinate }
 
-    init(algorithm: COSEAlgorithmIdentifier, curve: COSECurve, xCoordinate: Data, yCoordinate: Data) {
+    init(algorithm: COSEAlgorithmIdentifier, curve: COSECurve, xCoordinate: [UInt8], yCoordinate: [UInt8]) {
         self.algorithm = algorithm
         self.curve = curve
         self.xCoordinate = xCoordinate
@@ -126,12 +126,12 @@ struct EC2PublicKey: PublicKey {
               case let .byteString(xCoordinateBytes) = xCoordRaw else {
             throw WebAuthnError.invalidXCoordinate
         }
-        xCoordinate = Data(xCoordinateBytes)
+        xCoordinate = xCoordinateBytes
         guard let yCoordRaw = publicKeyObject[COSEKey.y.cbor],
               case let .byteString(yCoordinateBytes) = yCoordRaw else {
             throw WebAuthnError.invalidYCoordinate
         }
-        yCoordinate = Data(yCoordinateBytes)
+        yCoordinate = yCoordinateBytes
     }
 
     func verify(signature: some DataProtocol, data: some DataProtocol) throws {
@@ -162,11 +162,11 @@ struct EC2PublicKey: PublicKey {
 struct RSAPublicKeyData: PublicKey {
     let algorithm: COSEAlgorithmIdentifier
     // swiftlint:disable:next identifier_name
-    let n: Data
+    let n: [UInt8]
     // swiftlint:disable:next identifier_name
-    let e: Data
+    let e: [UInt8]
 
-    var rawRepresentation: Data { n + e }
+    var rawRepresentation: [UInt8] { n + e }
 
     init(publicKeyObject: CBOR, algorithm: COSEAlgorithmIdentifier) throws {
         self.algorithm = algorithm
@@ -175,13 +175,13 @@ struct RSAPublicKeyData: PublicKey {
               case let .byteString(nBytes) = nRaw else {
             throw WebAuthnError.invalidModulus
         }
-        n = Data(nBytes)
+        n = nBytes
 
         guard let eRaw = publicKeyObject[COSEKey.e.cbor],
               case let .byteString(eBytes) = eRaw else {
             throw WebAuthnError.invalidExponent
         }
-        e = Data(eBytes)
+        e = eBytes
     }
 
     func verify(signature: some DataProtocol, data: some DataProtocol) throws {
