@@ -105,7 +105,7 @@ extension AuthenticatorData {
         /// **credentialPublicKey** (variable): The credential public key encoded in `COSE_Key` format, as defined in [Section 7](https://tools.ietf.org/html/rfc9052#section-7) of [RFC9052], using the CTAP2 canonical CBOR encoding form.
         /// Assuming valid CBOR, verify the public key's length by decoding the next CBOR item.
         let inputStream = ByteInputStream(data[credentialIDEndIndex...])
-        let decoder = CBORDecoder(stream: inputStream)
+        let decoder = CBORDecoder(stream: inputStream, options: CBOROptions(maximumDepth: 16))
         _ = try decoder.decodeItem()
         let publicKeyBytes = data[credentialIDEndIndex..<(data.count - inputStream.remainingBytes)]
 

@@ -40,7 +40,7 @@ enum CredentialPublicKey {
     }
 
     init(publicKeyBytes: [UInt8]) throws {
-        guard let publicKeyObject = try CBOR.decode(publicKeyBytes) else {
+        guard let publicKeyObject = try CBOR.decode(publicKeyBytes, options: CBOROptions(maximumDepth: 16)) else {
             throw WebAuthnError.badPublicKeyBytes
         }
 
