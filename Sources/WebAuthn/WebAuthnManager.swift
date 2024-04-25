@@ -119,6 +119,7 @@ public struct WebAuthnManager {
             signCount: parsedData.response.attestationObject.authenticatorData.counter,
             backupEligible: parsedData.response.attestationObject.authenticatorData.flags.isBackupEligible,
             isBackedUp: parsedData.response.attestationObject.authenticatorData.flags.isCurrentlyBackedUp,
+            aaguid: parsedData.response.attestationObject.authenticatorData.attestedData?.aaguid,
             attestationObject: parsedData.response.attestationObject,
             attestationClientDataJSON: parsedData.response.clientData
         )

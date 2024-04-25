@@ -41,6 +41,8 @@ public struct Credential {
 
     // MARK: Optional content
 
+    public let aaguid: [UInt8]?
+    
     public let attestationObject: AttestationObject
 
     public let attestationClientDataJSON: CollectedClientData

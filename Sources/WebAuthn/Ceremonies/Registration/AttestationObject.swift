@@ -56,21 +56,21 @@ public struct AttestationObject {
             throw WebAuthnError.unsupportedCredentialPublicKeyAlgorithm
         }
 
-        // let pemRootCertificates = pemRootCertificatesByFormat[format] ?? []
+        let pemRootCertificates = pemRootCertificatesByFormat[format] ?? []
         switch format {
         case .none:
             // if format is `none` statement must be empty
             guard attestationStatement == .map([:]) else {
                 throw WebAuthnError.attestationStatementMustBeEmpty
             }
-        // case .packed:
-        //     try await PackedAttestation.verify(
-        //         attStmt: attestationStatement,
-        //         authenticatorData: rawAuthenticatorData,
-        //         clientDataHash: Data(clientDataHash),
-        //         credentialPublicKey: credentialPublicKey,
-        //         pemRootCertificates: pemRootCertificates
-        //     )
+        case .packed:
+            try await PackedAttestation.verify(
+                attStmt: attestationStatement,
+                authenticatorData: Data(rawAuthenticatorData),
+                clientDataHash: Data(clientDataHash),
+                credentialPublicKey: credentialPublicKey,
+                pemRootCertificates: pemRootCertificates
+            )
         // case .tpm:
         //     try TPMAttestation.verify(
         //         attStmt: attestationStatement,
