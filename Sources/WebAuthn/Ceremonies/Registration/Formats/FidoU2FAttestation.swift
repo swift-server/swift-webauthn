@@ -46,11 +46,6 @@ struct FidoU2FAttestation {
         guard case let .ec2(key) = credentialPublicKey else {
             throw FidoU2FAttestationError.invalidAttestationKeyType
         }
-        
-        // With U2F, the public key format used when calculating the signature (`sig`) was encoded in ANSI X9.62 format
-        let ansiPublicKey = [0x04] + key.xCoordinate + key.yCoordinate
-        // https://fidoalliance.org/specs/fido-u2f-v1.1-id-20160915/fido-u2f-raw-message-formats-v1.1-id-20160915.html#registration-response-message-success
-        let verificationData = Data([0x00] + authenticatorData.relyingPartyIDHash + Array(clientDataHash) + attestedData.credentialID + ansiPublicKey)
 
         guard let x5cCBOR = attStmt["x5c"], case let .array(x5cCBOR) = x5cCBOR else {
                 throw FidoU2FAttestationError.invalidX5C
@@ -82,10 +77,19 @@ struct FidoU2FAttestation {
             throw FidoU2FAttestationError.invalidLeafCertificate
         }
 
-        // 2. Verify signature
-        // 2.1 Determine key type (with new Swift ASN.1/ Certificates library)
-        // 2.2 Create corresponding public key object (EC2PublicKey/RSAPublicKey/OKPPublicKey)
-        // 2.3 Call verify method on public key with signature + data
+        // With U2F, the public key format used when calculating the signature (`sig`) was encoded in ANSI X9.62 format
+        let ansiPublicKey = [0x04] + key.xCoordinate + key.yCoordinate
+        
+        // https://fidoalliance.org/specs/fido-u2f-v1.1-id-20160915/fido-u2f-raw-message-formats-v1.1-id-20160915.html#registration-response-message-success
+        let verificationData = Data(
+            [0x00]
+            + authenticatorData.relyingPartyIDHash
+            + Array(clientDataHash)
+            + attestedData.credentialID
+            + ansiPublicKey
+        )
+        
+        // Verify signature
         let leafCertificatePublicKey: Certificate.PublicKey = leafCertificate.publicKey
         guard try leafCertificatePublicKey.verifySignature(Data(sig), algorithm: .ecdsaWithSHA256, data: verificationData) else {
             throw FidoU2FAttestationError.invalidVerificationData
