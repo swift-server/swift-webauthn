@@ -14,7 +14,6 @@
 
 import Foundation
 import SwiftCBOR
-import SwiftASN1
 import X509
 import Crypto
 import _CryptoExtras
@@ -25,13 +24,10 @@ struct PackedAttestation {
         case invalidSig
         case invalidX5C
         case invalidLeafCertificate
-        case invalidLeafCertificatePublicKey
-        case missingAttestationCertificate
         case algDoesNotMatch
         case missingAttestedCredential
         // Authenticator data cannot be verified
         case invalidVerificationData
-        case notImplemented
     }
 
     static func verify(
@@ -53,7 +49,6 @@ struct PackedAttestation {
         let verificationData = authenticatorData + clientDataHash
 
         if let x5cCBOR = attStmt["x5c"] {
-            print("\n ••••••• Full attestation!!!!!! ••••••• \n")
             guard case let .array(x5cCBOR) = x5cCBOR else {
                 throw PackedAttestationError.invalidX5C
             }
@@ -79,7 +74,6 @@ struct PackedAttestation {
                 leafCertificate: leafCertificate,
                 intermediates: intermediates
             )
-
             guard case .validCertificate = verifierResult else {
                 throw PackedAttestationError.invalidLeafCertificate
             }

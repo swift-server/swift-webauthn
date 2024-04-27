@@ -14,24 +14,18 @@
 
 import Foundation
 import SwiftCBOR
-import SwiftASN1
 import X509
 import Crypto
 
 struct FidoU2FAttestation {
     enum FidoU2FAttestationError: Error {
-        case invalidAlg
         case invalidSig
         case invalidX5C
         case invalidLeafCertificate
-        case invalidLeafCertificatePublicKey
-        case missingAttestationCertificate
-        case algDoesNotMatch
         case invalidAttestationKeyType
         case missingAttestedCredential
         // Authenticator data cannot be verified
         case invalidVerificationData
-        case notImplemented
     }
 
     static func verify(
@@ -45,8 +39,9 @@ struct FidoU2FAttestation {
             throw FidoU2FAttestationError.invalidSig
         }
 
-        let credentialId = authenticatorData.attestedData!.credentialID
-        let publicKeyBytes = authenticatorData.attestedData!.publicKey
+        guard let attestedData = authenticatorData.attestedData else {
+            throw FidoU2FAttestationError.missingAttestedCredential
+        }
         
         guard case let .ec2(key) = credentialPublicKey else {
             throw FidoU2FAttestationError.invalidAttestationKeyType
@@ -55,7 +50,7 @@ struct FidoU2FAttestation {
         // With U2F, the public key format used when calculating the signature (`sig`) was encoded in ANSI X9.62 format
         let ansiPublicKey = [0x04] + key.xCoordinate + key.yCoordinate
         // https://fidoalliance.org/specs/fido-u2f-v1.1-id-20160915/fido-u2f-raw-message-formats-v1.1-id-20160915.html#registration-response-message-success
-        let verificationData = Data([0x00] + authenticatorData.relyingPartyIDHash + Array(clientDataHash) + credentialId + ansiPublicKey)
+        let verificationData = Data([0x00] + authenticatorData.relyingPartyIDHash + Array(clientDataHash) + attestedData.credentialID + ansiPublicKey)
 
         guard let x5cCBOR = attStmt["x5c"], case let .array(x5cCBOR) = x5cCBOR else {
                 throw FidoU2FAttestationError.invalidX5C
@@ -74,7 +69,7 @@ struct FidoU2FAttestation {
             try pemRootCertificates.map { try Certificate(derEncoded: [UInt8]($0)) }
         )
         
-        /*var verifier = Verifier(rootCertificates: rootCertificates) {
+        var verifier = Verifier(rootCertificates: rootCertificates) {
             // TODO: do we really want to validate a cert expiry for devices that cannot be updated?
             // An expired device cert just means that the device is "old".
             RFC5280Policy(validationTime: Date())
@@ -83,10 +78,9 @@ struct FidoU2FAttestation {
             leafCertificate: leafCertificate,
             intermediates: intermediates
         )
-
         guard case .validCertificate = verifierResult else {
             throw FidoU2FAttestationError.invalidLeafCertificate
-        }*/
+        }
 
         // 2. Verify signature
         // 2.1 Determine key type (with new Swift ASN.1/ Certificates library)

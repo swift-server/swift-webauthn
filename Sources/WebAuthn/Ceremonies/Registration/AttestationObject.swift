@@ -82,6 +82,7 @@ public struct AttestationObject {
         //         pemRootCertificates: pemRootCertificates
         //     )
             
+        // Legacy format used mostly by older authenticators
         case .fidoU2F:
             try await FidoU2FAttestation.verify(
                 attStmt: attestationStatement,
