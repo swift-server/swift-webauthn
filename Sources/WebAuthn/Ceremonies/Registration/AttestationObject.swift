@@ -85,7 +85,7 @@ public struct AttestationObject {
         case .fidoU2F:
             try await FidoU2FAttestation.verify(
                 attStmt: attestationStatement,
-                authenticatorData: Data(rawAuthenticatorData),
+                authenticatorData: authenticatorData,
                 clientDataHash: Data(clientDataHash),
                 credentialPublicKey: credentialPublicKey,
                 pemRootCertificates: pemRootCertificates
