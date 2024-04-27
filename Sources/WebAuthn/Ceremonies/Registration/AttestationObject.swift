@@ -30,6 +30,7 @@ public struct AttestationObject {
         supportedPublicKeyAlgorithms: [PublicKeyCredentialParameters],
         pemRootCertificatesByFormat: [AttestationFormat: [Data]] = [:]
     ) async throws -> AttestedCredentialData {
+        print("\n•••••••• \(Self.self).verify(): format=\(format) ***\n")
         let relyingPartyIDHash = SHA256.hash(data: relyingPartyID.data(using: .utf8)!)
 
         guard relyingPartyIDHash == authenticatorData.relyingPartyIDHash else {
@@ -80,6 +81,15 @@ public struct AttestationObject {
         //         credentialPublicKey: credentialPublicKey,
         //         pemRootCertificates: pemRootCertificates
         //     )
+            
+        case .fidoU2F:
+            try await FidoU2FAttestation.verify(
+                attStmt: attestationStatement,
+                authenticatorData: Data(rawAuthenticatorData),
+                clientDataHash: Data(clientDataHash),
+                credentialPublicKey: credentialPublicKey,
+                pemRootCertificates: pemRootCertificates
+            )
         default:
             throw WebAuthnError.attestationVerificationNotSupported
         }
