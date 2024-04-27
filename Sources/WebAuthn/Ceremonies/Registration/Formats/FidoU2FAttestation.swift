@@ -15,7 +15,6 @@
 import Foundation
 import SwiftCBOR
 import X509
-import Crypto
 
 struct FidoU2FAttestation {
     enum FidoU2FAttestationError: Error {
@@ -63,7 +62,7 @@ struct FidoU2FAttestation {
         let rootCertificates = CertificateStore(
             try pemRootCertificates.map { try Certificate(derEncoded: [UInt8]($0)) }
         )
-        
+
         var verifier = Verifier(rootCertificates: rootCertificates) {
             // TODO: do we really want to validate a cert expiry for devices that cannot be updated?
             // An expired device cert just means that the device is "old".
@@ -82,7 +81,7 @@ struct FidoU2FAttestation {
         
         // https://fidoalliance.org/specs/fido-u2f-v1.1-id-20160915/fido-u2f-raw-message-formats-v1.1-id-20160915.html#registration-response-message-success
         let verificationData = Data(
-            [0x00]
+            [0x00] // A byte "reserved for future use" with the value 0x00.
             + authenticatorData.relyingPartyIDHash
             + Array(clientDataHash)
             + attestedData.credentialID
@@ -94,9 +93,6 @@ struct FidoU2FAttestation {
         guard try leafCertificatePublicKey.verifySignature(Data(sig), algorithm: .ecdsaWithSHA256, data: verificationData) else {
             throw FidoU2FAttestationError.invalidVerificationData
         }
-        print("\n••••• Verified FidoU2FAttestation !!!! ••••")
-
-        
     }
 }
 
