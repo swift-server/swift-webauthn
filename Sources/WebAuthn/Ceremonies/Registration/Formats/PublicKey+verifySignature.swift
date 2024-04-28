@@ -14,6 +14,7 @@
 
 import Foundation
 import X509
+import SwiftASN1
 import Crypto
 import _CryptoExtras
 
@@ -49,5 +50,14 @@ extension Certificate.PublicKey {
         default: // Should we return more explicit info (signature alg not supported) in that case?
             return false
         }
+    }
+}
+
+extension SwiftASN1.ASN1ObjectIdentifier {
+    static var idFidoGenCeAaguid: Self {
+        .init(arrayLiteral: 1, 3, 6, 1, 4, 1, 45724, 1, 1, 4)
+    }
+    static var tcgKpAIKCertificate: Self {
+        .init(arrayLiteral: 2, 23, 133, 8, 3)
     }
 }

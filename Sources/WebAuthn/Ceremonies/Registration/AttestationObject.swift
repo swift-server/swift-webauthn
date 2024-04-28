@@ -61,7 +61,7 @@ public struct AttestationObject {
         }
 
         let pemRootCertificates = pemRootCertificatesByFormat[format] ?? []
-        var trustedPath: [Certificate]!
+        var trustedPath: [Certificate] = []
         switch format {
         case .none:
             // if format is `none` statement must be empty
@@ -76,15 +76,15 @@ public struct AttestationObject {
                 credentialPublicKey: credentialPublicKey,
                 pemRootCertificates: pemRootCertificates
             )
-        // case .tpm:
-        //     try TPMAttestation.verify(
-        //         attStmt: attestationStatement,
-        //         authenticatorData: rawAuthenticatorData,
-        //         attestedCredentialData: attestedCredentialData,
-        //         clientDataHash: Data(clientDataHash),
-        //         credentialPublicKey: credentialPublicKey,
-        //         pemRootCertificates: pemRootCertificates
-        //     )
+        case .tpm:
+            trustedPath = try await TPMAttestation.verify(
+                attStmt: attestationStatement,
+                authenticatorData: Data(rawAuthenticatorData),
+                attestedCredentialData: attestedCredentialData,
+                clientDataHash: Data(clientDataHash),
+                credentialPublicKey: credentialPublicKey,
+                pemRootCertificates: pemRootCertificates
+            )
             
         // Legacy format used mostly by older authenticators
         case .fidoU2F:

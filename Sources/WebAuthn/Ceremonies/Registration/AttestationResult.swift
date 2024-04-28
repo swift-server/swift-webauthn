@@ -15,8 +15,18 @@
 import X509
 
 public struct AttestationResult {
+    enum AttestationType {
+        /// Attestation key pair validated by device manufacturer CA
+        case basicFull
+        /// Attestation signed by the public key generated during the registration
+        case `self`
+        case attCA
+        case anonCA
+        case none
+    }
     public let aaguid: [UInt8]?
     public let format: AttestationFormat
+    //public let type: AttestationType
     public let trustChain: [Certificate]
     
     let attestedCredentialData: AttestedCredentialData

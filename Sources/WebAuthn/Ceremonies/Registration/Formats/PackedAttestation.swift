@@ -15,6 +15,7 @@
 import Foundation
 import SwiftCBOR
 import X509
+import SwiftASN1
 
 struct PackedAttestation {
     enum PackedAttestationError: Error {
@@ -26,6 +27,8 @@ struct PackedAttestation {
         case missingAttestedCredential
         // Authenticator data cannot be verified
         case invalidVerificationData
+        case invalidCertAaguid
+        case aaguidMismatch
     }
 
     static func verify(
@@ -57,7 +60,7 @@ struct PackedAttestation {
                 }
                 return try Certificate(derEncoded: certificate)
             }
-            guard let leafCertificate = x5c.first else { throw PackedAttestationError.invalidX5C }
+            guard let attestnCert = x5c.first else { throw PackedAttestationError.invalidX5C }
             let intermediates = CertificateStore(x5c[1...])
             let rootCertificates = CertificateStore(
                 try pemRootCertificates.map { try Certificate(derEncoded: [UInt8]($0)) }
@@ -69,7 +72,7 @@ struct PackedAttestation {
                 RFC5280Policy(validationTime: Date())
             }
             let verifierResult: VerificationResult = await verifier.validate(
-                leafCertificate: leafCertificate,
+                leafCertificate: attestnCert,
                 intermediates: intermediates
             )
             guard case .validCertificate(let chain) = verifierResult else {
@@ -80,10 +83,31 @@ struct PackedAttestation {
             // 2.1 Determine key type (with new Swift ASN.1/ Certificates library)
             // 2.2 Create corresponding public key object (EC2PublicKey/RSAPublicKey/OKPPublicKey)
             // 2.3 Call verify method on public key with signature + data
-            let leafCertificatePublicKey: Certificate.PublicKey = leafCertificate.publicKey
-            guard try leafCertificatePublicKey.verifySignature(Data(sig), algorithm: leafCertificate.signatureAlgorithm, data: verificationData) else {
+            let leafCertificatePublicKey: Certificate.PublicKey = attestnCert.publicKey
+            guard try leafCertificatePublicKey.verifySignature(
+                Data(sig),
+                algorithm: attestnCert.signatureAlgorithm,
+                data: verificationData) else {
                 throw PackedAttestationError.invalidVerificationData
             }
+            
+            // Verify that the value of the aaguid extension, if present, matches aaguid in authenticatorData
+            if let certAAGUID = attestnCert.extensions.first(
+                where: {$0.oid == .idFidoGenCeAaguid}
+            ) {
+                // The AAGUID is wrapped in two OCTET STRINGS
+                let derValue = try DER.parse(certAAGUID.value)
+                guard case .primitive(let certAaguidValue) = derValue.content else {
+                    throw PackedAttestationError.invalidCertAaguid
+                }
+                
+                let authenticatorData = try AuthenticatorData(bytes: Array(authenticatorData))
+                guard let attestedData = authenticatorData.attestedData,
+                      attestedData.aaguid == Array(certAaguidValue) else {
+                    throw PackedAttestationError.aaguidMismatch
+                }
+            }
+            
             return chain
 
         } else { // self attestation is in use
