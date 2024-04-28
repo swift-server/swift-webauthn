@@ -34,7 +34,7 @@ struct PackedAttestation {
         clientDataHash: Data,
         credentialPublicKey: CredentialPublicKey,
         pemRootCertificates: [Data]
-    ) async throws {
+    ) async throws -> [Certificate] {
         guard let algCBOR = attStmt["alg"],
             case let .negativeInt(algorithmNegative) = algCBOR,
             let alg = COSEAlgorithmIdentifier(rawValue: -1 - Int(algorithmNegative)) else {
@@ -72,7 +72,7 @@ struct PackedAttestation {
                 leafCertificate: leafCertificate,
                 intermediates: intermediates
             )
-            guard case .validCertificate = verifierResult else {
+            guard case .validCertificate(let chain) = verifierResult else {
                 throw PackedAttestationError.invalidLeafCertificate
             }
             
@@ -84,6 +84,7 @@ struct PackedAttestation {
             guard try leafCertificatePublicKey.verifySignature(Data(sig), algorithm: leafCertificate.signatureAlgorithm, data: verificationData) else {
                 throw PackedAttestationError.invalidVerificationData
             }
+            return chain
 
         } else { // self attestation is in use
             print("\n ••••••• Self attestation!!!!!! ••••••• \n")
@@ -92,6 +93,7 @@ struct PackedAttestation {
             }
 
             try credentialPublicKey.verify(signature: Data(sig), data: verificationData)
+            return []
         }
     }
 }

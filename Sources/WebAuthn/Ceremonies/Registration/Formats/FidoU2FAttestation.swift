@@ -21,6 +21,8 @@ struct FidoU2FAttestation {
         case invalidSig
         case invalidX5C
         case invalidLeafCertificate
+        // attestation cert can only have a ecdsaWithSHA256 signature
+        case invalidLeafCertificateSigType
         case invalidAttestationKeyType
         case missingAttestedCredential
         // Authenticator data cannot be verified
@@ -33,7 +35,7 @@ struct FidoU2FAttestation {
         clientDataHash: Data,
         credentialPublicKey: CredentialPublicKey,
         pemRootCertificates: [Data]
-    ) async throws {
+    ) async throws -> [Certificate] {
         guard let sigCBOR = attStmt["sig"], case let .byteString(sig) = sigCBOR else {
             throw FidoU2FAttestationError.invalidSig
         }
@@ -42,7 +44,7 @@ struct FidoU2FAttestation {
             throw FidoU2FAttestationError.missingAttestedCredential
         }
         
-        guard case let .ec2(key) = credentialPublicKey else {
+        guard case let .ec2(key) = credentialPublicKey, key.algorithm == .algES256 else {
             throw FidoU2FAttestationError.invalidAttestationKeyType
         }
 
@@ -57,12 +59,20 @@ struct FidoU2FAttestation {
             return try Certificate(derEncoded: certificate)
         }
 
+        // U2F attestation can only have 1 certificate
+        guard x5c.count == 1 else {
+            throw FidoU2FAttestationError.invalidX5C
+        }
+        
         guard let leafCertificate = x5c.first else { throw FidoU2FAttestationError.invalidX5C }
-        let intermediates = CertificateStore(x5c[1...])
         let rootCertificates = CertificateStore(
             try pemRootCertificates.map { try Certificate(derEncoded: [UInt8]($0)) }
         )
 
+        guard leafCertificate.signatureAlgorithm == .ecdsaWithSHA256 else {
+            throw FidoU2FAttestationError.invalidLeafCertificateSigType
+        }
+        
         var verifier = Verifier(rootCertificates: rootCertificates) {
             // TODO: do we really want to validate a cert expiry for devices that cannot be updated?
             // An expired device cert just means that the device is "old".
@@ -70,13 +80,13 @@ struct FidoU2FAttestation {
         }
         let verifierResult: VerificationResult = await verifier.validate(
             leafCertificate: leafCertificate,
-            intermediates: intermediates
+            intermediates: .init()
         )
-        guard case .validCertificate = verifierResult else {
+        guard case .validCertificate(let chain) = verifierResult else {
             throw FidoU2FAttestationError.invalidLeafCertificate
         }
 
-        // With U2F, the public key format used when calculating the signature (`sig`) was encoded in ANSI X9.62 format
+        // With U2F, the public key used when calculating the signature (`sig`) was encoded in ANSI X9.62 format
         let ansiPublicKey = [0x04] + key.xCoordinate + key.yCoordinate
         
         // https://fidoalliance.org/specs/fido-u2f-v1.1-id-20160915/fido-u2f-raw-message-formats-v1.1-id-20160915.html#registration-response-message-success
@@ -90,9 +100,14 @@ struct FidoU2FAttestation {
         
         // Verify signature
         let leafCertificatePublicKey: Certificate.PublicKey = leafCertificate.publicKey
-        guard try leafCertificatePublicKey.verifySignature(Data(sig), algorithm: .ecdsaWithSHA256, data: verificationData) else {
+        guard try leafCertificatePublicKey.verifySignature(
+            Data(sig),
+            algorithm: leafCertificate.signatureAlgorithm,
+            data: verificationData) else {
             throw FidoU2FAttestationError.invalidVerificationData
         }
+        
+        return chain
     }
 }
 

@@ -40,10 +40,8 @@ public struct Credential {
     public let isBackedUp: Bool
 
     // MARK: Optional content
-
-    public let aaguid: [UInt8]?
     
-    public let attestationObject: AttestationObject
+    public let attestationResult: AttestationResult
 
     public let attestationClientDataJSON: CollectedClientData
 }

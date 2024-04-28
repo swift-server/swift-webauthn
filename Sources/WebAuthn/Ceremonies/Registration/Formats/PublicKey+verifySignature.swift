@@ -39,6 +39,7 @@ extension Certificate.PublicKey {
             }
             let signature = try P521.Signing.ECDSASignature(derRepresentation: signature)
             return key.isValidSignature(signature, for: data)
+        // This hasn't been tested
         case .sha1WithRSAEncryption, .sha256WithRSAEncryption, .sha384WithRSAEncryption, .sha512WithRSAEncryption:
             guard let key = _RSA.Signing.PublicKey(self) else {
                 return false

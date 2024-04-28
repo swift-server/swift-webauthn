@@ -15,6 +15,7 @@
 import Foundation
 import Crypto
 import SwiftCBOR
+import X509
 
 /// Contains the cryptographic attestation that a new key pair was created by that authenticator.
 public struct AttestationObject {
@@ -22,6 +23,7 @@ public struct AttestationObject {
     let rawAuthenticatorData: [UInt8]
     let format: AttestationFormat
     let attestationStatement: CBOR
+    var trustPath: [Certificate] = []
 
     func verify(
         relyingPartyID: String,
@@ -29,7 +31,8 @@ public struct AttestationObject {
         clientDataHash: SHA256.Digest,
         supportedPublicKeyAlgorithms: [PublicKeyCredentialParameters],
         pemRootCertificatesByFormat: [AttestationFormat: [Data]] = [:]
-    ) async throws -> AttestedCredentialData {
+    ) async throws -> AttestationResult {
+        // TODO: remove
         print("\n•••••••• \(Self.self).verify(): format=\(format) ***\n")
         let relyingPartyIDHash = SHA256.hash(data: relyingPartyID.data(using: .utf8)!)
 
@@ -58,6 +61,7 @@ public struct AttestationObject {
         }
 
         let pemRootCertificates = pemRootCertificatesByFormat[format] ?? []
+        var trustedPath: [Certificate]!
         switch format {
         case .none:
             // if format is `none` statement must be empty
@@ -65,7 +69,7 @@ public struct AttestationObject {
                 throw WebAuthnError.attestationStatementMustBeEmpty
             }
         case .packed:
-            try await PackedAttestation.verify(
+            trustedPath = try await PackedAttestation.verify(
                 attStmt: attestationStatement,
                 authenticatorData: Data(rawAuthenticatorData),
                 clientDataHash: Data(clientDataHash),
@@ -84,7 +88,7 @@ public struct AttestationObject {
             
         // Legacy format used mostly by older authenticators
         case .fidoU2F:
-            try await FidoU2FAttestation.verify(
+            trustedPath = try await FidoU2FAttestation.verify(
                 attStmt: attestationStatement,
                 authenticatorData: authenticatorData,
                 clientDataHash: Data(clientDataHash),
@@ -94,7 +98,12 @@ public struct AttestationObject {
         default:
             throw WebAuthnError.attestationVerificationNotSupported
         }
-
-        return attestedCredentialData
+        
+        return AttestationResult(
+            aaguid: [],
+            format: format,
+            trustChain: trustedPath,
+            attestedCredentialData: attestedCredentialData
+        )
     }
 }

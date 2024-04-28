@@ -87,7 +87,7 @@ struct ParsedCredentialCreationResponse {
         relyingPartyOrigin: String,
         supportedPublicKeyAlgorithms: [PublicKeyCredentialParameters],
         pemRootCertificatesByFormat: [AttestationFormat: [Data]]
-    ) async throws -> AttestedCredentialData {
+    ) async throws -> AttestationResult {
         // Step 7. - 9.
         try response.clientData.verify(
             storedChallenge: storedChallenge,
@@ -101,7 +101,7 @@ struct ParsedCredentialCreationResponse {
         // CBOR decoding happened already. Skipping Step 11.
 
         // Step 12. - 17.
-        let attestedCredentialData = try await response.attestationObject.verify(
+        let attestationResult = try await response.attestationObject.verify(
             relyingPartyID: relyingPartyID,
             verificationRequired: verifyUser,
             clientDataHash: hash,
@@ -114,6 +114,6 @@ struct ParsedCredentialCreationResponse {
             throw WebAuthnError.credentialRawIDTooLong
         }
 
-        return attestedCredentialData
+        return attestationResult
     }
 }
