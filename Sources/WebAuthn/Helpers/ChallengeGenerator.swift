@@ -12,10 +12,10 @@
 //
 //===----------------------------------------------------------------------===//
 
-public struct ChallengeGenerator {
+package struct ChallengeGenerator {
     var generate: () -> [UInt8]
 
-    public static var live: Self {
+    package static var live: Self {
         .init(generate: { [UInt8].random(count: 32) })
     }
 }
