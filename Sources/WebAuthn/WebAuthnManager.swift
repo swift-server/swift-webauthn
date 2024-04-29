@@ -32,7 +32,7 @@ public struct WebAuthnManager {
 
     private let challengeGenerator: ChallengeGenerator
 
-    /// Create a new WebAuthnManager using the given configuration..
+    /// Create a new WebAuthnManager using the given configuration.
     ///
     /// - Parameters:
     ///   - configuration: The configuration to use for this manager.
