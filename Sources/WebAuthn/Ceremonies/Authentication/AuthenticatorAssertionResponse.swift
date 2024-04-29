@@ -18,7 +18,7 @@ import Crypto
 /// This is what the authenticator device returned after we requested it to authenticate a user.
 ///
 /// When decoding using `Decodable`, byte arrays are decoded from base64url to bytes.
-public struct AuthenticatorAssertionResponse {
+public struct AuthenticatorAssertionResponse: Sendable {
     /// Representation of what we passed to `navigator.credentials.get()`
     ///
     /// When decoding using `Decodable`, this is decoded from base64url to bytes.
@@ -69,7 +69,7 @@ extension AuthenticatorAssertionResponse: Decodable {
     }
 }
 
-struct ParsedAuthenticatorAssertionResponse {
+struct ParsedAuthenticatorAssertionResponse: Sendable {
     let rawClientData: [UInt8]
     let clientData: CollectedClientData
     let rawAuthenticatorData: [UInt8]

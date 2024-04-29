@@ -16,7 +16,7 @@ import Foundation
 
 extension WebAuthnManager {
     /// Configuration represents the WebAuthn configuration.
-    public struct Configuration {
+    public struct Configuration: Sendable {
         /// The relying party id is based on the host's domain.
         /// It does not include a scheme or port (like the `relyingPartyOrigin`).
         /// For example, if the origin is https://login.example.com:1337, then _login.example.com_ or _example.com_ are
