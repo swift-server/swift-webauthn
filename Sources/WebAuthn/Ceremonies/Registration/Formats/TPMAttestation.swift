@@ -57,7 +57,7 @@ struct TPMAttestation {
         }
         
         // Verify certificate chain
-        let x5c: [Certificate] = try x5cCBOR.map {
+        /*let x5c: [Certificate] = try x5cCBOR.map {
             guard case let .byteString(certificate) = $0 else {
                 throw TPMAttestationError.invalidX5c
             }
@@ -112,12 +112,12 @@ struct TPMAttestation {
                   attestedData.aaguid == Array(certAaguidValue) else {
                 throw TPMAttestationError.aaguidMismatch
             }
-        }
+        }*/
 
         // Verify pubArea
         guard let pubAreaCBOR = attStmt["pubArea"],
-            case let .byteString(pubArea) = pubAreaCBOR,
-            let pubArea = PubArea(from: Data(pubArea)) else {
+            case let .byteString(pubAreaRaw) = pubAreaCBOR,
+            let pubArea = PubArea(from: Data(pubAreaRaw)) else {
             throw TPMAttestationError.pubAreaInvalid
         }
        switch pubArea.parameters {
@@ -154,9 +154,8 @@ struct TPMAttestation {
             let parsedCertInfo = CertInfo(fromBytes: Data(certInfo)) else {
             throw TPMAttestationError.certInfoInvalid
         }
-        try parsedCertInfo.verify()
 
-        let attToBeSigned = authenticatorData + clientDataHash
+        try parsedCertInfo.verify(pubArea: Data(pubAreaRaw))
 
         guard let algCBOR = attStmt["alg"],
             case let .negativeInt(algorithmNegative) = algCBOR,
@@ -164,10 +163,12 @@ struct TPMAttestation {
             throw TPMAttestationError.invalidAlg
         }
 
+        // Verify that extraData is set to the hash of attToBeSigned using the hash algorithm employed in "alg"
+        let attToBeSigned = authenticatorData + clientDataHash
         guard alg.hashAndCompare(data: attToBeSigned, to: parsedCertInfo.extraData) else {
             throw TPMAttestationError.extraDataDoesNotMatchAttToBeSignedHash
         }
         
-        return chain
+        return [] //chain
     }
 }

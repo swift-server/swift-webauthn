@@ -13,12 +13,15 @@
 //===----------------------------------------------------------------------===//
 
 import Foundation
+import Crypto
 
 extension TPMAttestation {
     enum CertInfoError: Error {
         case magicInvalid
         case typeInvalid
         case dataTooShort
+        case nameAlgInvalid
+        case pubAreaHashInvalid
         case tpmImplementationIsWIP
     }
 
@@ -84,18 +87,44 @@ extension TPMAttestation {
             attested = AttestationInformation(name: attestedName, qualifiedName: qualifiedName)
         }
 
-        func verify() throws {
+        func verify(pubArea: Data) throws {
+            // Verify that magic is set to TPM_GENERATED_VALUE
             let tpmGeneratedValue = 0xFF544347
             guard magic.toInteger(endian: .big) == tpmGeneratedValue else {
                 throw CertInfoError.magicInvalid
             }
 
+            // Verify that type is set to TPM_ST_ATTEST_CERTIFY
             let tpmStAttestCertify = 0x8017
             guard type.toInteger(endian: .big) == tpmStAttestCertify else {
                 throw CertInfoError.typeInvalid
             }
 
-            throw CertInfoError.tpmImplementationIsWIP
+            // Verify pubArea hash
+            guard let nameAlg = self.attested.name[safe: 0..<2],
+                let nameAlg = TPMAlg(from: nameAlg),
+                let nameHash = self.attested.name[safe: 2..<self.attested.name.count] else {
+                throw CertInfoError.nameAlgInvalid
+            }
+
+            let pubAreaHash: Data
+            switch nameAlg {
+            case .sha256:
+                pubAreaHash = Data(SHA256.hash(data: pubArea))
+            case .sha384:
+                pubAreaHash = Data(SHA384.hash(data: pubArea))
+            case .sha512:
+                pubAreaHash = Data(SHA512.hash(data: pubArea))
+            case .sha1:
+                pubAreaHash = Data(Insecure.SHA1.hash(data: pubArea))
+            // TODO: would we possibly receive other hash algorithms here?
+            default:
+                throw CertInfoError.tpmImplementationIsWIP
+            }
+            
+            guard pubAreaHash == nameHash else {
+                throw CertInfoError.pubAreaHashInvalid
+            }
         }
     }
 

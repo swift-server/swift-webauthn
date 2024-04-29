@@ -77,8 +77,7 @@ enum CredentialPublicKey {
         case .ellipticKey:
             self = try .ec2(EC2PublicKey(publicKeyObject: publicKeyObject, algorithm: algorithm))
         case .rsaKey:
-            throw WebAuthnError.unsupported
-            // self = try .rsa(RSAPublicKeyData(publicKeyObject: publicKeyObject, algorithm: algorithm))
+            self = try .rsa(RSAPublicKeyData(publicKeyObject: publicKeyObject, algorithm: algorithm))
         case .octetKey:
             throw WebAuthnError.unsupported
             // self = try .okp(OKPPublicKey(publicKeyObject: publicKeyObject, algorithm: algorithm))
@@ -154,6 +153,8 @@ struct EC2PublicKey: PublicKey {
                 .isValidSignature(ecdsaSignature, for: data) else {
                 throw WebAuthnError.invalidSignature
             }
+        default:
+            throw WebAuthnError.unsupportedCOSEAlgorithm
         }
     }
 }
@@ -185,6 +186,7 @@ struct RSAPublicKeyData: PublicKey {
     }
 
     func verify(signature: some DataProtocol, data: some DataProtocol) throws {
+        print("\n•••••• \(Self.self).verify() ")
         throw WebAuthnError.unsupported
         // let rsaSignature = _RSA.Signing.RSASignature(derRepresentation: signature)
 

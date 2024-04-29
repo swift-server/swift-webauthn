@@ -18,8 +18,9 @@ extension Data {
     struct IndexOutOfBounds: Error {}
 
     subscript(safe range: Range<Int>) -> Data? {
+        let actualRange = range.lowerBound + self.startIndex..<range.upperBound+self.startIndex
         guard count >= range.upperBound else { return nil }
-        return self[range]
+        return self[actualRange]
     }
 
     /// Safely slices bytes from `pointer` to `pointer` + `length`. Updates the pointer afterwards.
