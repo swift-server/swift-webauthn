@@ -22,7 +22,7 @@ struct PackedAttestation {
         case invalidAlg
         case invalidSig
         case invalidX5C
-        case invalidLeafCertificate
+        case invalidTrustPath
         case algDoesNotMatch
         case missingAttestedCredential
         // Authenticator data cannot be verified
@@ -69,14 +69,15 @@ struct PackedAttestation {
             var verifier = Verifier(rootCertificates: rootCertificates) {
                 // TODO: do we really want to validate a cert expiry for devices that cannot be updated?
                 // An expired device cert just means that the device is "old". 
-                RFC5280Policy(validationTime: Date())
+                //RFC5280Policy(validationTime: Date())
+                PackedVerificationPolicy()
             }
             let verifierResult: VerificationResult = await verifier.validate(
                 leafCertificate: attestnCert,
                 intermediates: intermediates
             )
             guard case .validCertificate(let chain) = verifierResult else {
-                throw PackedAttestationError.invalidLeafCertificate
+                throw PackedAttestationError.invalidTrustPath
             }
             
             // 2. Verify signature
@@ -109,9 +110,7 @@ struct PackedAttestation {
             }
             
             return chain
-
         } else { // self attestation is in use
-            print("\n ••••••• Self attestation!!!!!! ••••••• \n")
             guard credentialPublicKey.key.algorithm == alg else {
                 throw PackedAttestationError.algDoesNotMatch
             }

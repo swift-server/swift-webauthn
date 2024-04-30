@@ -20,7 +20,7 @@ struct FidoU2FAttestation {
     enum FidoU2FAttestationError: Error {
         case invalidSig
         case invalidX5C
-        case invalidLeafCertificate
+        case invalidTrustPath
         // attestation cert can only have a ecdsaWithSHA256 signature
         case invalidLeafCertificateSigType
         case invalidAttestationKeyType
@@ -63,7 +63,7 @@ struct FidoU2FAttestation {
         guard x5c.count == 1 else {
             throw FidoU2FAttestationError.invalidX5C
         }
-        
+
         guard let leafCertificate = x5c.first else { throw FidoU2FAttestationError.invalidX5C }
         let rootCertificates = CertificateStore(
             try pemRootCertificates.map { try Certificate(derEncoded: [UInt8]($0)) }
@@ -72,23 +72,21 @@ struct FidoU2FAttestation {
         guard leafCertificate.signatureAlgorithm == .ecdsaWithSHA256 else {
             throw FidoU2FAttestationError.invalidLeafCertificateSigType
         }
-        
+
         var verifier = Verifier(rootCertificates: rootCertificates) {
-            // TODO: do we really want to validate a cert expiry for devices that cannot be updated?
-            // An expired device cert just means that the device is "old".
-            RFC5280Policy(validationTime: Date())
+            PackedVerificationPolicy()
         }
         let verifierResult: VerificationResult = await verifier.validate(
             leafCertificate: leafCertificate,
             intermediates: .init()
         )
         guard case .validCertificate(let chain) = verifierResult else {
-            throw FidoU2FAttestationError.invalidLeafCertificate
+            throw FidoU2FAttestationError.invalidTrustPath
         }
 
         // With U2F, the public key used when calculating the signature (`sig`) was encoded in ANSI X9.62 format
         let ansiPublicKey = [0x04] + key.xCoordinate + key.yCoordinate
-        
+
         // https://fidoalliance.org/specs/fido-u2f-v1.1-id-20160915/fido-u2f-raw-message-formats-v1.1-id-20160915.html#registration-response-message-success
         let verificationData = Data(
             [0x00] // A byte "reserved for future use" with the value 0x00.
@@ -97,7 +95,7 @@ struct FidoU2FAttestation {
             + attestedData.credentialID
             + ansiPublicKey
         )
-        
+
         // Verify signature
         let leafCertificatePublicKey: Certificate.PublicKey = leafCertificate.publicKey
         guard try leafCertificatePublicKey.verifySignature(

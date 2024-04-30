@@ -60,4 +60,7 @@ extension SwiftASN1.ASN1ObjectIdentifier {
     static var tcgKpAIKCertificate: Self {
         .init(arrayLiteral: 2, 23, 133, 8, 3)
     }
+    static var certificatePolicies: Self {
+        .init(arrayLiteral: 2, 5, 29, 32)
+    }
 }

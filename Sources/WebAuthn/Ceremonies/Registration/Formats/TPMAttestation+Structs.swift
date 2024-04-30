@@ -130,7 +130,7 @@ extension TPMAttestation {
 
     enum PubAreaParameters {
         case rsa(PubAreaParametersRSA)
-        case ecc (PubAreaParametersECC)
+        case ecc(PubAreaParametersECC)
     }
 
     struct PubArea {

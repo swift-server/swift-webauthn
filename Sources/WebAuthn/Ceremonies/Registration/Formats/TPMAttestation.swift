@@ -21,13 +21,16 @@ struct TPMAttestation {
     enum TPMAttestationError: Error {
         case pubAreaInvalid
         case certInfoInvalid
+        /// Invalid or unsupported attestation signature algorithm
         case invalidAlg
+        /// Unsupported TPM version
         case invalidVersion
         case invalidX5c
         case invalidPublicKey
-        case invalidLeafCertificate
+        case invalidTrustPath
         case attestationCertificateSubjectNotEmpty
         case attestationCertificateMissingTcgKpAIKCertificate
+        /// A leaf (atte4station) cert must not have the CA flag set.
         case attestationCertificateIsCA
         case invalidCertAaguid
         case aaguidMismatch
@@ -57,44 +60,31 @@ struct TPMAttestation {
         }
         
         // Verify certificate chain
-        /*let x5c: [Certificate] = try x5cCBOR.map {
+        let x5c: [Certificate] = try x5cCBOR.map {
             guard case let .byteString(certificate) = $0 else {
                 throw TPMAttestationError.invalidX5c
             }
             return try Certificate(derEncoded: certificate)
         }
+        
         guard let aikCert = x5c.first else { throw TPMAttestationError.invalidX5c }
         let intermediates = CertificateStore(x5c[1...])
         let rootCertificates = CertificateStore(
             try pemRootCertificates.map { try Certificate(derEncoded: [UInt8]($0)) }
         )
 
-        // TPM Attestation Statement Certificate Requirements
-        // Subject field MUST be set to empty.
-        guard aikCert.subject.isEmpty else {
-            throw TPMAttestationError.attestationCertificateSubjectNotEmpty
-        }
-        // The Extended Key Usage extension MUST contain the OID 2.23.133.8.3
-        guard aikCert.extensions.contains(where: {$0.oid == .tcgKpAIKCertificate}) else {
-            throw TPMAttestationError.attestationCertificateMissingTcgKpAIKCertificate
-        }
-        // The Basic Constraints extension MUST have the CA component set to false.
-        guard case .notCertificateAuthority = try aikCert.extensions.basicConstraints  else {
-            throw TPMAttestationError.attestationCertificateIsCA
-        }
-        
-        
         var verifier = Verifier(rootCertificates: rootCertificates) {
-            // TODO: do we really want to validate a cert expiry for devices that cannot be updated?
-            // An expired device cert just means that the device is "old".
-            RFC5280Policy(validationTime: Date())
+            TPMVerificationPolicy()
         }
         let verifierResult: VerificationResult = await verifier.validate(
             leafCertificate: aikCert,
-            intermediates: intermediates
+            intermediates: intermediates,
+            diagnosticCallback: { result in
+                print("\n •••• Self.self result=\(result)")
+            }
         )
         guard case .validCertificate(let chain) = verifierResult else {
-            throw TPMAttestationError.invalidLeafCertificate
+            throw TPMAttestationError.invalidTrustPath
         }
         
         // Verify that the value of the aaguid extension, if present, matches aaguid in authenticatorData
@@ -112,7 +102,7 @@ struct TPMAttestation {
                   attestedData.aaguid == Array(certAaguidValue) else {
                 throw TPMAttestationError.aaguidMismatch
             }
-        }*/
+        }
 
         // Verify pubArea
         guard let pubAreaCBOR = attStmt["pubArea"],
@@ -120,8 +110,8 @@ struct TPMAttestation {
             let pubArea = PubArea(from: Data(pubAreaRaw)) else {
             throw TPMAttestationError.pubAreaInvalid
         }
-       switch pubArea.parameters {
-       case let .rsa(rsaParameters):
+        switch pubArea.parameters {
+        case let .rsa(rsaParameters):
            guard case let .rsa(rsaPublicKeyData) = credentialPublicKey,
                Array(pubArea.unique.data) == rsaPublicKeyData.n else {
                throw TPMAttestationError.invalidPublicKey
@@ -136,7 +126,7 @@ struct TPMAttestation {
            guard pubAreaExponent == pubKeyExponent else {
                throw TPMAttestationError.pubAreaExponentDoesNotMatchPubKeyExponent
            }
-       case let .ecc(eccParameters):
+        case let .ecc(eccParameters):
            guard case let .ec2(ec2PublicKeyData) = credentialPublicKey,
                Array(pubArea.unique.data) == ec2PublicKeyData.rawRepresentation else {
                throw TPMAttestationError.invalidPublicKey
@@ -146,8 +136,7 @@ struct TPMAttestation {
                pubAreaCrv == ec2PublicKeyData.curve else {
                throw TPMAttestationError.invalidPubAreaCurve
            }
-       }
-
+        }
         // Verify certInfo
         guard let certInfoCBOR = attStmt["certInfo"],
             case let .byteString(certInfo) = certInfoCBOR,
@@ -169,6 +158,6 @@ struct TPMAttestation {
             throw TPMAttestationError.extraDataDoesNotMatchAttToBeSignedHash
         }
         
-        return [] //chain
+        return chain
     }
 }
