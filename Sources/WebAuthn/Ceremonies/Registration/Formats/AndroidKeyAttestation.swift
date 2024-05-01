@@ -15,17 +15,17 @@
 import Foundation
 import SwiftCBOR
 import X509
+import SwiftASN1
 
-struct FidoU2FAttestation: AttestationProtocol {
-    enum FidoU2FAttestationError: Error {
+// https://www.w3.org/TR/webauthn-2/#sctn-android-key-attestation
+struct AndroidKeyAttestation: AttestationProtocol {
+    enum AndroidKeyAttestationError: Error {
         case invalidSig
         case invalidX5C
         case invalidTrustPath
-        // attestation cert can only have a ecdsaWithSHA256 signature
-        case invalidLeafCertificateSigType
-        case invalidAttestationKeyType
         // Authenticator data cannot be verified
         case invalidVerificationData
+        case credentialPublicKeyMismatch
     }
 
     static func verify(
@@ -36,61 +36,56 @@ struct FidoU2FAttestation: AttestationProtocol {
         pemRootCertificates: [Data]
     ) async throws -> [Certificate] {
         guard let sigCBOR = attStmt["sig"], case let .byteString(sig) = sigCBOR else {
-            throw FidoU2FAttestationError.invalidSig
+            throw AndroidKeyAttestationError.invalidSig
         }
         
-        guard case let .ec2(key) = credentialPublicKey, key.algorithm == .algES256 else {
-            throw FidoU2FAttestationError.invalidAttestationKeyType
-        }
-
         guard let x5cCBOR = attStmt["x5c"], case let .array(x5cCBOR) = x5cCBOR else {
-                throw FidoU2FAttestationError.invalidX5C
+                throw AndroidKeyAttestationError.invalidX5C
         }
 
         let x5c: [Certificate] = try x5cCBOR.map {
             guard case let .byteString(certificate) = $0 else {
-                throw FidoU2FAttestationError.invalidX5C
+                throw AndroidKeyAttestationError.invalidX5C
             }
             return try Certificate(derEncoded: certificate)
         }
 
-        guard let leafCertificate = x5c.first else { throw FidoU2FAttestationError.invalidX5C }
+        guard let leafCertificate = x5c.first else { throw AndroidKeyAttestationError.invalidX5C }
         let intermediates = CertificateStore(x5c[1...])
         let rootCertificates = CertificateStore(
             try pemRootCertificates.map { try Certificate(derEncoded: [UInt8]($0)) }
         )
 
-        var verifier = Verifier(rootCertificates: rootCertificates) {
-            FidoU2FVerificationPolicy()
-        }
-        let verifierResult: VerificationResult = await verifier.validate(
-            leafCertificate: leafCertificate,
-            intermediates: intermediates
-        )
-        guard case .validCertificate(let chain) = verifierResult else {
-            throw FidoU2FAttestationError.invalidTrustPath
-        }
-
-        // With U2F, the public key used when calculating the signature (`sig`) was encoded in ANSI X9.62 format
-        let ansiPublicKey = [0x04] + key.xCoordinate + key.yCoordinate
-
-        // https://www.w3.org/TR/webauthn-2/#sctn-fido-u2f-attestation Verification Procedure step 5.
-        let verificationData = Data(
-            [0x00] // A byte "reserved for future use" with the value 0x00.
-            + authenticatorData.relyingPartyIDHash
-            + Array(clientDataHash)
-            // This has been verified as not nil in AttestationObject
-            + authenticatorData.attestedData!.credentialID
-            + ansiPublicKey
-        )
-
+        let verificationData = authenticatorData.rawData + clientDataHash
         // Verify signature
         let leafCertificatePublicKey: Certificate.PublicKey = leafCertificate.publicKey
         guard try leafCertificatePublicKey.verifySignature(
             Data(sig),
             algorithm: leafCertificate.signatureAlgorithm,
             data: verificationData) else {
-            throw FidoU2FAttestationError.invalidVerificationData
+            throw AndroidKeyAttestationError.invalidVerificationData
+        }
+
+        // We need to verify that the authenticator certificate's public key matches the public key present in
+        // authenticatorData.attestedData (credentialPublicKey).
+        // We can't directly compare two public keys, so instead we verify the signature with both keys:
+        // the authenticator cert (previous step above) and credentialPublicKey (below).
+        guard let _ = try? credentialPublicKey.verify(signature: Data(sig), data: verificationData) else {
+            throw AndroidKeyAttestationError.credentialPublicKeyMismatch
+        }
+
+        var verifier = Verifier(rootCertificates: rootCertificates) {
+            AndroidKeyVerificationPolicy()
+        }
+        let verifierResult: VerificationResult = await verifier.validate(
+            leafCertificate: leafCertificate,
+            intermediates: intermediates,
+            diagnosticCallback: { result in
+                print("\n •••• \(Self.self) result=\(result)")
+            }
+        )
+        guard case .validCertificate(let chain) = verifierResult else {
+            throw AndroidKeyAttestationError.invalidTrustPath
         }
         
         return chain

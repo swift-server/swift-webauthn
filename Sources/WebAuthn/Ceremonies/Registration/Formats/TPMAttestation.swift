@@ -17,7 +17,7 @@ import SwiftCBOR
 import X509
 import SwiftASN1
 
-struct TPMAttestation {
+struct TPMAttestation: AttestationProtocol {
     enum TPMAttestationError: Error {
         case pubAreaInvalid
         case certInfoInvalid
@@ -41,8 +41,7 @@ struct TPMAttestation {
 
     static func verify(
         attStmt: CBOR,
-        authenticatorData: Data,
-        attestedCredentialData: AttestedCredentialData,
+        authenticatorData: AuthenticatorData,
         clientDataHash: Data,
         credentialPublicKey: CredentialPublicKey,
         pemRootCertificates: [Data]
@@ -74,14 +73,12 @@ struct TPMAttestation {
         )
 
         var verifier = Verifier(rootCertificates: rootCertificates) {
+            RFC5280Policy(validationTime: Date())
             TPMVerificationPolicy()
         }
         let verifierResult: VerificationResult = await verifier.validate(
             leafCertificate: aikCert,
-            intermediates: intermediates,
-            diagnosticCallback: { result in
-                print("\n •••• Self.self result=\(result)")
-            }
+            intermediates: intermediates
         )
         guard case .validCertificate(let chain) = verifierResult else {
             throw TPMAttestationError.invalidTrustPath
@@ -97,9 +94,7 @@ struct TPMAttestation {
                 throw TPMAttestationError.invalidCertAaguid
             }
             
-            let authenticatorData = try AuthenticatorData(bytes: Array(authenticatorData))
-            guard let attestedData = authenticatorData.attestedData,
-                  attestedData.aaguid == Array(certAaguidValue) else {
+            guard authenticatorData.attestedData?.aaguid == Array(certAaguidValue) else {
                 throw TPMAttestationError.aaguidMismatch
             }
         }
@@ -153,7 +148,7 @@ struct TPMAttestation {
         }
 
         // Verify that extraData is set to the hash of attToBeSigned using the hash algorithm employed in "alg"
-        let attToBeSigned = authenticatorData + clientDataHash
+        let attToBeSigned = authenticatorData.rawData + clientDataHash
         guard alg.hashAndCompare(data: attToBeSigned, to: parsedCertInfo.extraData) else {
             throw TPMAttestationError.extraDataDoesNotMatchAttToBeSignedHash
         }

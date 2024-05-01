@@ -24,10 +24,10 @@ public struct AttestationResult {
         case anonCA
         case none
     }
-    public let aaguid: [UInt8]?
+    //public let aaguid: [UInt8]?
     public let format: AttestationFormat
     //public let type: AttestationType
     public let trustChain: [Certificate]
     
-    let attestedCredentialData: AttestedCredentialData
+    public let attestedCredentialData: AttestedCredentialData
 }

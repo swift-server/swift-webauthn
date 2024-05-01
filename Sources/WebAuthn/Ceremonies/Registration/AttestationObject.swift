@@ -71,7 +71,7 @@ public struct AttestationObject {
         case .packed:
             trustedPath = try await PackedAttestation.verify(
                 attStmt: attestationStatement,
-                authenticatorData: Data(rawAuthenticatorData),
+                authenticatorData: authenticatorData,
                 clientDataHash: Data(clientDataHash),
                 credentialPublicKey: credentialPublicKey,
                 pemRootCertificates: pemRootCertificates
@@ -79,13 +79,19 @@ public struct AttestationObject {
         case .tpm:
             trustedPath = try await TPMAttestation.verify(
                 attStmt: attestationStatement,
-                authenticatorData: Data(rawAuthenticatorData),
-                attestedCredentialData: attestedCredentialData,
+                authenticatorData: authenticatorData,
                 clientDataHash: Data(clientDataHash),
                 credentialPublicKey: credentialPublicKey,
                 pemRootCertificates: pemRootCertificates
             )
-            
+        case .androidKey:
+            trustedPath = try await AndroidKeyAttestation.verify(
+                attStmt: attestationStatement,
+                authenticatorData: authenticatorData,
+                clientDataHash: Data(clientDataHash),
+                credentialPublicKey: credentialPublicKey,
+                pemRootCertificates: pemRootCertificates
+            )
         // Legacy format used mostly by older authenticators
         case .fidoU2F:
             trustedPath = try await FidoU2FAttestation.verify(
@@ -100,7 +106,6 @@ public struct AttestationObject {
         }
         
         return AttestationResult(
-            aaguid: [],
             format: format,
             trustChain: trustedPath,
             attestedCredentialData: attestedCredentialData

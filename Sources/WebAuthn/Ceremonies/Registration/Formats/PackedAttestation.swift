@@ -17,14 +17,13 @@ import SwiftCBOR
 import X509
 import SwiftASN1
 
-struct PackedAttestation {
+struct PackedAttestation: AttestationProtocol {
     enum PackedAttestationError: Error {
         case invalidAlg
         case invalidSig
         case invalidX5C
         case invalidTrustPath
         case algDoesNotMatch
-        case missingAttestedCredential
         // Authenticator data cannot be verified
         case invalidVerificationData
         case invalidCertAaguid
@@ -33,7 +32,7 @@ struct PackedAttestation {
 
     static func verify(
         attStmt: CBOR,
-        authenticatorData: Data,
+        authenticatorData: AuthenticatorData,
         clientDataHash: Data,
         credentialPublicKey: CredentialPublicKey,
         pemRootCertificates: [Data]
@@ -47,7 +46,7 @@ struct PackedAttestation {
             throw PackedAttestationError.invalidSig
         }
         
-        let verificationData = authenticatorData + clientDataHash
+        let verificationData = authenticatorData.rawData + clientDataHash
 
         if let x5cCBOR = attStmt["x5c"] {
             guard case let .array(x5cCBOR) = x5cCBOR else {
@@ -61,15 +60,16 @@ struct PackedAttestation {
                 return try Certificate(derEncoded: certificate)
             }
             guard let attestnCert = x5c.first else { throw PackedAttestationError.invalidX5C }
+            if x5c.count > 1 {
+                
+            }
             let intermediates = CertificateStore(x5c[1...])
             let rootCertificates = CertificateStore(
                 try pemRootCertificates.map { try Certificate(derEncoded: [UInt8]($0)) }
             )
 
             var verifier = Verifier(rootCertificates: rootCertificates) {
-                // TODO: do we really want to validate a cert expiry for devices that cannot be updated?
-                // An expired device cert just means that the device is "old". 
-                //RFC5280Policy(validationTime: Date())
+                RFC5280Policy(validationTime: Date())
                 PackedVerificationPolicy()
             }
             let verifierResult: VerificationResult = await verifier.validate(
@@ -102,9 +102,7 @@ struct PackedAttestation {
                     throw PackedAttestationError.invalidCertAaguid
                 }
                 
-                let authenticatorData = try AuthenticatorData(bytes: Array(authenticatorData))
-                guard let attestedData = authenticatorData.attestedData,
-                      attestedData.aaguid == Array(certAaguidValue) else {
+                guard authenticatorData.attestedData?.aaguid == Array(certAaguidValue) else {
                     throw PackedAttestationError.aaguidMismatch
                 }
             }

@@ -72,7 +72,6 @@ enum CredentialPublicKey {
             throw WebAuthnError.unsupportedCOSEAlgorithm
         }
 
-        // Currently we only support elliptic curve algorithms
         switch keyType {
         case .ellipticKey:
             self = try .ec2(EC2PublicKey(publicKeyObject: publicKeyObject, algorithm: algorithm))

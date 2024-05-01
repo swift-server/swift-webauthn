@@ -16,9 +16,8 @@ import Foundation
 import SwiftASN1
 import X509
 
-/// Based on https://www.w3.org/TR/webauthn-2/#sctn-packed-attestation-cert-requirements
-/// Note: we are **not** validating the certificates dates.
-public struct PackedVerificationPolicy: VerifierPolicy {
+/// Based on https://www.w3.org/TR/webauthn-2/#sctn-fido-u2f-attestation
+public struct FidoU2FVerificationPolicy: VerifierPolicy {
     public let verifyingCriticalExtensions: [ASN1ObjectIdentifier] = [
         .X509ExtensionID.basicConstraints,
         .X509ExtensionID.nameConstraints,
@@ -27,19 +26,19 @@ public struct PackedVerificationPolicy: VerifierPolicy {
     ]
 
     public func chainMeetsPolicyRequirements(chain: UnverifiedCertificateChain) -> PolicyEvaluationResult {
-        let leaf = chain.leaf
         
-        // Version MUST be set to 3
-        guard leaf.version == .v3 else {
+        // Check that x5c has exactly one element
+        guard chain.count == 1 else {
             return .failsToMeetPolicy(
-                reason: "Version MUST be set to 3: \(leaf)"
+                reason: "Authenticator attestation must return exactly 1 certificate, got \(chain.count)"
             )
         }
         
-        // The Basic Constraints extension MUST have the CA component set to false
-        guard let basic = try? leaf.extensions.basicConstraints, case .notCertificateAuthority = basic else {
+        let leaf = chain.leaf
+        // Certificate public key must be an Elliptic Curve (EC) public key over the P-256 curve,
+        guard leaf.signatureAlgorithm == .ecdsaWithSHA256 else {
             return .failsToMeetPolicy(
-                reason: "The Basic Constraints extension MUST have CA set to false: \(leaf)"
+                reason: "Public key must be Elliptic Curve (EC) P-256: \(leaf)"
             )
         }
         return .meetsPolicy
