@@ -46,7 +46,7 @@ struct TPMAttestation: AttestationProtocol {
         clientDataHash: Data,
         credentialPublicKey: CredentialPublicKey,
         pemRootCertificates: [Data]
-    ) async throws -> [Certificate] {
+    ) async throws -> (AttestationResult.AttestationType, [Certificate]) {
         // Verify version
         guard let verCBOR = attStmt["ver"],
             case let .utf8String(ver) = verCBOR,
@@ -154,6 +154,6 @@ struct TPMAttestation: AttestationProtocol {
             throw TPMAttestationError.extraDataDoesNotMatchAttToBeSignedHash
         }
         
-        return chain
+        return (.attCA, chain)
     }
 }

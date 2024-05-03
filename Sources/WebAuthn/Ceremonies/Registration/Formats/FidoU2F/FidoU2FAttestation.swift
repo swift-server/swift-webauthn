@@ -35,7 +35,7 @@ struct FidoU2FAttestation: AttestationProtocol {
         clientDataHash: Data,
         credentialPublicKey: CredentialPublicKey,
         pemRootCertificates: [Data]
-    ) async throws -> [Certificate] {
+    ) async throws -> (AttestationResult.AttestationType, [Certificate]) {
         guard let sigCBOR = attStmt["sig"], case let .byteString(sig) = sigCBOR else {
             throw FidoU2FAttestationError.invalidSig
         }
@@ -94,7 +94,7 @@ struct FidoU2FAttestation: AttestationProtocol {
             throw FidoU2FAttestationError.invalidVerificationData
         }
         
-        return chain
+        return (.basicFull, chain)
     }
 }
 

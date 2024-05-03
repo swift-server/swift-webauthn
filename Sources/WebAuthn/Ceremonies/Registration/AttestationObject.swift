@@ -61,6 +61,7 @@ public struct AttestationObject {
         }
 
         let pemRootCertificates = pemRootCertificatesByFormat[format] ?? []
+        var attestationType: AttestationResult.AttestationType!
         var trustedPath: [Certificate] = []
         switch format {
         case .none:
@@ -69,7 +70,7 @@ public struct AttestationObject {
                 throw WebAuthnError.attestationStatementMustBeEmpty
             }
         case .packed:
-            trustedPath = try await PackedAttestation.verify(
+            (attestationType, trustedPath) = try await PackedAttestation.verify(
                 attStmt: attestationStatement,
                 authenticatorData: authenticatorData,
                 clientDataHash: Data(clientDataHash),
@@ -77,7 +78,7 @@ public struct AttestationObject {
                 pemRootCertificates: pemRootCertificates
             )
         case .tpm:
-            trustedPath = try await TPMAttestation.verify(
+            (attestationType, trustedPath) = try await TPMAttestation.verify(
                 attStmt: attestationStatement,
                 authenticatorData: authenticatorData,
                 clientDataHash: Data(clientDataHash),
@@ -85,7 +86,7 @@ public struct AttestationObject {
                 pemRootCertificates: pemRootCertificates
             )
         case .androidKey:
-            trustedPath = try await AndroidKeyAttestation.verify(
+            (attestationType, trustedPath) = try await AndroidKeyAttestation.verify(
                 attStmt: attestationStatement,
                 authenticatorData: authenticatorData,
                 clientDataHash: Data(clientDataHash),
@@ -94,7 +95,7 @@ public struct AttestationObject {
             )
         // Legacy format used mostly by older authenticators
         case .fidoU2F:
-            trustedPath = try await FidoU2FAttestation.verify(
+            (attestationType, trustedPath) = try await FidoU2FAttestation.verify(
                 attStmt: attestationStatement,
                 authenticatorData: authenticatorData,
                 clientDataHash: Data(clientDataHash),
@@ -107,6 +108,7 @@ public struct AttestationObject {
         
         return AttestationResult(
             format: format,
+            type: attestationType,
             trustChain: trustedPath,
             attestedCredentialData: attestedCredentialData
         )

@@ -23,5 +23,5 @@ protocol AttestationProtocol {
         clientDataHash: Data,
         credentialPublicKey: CredentialPublicKey,
         pemRootCertificates: [Data]
-    ) async throws -> [Certificate]
+    ) async throws -> (AttestationResult.AttestationType, [Certificate])
 }

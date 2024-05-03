@@ -37,7 +37,7 @@ struct PackedAttestation: AttestationProtocol {
         clientDataHash: Data,
         credentialPublicKey: CredentialPublicKey,
         pemRootCertificates: [Data]
-    ) async throws -> [Certificate] {
+    ) async throws -> (AttestationResult.AttestationType, [Certificate]) {
         guard let algCBOR = attStmt["alg"],
             case let .negativeInt(algorithmNegative) = algCBOR,
             let alg = COSEAlgorithmIdentifier(rawValue: -1 - Int(algorithmNegative)) else {
@@ -108,14 +108,14 @@ struct PackedAttestation: AttestationProtocol {
                 }
             }
             
-            return chain
+            return (.basicFull, chain)
         } else { // self attestation is in use
             guard credentialPublicKey.key.algorithm == alg else {
                 throw PackedAttestationError.algDoesNotMatch
             }
 
             try credentialPublicKey.verify(signature: Data(sig), data: verificationData)
-            return []
+            return (.`self`, [])
         }
     }
 }

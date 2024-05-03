@@ -34,7 +34,7 @@ struct AndroidKeyAttestation: AttestationProtocol {
         clientDataHash: Data,
         credentialPublicKey: CredentialPublicKey,
         pemRootCertificates: [Data]
-    ) async throws -> [Certificate] {
+    ) async throws -> (AttestationResult.AttestationType, [Certificate]) {
         guard let sigCBOR = attStmt["sig"], case let .byteString(sig) = sigCBOR else {
             throw AndroidKeyAttestationError.invalidSig
         }
@@ -88,7 +88,7 @@ struct AndroidKeyAttestation: AttestationProtocol {
             throw AndroidKeyAttestationError.invalidTrustPath
         }
         
-        return chain
+        return (.basicFull, chain)
     }
 }
 
