@@ -63,4 +63,7 @@ extension SwiftASN1.ASN1ObjectIdentifier {
     static var certificatePolicies: Self {
         .init(arrayLiteral: 2, 5, 29, 32)
     }
+    static var androidAttestation: Self {
+        .init(arrayLiteral: 1, 3, 6, 1, 4, 1, 11129, 2, 1, 17)
+    }
 }

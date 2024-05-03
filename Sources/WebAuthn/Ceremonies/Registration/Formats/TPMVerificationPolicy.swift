@@ -18,8 +18,8 @@ import X509
 
 /// Based on https://www.w3.org/TR/webauthn-2/#sctn-tpm-cert-requirements
 /// Note: we are **not** validating the certificates dates.
-public struct TPMVerificationPolicy: VerifierPolicy {
-    public let verifyingCriticalExtensions: [ASN1ObjectIdentifier] = [
+struct TPMVerificationPolicy: VerifierPolicy {
+    let verifyingCriticalExtensions: [ASN1ObjectIdentifier] = [
         .X509ExtensionID.basicConstraints,
         .X509ExtensionID.nameConstraints,
         // The Subject Alternative Name extension MUST be set as defined in [TPMv2-EK-Profile] section 3.2.9.
@@ -28,7 +28,7 @@ public struct TPMVerificationPolicy: VerifierPolicy {
         .certificatePolicies,
     ]
 
-    public func chainMeetsPolicyRequirements(chain: UnverifiedCertificateChain) -> PolicyEvaluationResult {
+    func chainMeetsPolicyRequirements(chain: UnverifiedCertificateChain) -> PolicyEvaluationResult {
         let leaf = chain.leaf
         
         // Version MUST be set to 3
@@ -39,7 +39,7 @@ public struct TPMVerificationPolicy: VerifierPolicy {
         }
         
         // The Subject Alternative Name extension MUST be set as defined in [TPMv2-EK-Profile] section 3.2.9.
-        // Note: looks like some TPM attestation certs signed by Microsoft have nither subject nor SAN.
+        // Note: looks like some TPM attestation certs signed by Microsoft have neither subject nor SAN.
         /*guard let san = try? leaf.extensions.subjectAlternativeNames else {
             return .failsToMeetPolicy(
                 reason: "Subject Alternative Name extension MUST be set: \(leaf)"

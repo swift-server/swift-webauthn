@@ -17,15 +17,15 @@ import SwiftASN1
 import X509
 
 /// Based on https://www.w3.org/TR/webauthn-2/#sctn-fido-u2f-attestation
-public struct FidoU2FVerificationPolicy: VerifierPolicy {
-    public let verifyingCriticalExtensions: [ASN1ObjectIdentifier] = [
+struct FidoU2FVerificationPolicy: VerifierPolicy {
+    let verifyingCriticalExtensions: [ASN1ObjectIdentifier] = [
         .X509ExtensionID.basicConstraints,
         .X509ExtensionID.nameConstraints,
         .X509ExtensionID.subjectAlternativeName,
         .X509ExtensionID.keyUsage,
     ]
 
-    public func chainMeetsPolicyRequirements(chain: UnverifiedCertificateChain) -> PolicyEvaluationResult {
+    func chainMeetsPolicyRequirements(chain: UnverifiedCertificateChain) -> PolicyEvaluationResult {
         
         // Check that x5c has exactly one element
         guard chain.count == 1 else {

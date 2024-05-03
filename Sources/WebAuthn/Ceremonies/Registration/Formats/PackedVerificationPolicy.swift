@@ -18,15 +18,15 @@ import X509
 
 /// Based on https://www.w3.org/TR/webauthn-2/#sctn-packed-attestation-cert-requirements
 /// Note: we are **not** validating the certificates dates.
-public struct PackedVerificationPolicy: VerifierPolicy {
-    public let verifyingCriticalExtensions: [ASN1ObjectIdentifier] = [
+struct PackedVerificationPolicy: VerifierPolicy {
+    let verifyingCriticalExtensions: [ASN1ObjectIdentifier] = [
         .X509ExtensionID.basicConstraints,
         .X509ExtensionID.nameConstraints,
         .X509ExtensionID.subjectAlternativeName,
         .X509ExtensionID.keyUsage,
     ]
 
-    public func chainMeetsPolicyRequirements(chain: UnverifiedCertificateChain) -> PolicyEvaluationResult {
+    func chainMeetsPolicyRequirements(chain: UnverifiedCertificateChain) -> PolicyEvaluationResult {
         let leaf = chain.leaf
         
         // Version MUST be set to 3

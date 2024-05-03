@@ -15,7 +15,6 @@
 import Foundation
 import SwiftCBOR
 import X509
-import SwiftASN1
 
 // https://www.w3.org/TR/webauthn-2/#sctn-android-key-attestation
 struct AndroidKeyAttestation: AttestationProtocol {
@@ -23,8 +22,9 @@ struct AndroidKeyAttestation: AttestationProtocol {
         case invalidSig
         case invalidX5C
         case invalidTrustPath
-        // Authenticator data cannot be verified
+        /// Authenticator data cannot be verified
         case invalidVerificationData
+        /// The authenticator certificate public key does not match the attested data public key
         case credentialPublicKeyMismatch
     }
 
@@ -75,7 +75,7 @@ struct AndroidKeyAttestation: AttestationProtocol {
         }
 
         var verifier = Verifier(rootCertificates: rootCertificates) {
-            AndroidKeyVerificationPolicy()
+            AndroidKeyVerificationPolicy(clientDataHash: clientDataHash)
         }
         let verifierResult: VerificationResult = await verifier.validate(
             leafCertificate: leafCertificate,
