@@ -34,7 +34,7 @@ struct TPMVerificationPolicy: VerifierPolicy {
         // Version MUST be set to 3
         guard leaf.version == .v3 else {
             return .failsToMeetPolicy(
-                reason: "Version MUST be set to 3: \(leaf)"
+                reason: "Authenticator certificate version must be set to 3: \(leaf)"
             )
         }
         
@@ -49,14 +49,14 @@ struct TPMVerificationPolicy: VerifierPolicy {
         // The Extended Key Usage extension MUST contain the "joint-iso-itu-t(2) internationalorganizations(23) 133 tcg-kp(8) tcg-kp-AIKCertificate(3)" OID.
         guard let eku = try? leaf.extensions.extendedKeyUsage, eku.contains(.init(oid: .tcgKpAIKCertificate)) else {
             return .failsToMeetPolicy(
-                reason: "Extended Key Usage extension MUST contain the tcg-kp-AIKCertificate OID: \(leaf)"
+                reason: "Extended Key Usage extension must contain the tcg-kp-AIKCertificate OID: \(leaf)"
             )
         }
         
         // The Basic Constraints extension MUST have the CA component set to false
         guard let basic = try? leaf.extensions.basicConstraints, case .notCertificateAuthority = basic else {
             return .failsToMeetPolicy(
-                reason: "The Basic Constraints extension MUST have CA set to false: \(leaf)"
+                reason: "The Basic Constraints extension must have CA set to false: \(leaf)"
             )
         }
         return .meetsPolicy

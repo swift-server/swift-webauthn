@@ -17,6 +17,7 @@ import SwiftCBOR
 import X509
 import SwiftASN1
 
+// https://www.w3.org/TR/webauthn-2/#sctn-packed-attestation
 struct PackedAttestation: AttestationProtocol {
     enum PackedAttestationError: Error {
         case invalidAlg

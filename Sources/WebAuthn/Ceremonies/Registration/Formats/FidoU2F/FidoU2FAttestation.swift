@@ -16,6 +16,7 @@ import Foundation
 import SwiftCBOR
 import X509
 
+// https://www.w3.org/TR/webauthn-2/#sctn-fido-u2f-attestation
 struct FidoU2FAttestation: AttestationProtocol {
     enum FidoU2FAttestationError: Error {
         case invalidSig

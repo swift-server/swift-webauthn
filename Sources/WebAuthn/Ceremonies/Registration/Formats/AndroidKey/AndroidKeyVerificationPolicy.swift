@@ -16,7 +16,7 @@ import Foundation
 import SwiftASN1
 import X509
 
-/// Based on https://www.w3.org/TR/webauthn-2/#sctn-fido-u2f-attestation
+/// Based on https://www.w3.org/TR/webauthn-2/#sctn-android-key-attestation
 struct AndroidKeyVerificationPolicy: VerifierPolicy {
     let verifyingCriticalExtensions: [ASN1ObjectIdentifier] = [
         .X509ExtensionID.basicConstraints,
@@ -34,6 +34,7 @@ struct AndroidKeyVerificationPolicy: VerifierPolicy {
     func chainMeetsPolicyRequirements(chain: UnverifiedCertificateChain) -> PolicyEvaluationResult {
         let leaf = chain.leaf
 
+        // https://www.w3.org/TR/webauthn-2/#sctn-key-attstn-cert-requirements
         guard let androidExtension = leaf.extensions[oid: .androidAttestation] else {
             return .failsToMeetPolicy(
                 reason: "Required extension \(ASN1ObjectIdentifier.androidAttestation) not present: \(leaf)"
