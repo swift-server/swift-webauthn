@@ -36,7 +36,7 @@ struct PackedAttestation: AttestationProtocol {
         authenticatorData: AuthenticatorData,
         clientDataHash: Data,
         credentialPublicKey: CredentialPublicKey,
-        pemRootCertificates: [Data]
+        rootCertificates: [Certificate]
     ) async throws -> (AttestationResult.AttestationType, [Certificate]) {
         guard let algCBOR = attStmt["alg"],
             case let .negativeInt(algorithmNegative) = algCBOR,
@@ -65,11 +65,9 @@ struct PackedAttestation: AttestationProtocol {
                 
             }
             let intermediates = CertificateStore(x5c[1...])
-            let rootCertificates = CertificateStore(
-                try pemRootCertificates.map { try Certificate(derEncoded: [UInt8]($0)) }
-            )
+            let rootCertificatesStore = CertificateStore(rootCertificates)
 
-            var verifier = Verifier(rootCertificates: rootCertificates) {
+            var verifier = Verifier(rootCertificates: rootCertificatesStore) {
                 RFC5280Policy(validationTime: Date())
                 PackedVerificationPolicy()
             }

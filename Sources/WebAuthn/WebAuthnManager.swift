@@ -13,6 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 import Foundation
+import X509
 
 /// Main entrypoint for WebAuthn operations.
 ///
@@ -91,7 +92,7 @@ public struct WebAuthnManager {
         credentialCreationData: RegistrationCredential,
         requireUserVerification: Bool = false,
         supportedPublicKeyAlgorithms: [PublicKeyCredentialParameters] = .supported,
-        pemRootCertificatesByFormat: [AttestationFormat: [Data]] = [:],
+        rootCertificatesByFormat: [AttestationFormat: [Certificate]] = [:],
         confirmCredentialIDNotRegisteredYet: (String) async throws -> Bool
     ) async throws -> Credential {
         let parsedData = try ParsedCredentialCreationResponse(from: credentialCreationData)
@@ -101,7 +102,7 @@ public struct WebAuthnManager {
             relyingPartyID: configuration.relyingPartyID,
             relyingPartyOrigin: configuration.relyingPartyOrigin,
             supportedPublicKeyAlgorithms: supportedPublicKeyAlgorithms,
-            pemRootCertificatesByFormat: pemRootCertificatesByFormat
+            rootCertificatesByFormat: rootCertificatesByFormat
         )
 
         // TODO: Step 18. -> Verify client extensions

@@ -33,7 +33,7 @@ struct AndroidKeyAttestation: AttestationProtocol {
         authenticatorData: AuthenticatorData,
         clientDataHash: Data,
         credentialPublicKey: CredentialPublicKey,
-        pemRootCertificates: [Data]
+        rootCertificates: [Certificate]
     ) async throws -> (AttestationResult.AttestationType, [Certificate]) {
         guard let sigCBOR = attStmt["sig"], case let .byteString(sig) = sigCBOR else {
             throw AndroidKeyAttestationError.invalidSig
@@ -52,9 +52,7 @@ struct AndroidKeyAttestation: AttestationProtocol {
 
         guard let leafCertificate = x5c.first else { throw AndroidKeyAttestationError.invalidX5C }
         let intermediates = CertificateStore(x5c[1...])
-        let rootCertificates = CertificateStore(
-            try pemRootCertificates.map { try Certificate(derEncoded: [UInt8]($0)) }
-        )
+        let rootCertificatesStore = CertificateStore(rootCertificates)
 
         let verificationData = authenticatorData.rawData + clientDataHash
         // Verify signature
@@ -74,7 +72,7 @@ struct AndroidKeyAttestation: AttestationProtocol {
             throw AndroidKeyAttestationError.credentialPublicKeyMismatch
         }
 
-        var verifier = Verifier(rootCertificates: rootCertificates) {
+        var verifier = Verifier(rootCertificates: rootCertificatesStore) {
             AndroidKeyVerificationPolicy(clientDataHash: clientDataHash)
         }
         let verifierResult: VerificationResult = await verifier.validate(

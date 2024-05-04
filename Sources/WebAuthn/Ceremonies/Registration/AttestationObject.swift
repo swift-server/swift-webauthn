@@ -30,10 +30,8 @@ public struct AttestationObject {
         verificationRequired: Bool,
         clientDataHash: SHA256.Digest,
         supportedPublicKeyAlgorithms: [PublicKeyCredentialParameters],
-        pemRootCertificatesByFormat: [AttestationFormat: [Data]] = [:]
+        rootCertificatesByFormat: [AttestationFormat: [Certificate]] = [:]
     ) async throws -> AttestationResult {
-        // TODO: remove
-        print("\n•••••••• \(Self.self).verify(): format=\(format) ***\n")
         let relyingPartyIDHash = SHA256.hash(data: relyingPartyID.data(using: .utf8)!)
 
         guard relyingPartyIDHash == authenticatorData.relyingPartyIDHash else {
@@ -60,8 +58,8 @@ public struct AttestationObject {
             throw WebAuthnError.unsupportedCredentialPublicKeyAlgorithm
         }
 
-        let pemRootCertificates = pemRootCertificatesByFormat[format] ?? []
-        var attestationType: AttestationResult.AttestationType!
+        let rootCertificates = rootCertificatesByFormat[format] ?? []
+        var attestationType: AttestationResult.AttestationType = .none
         var trustedPath: [Certificate] = []
         switch format {
         case .none:
@@ -75,7 +73,7 @@ public struct AttestationObject {
                 authenticatorData: authenticatorData,
                 clientDataHash: Data(clientDataHash),
                 credentialPublicKey: credentialPublicKey,
-                pemRootCertificates: pemRootCertificates
+                rootCertificates: rootCertificates
             )
         case .tpm:
             (attestationType, trustedPath) = try await TPMAttestation.verify(
@@ -83,7 +81,7 @@ public struct AttestationObject {
                 authenticatorData: authenticatorData,
                 clientDataHash: Data(clientDataHash),
                 credentialPublicKey: credentialPublicKey,
-                pemRootCertificates: pemRootCertificates
+                rootCertificates: rootCertificates
             )
         case .androidKey:
             (attestationType, trustedPath) = try await AndroidKeyAttestation.verify(
@@ -91,7 +89,7 @@ public struct AttestationObject {
                 authenticatorData: authenticatorData,
                 clientDataHash: Data(clientDataHash),
                 credentialPublicKey: credentialPublicKey,
-                pemRootCertificates: pemRootCertificates
+                rootCertificates: rootCertificates
             )
         // Legacy format used mostly by older authenticators
         case .fidoU2F:
@@ -100,7 +98,7 @@ public struct AttestationObject {
                 authenticatorData: authenticatorData,
                 clientDataHash: Data(clientDataHash),
                 credentialPublicKey: credentialPublicKey,
-                pemRootCertificates: pemRootCertificates
+                rootCertificates: rootCertificates
             )
         default:
             throw WebAuthnError.attestationVerificationNotSupported

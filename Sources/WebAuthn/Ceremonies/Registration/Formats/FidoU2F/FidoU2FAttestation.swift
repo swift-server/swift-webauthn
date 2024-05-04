@@ -34,7 +34,7 @@ struct FidoU2FAttestation: AttestationProtocol {
         authenticatorData: AuthenticatorData,
         clientDataHash: Data,
         credentialPublicKey: CredentialPublicKey,
-        pemRootCertificates: [Data]
+        rootCertificates: [Certificate]
     ) async throws -> (AttestationResult.AttestationType, [Certificate]) {
         guard let sigCBOR = attStmt["sig"], case let .byteString(sig) = sigCBOR else {
             throw FidoU2FAttestationError.invalidSig
@@ -57,11 +57,9 @@ struct FidoU2FAttestation: AttestationProtocol {
 
         guard let leafCertificate = x5c.first else { throw FidoU2FAttestationError.invalidX5C }
         let intermediates = CertificateStore(x5c[1...])
-        let rootCertificates = CertificateStore(
-            try pemRootCertificates.map { try Certificate(derEncoded: [UInt8]($0)) }
-        )
+        let rootCertificatesStore = CertificateStore(rootCertificates)
 
-        var verifier = Verifier(rootCertificates: rootCertificates) {
+        var verifier = Verifier(rootCertificates: rootCertificatesStore) {
             FidoU2FVerificationPolicy()
         }
         let verifierResult: VerificationResult = await verifier.validate(
