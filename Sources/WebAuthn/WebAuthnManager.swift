@@ -33,12 +33,15 @@ public struct WebAuthnManager {
 
     private let challengeGenerator: ChallengeGenerator
 
-    /// Create a new WebAuthnManager using the given configuration and challenge generator.
+    /// Create a new WebAuthnManager using the given configuration.
     ///
     /// - Parameters:
     ///   - configuration: The configuration to use for this manager.
-    ///   - challengeGenerator: The challenge generator to use for this manager. Defaults to a live generator.
-    public init(configuration: Configuration, challengeGenerator: ChallengeGenerator = .live) {
+    public init(configuration: Configuration) {
+        self.init(configuration: configuration, challengeGenerator: .live)
+    }
+    
+    package init(configuration: Configuration, challengeGenerator: ChallengeGenerator) {
         self.configuration = configuration
         self.challengeGenerator = challengeGenerator
     }
