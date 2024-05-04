@@ -78,8 +78,7 @@ enum CredentialPublicKey {
         case .rsaKey:
             self = try .rsa(RSAPublicKeyData(publicKeyObject: publicKeyObject, algorithm: algorithm))
         case .octetKey:
-            throw WebAuthnError.unsupported
-            // self = try .okp(OKPPublicKey(publicKeyObject: publicKeyObject, algorithm: algorithm))
+            self = try .okp(OKPPublicKey(publicKeyObject: publicKeyObject, algorithm: algorithm))
         }
     }
 
@@ -185,7 +184,6 @@ struct RSAPublicKeyData: PublicKey {
     }
 
     func verify(signature: some DataProtocol, data: some DataProtocol) throws {
-        print("\n•••••• \(Self.self).verify() ")
         throw WebAuthnError.unsupported
         // let rsaSignature = _RSA.Signing.RSASignature(derRepresentation: signature)
 
@@ -209,7 +207,6 @@ struct RSAPublicKeyData: PublicKey {
     }
 }
 
-/// Currently not in use
 struct OKPPublicKey: PublicKey {
     let algorithm: COSEAlgorithmIdentifier
     let curve: UInt64

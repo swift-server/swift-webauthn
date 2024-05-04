@@ -41,9 +41,10 @@ public enum COSEAlgorithmIdentifier: Int, RawRepresentable, CaseIterable, Encoda
 	/// AlgPS512 RSASSA-PSS with SHA-512
 	//case algPS512 = -39
 	// AlgEdDSA EdDSA
-	//case algEdDSA = -8
+	case algEdDSA = -8
 
-	func hashAndCompare(data: Data, to compareHash: Data) -> Bool {
+    // This is only called for TPM attestations.
+	func hashAndCompare(data: Data, to compareHash: Data) throws -> Bool {
 		switch self {
         case .algES256, .algRS256:
 			return SHA256.hash(data: data) == compareHash
@@ -53,6 +54,8 @@ public enum COSEAlgorithmIdentifier: Int, RawRepresentable, CaseIterable, Encoda
 			return SHA512.hash(data: data) == compareHash
         case .algRS1:
             return Insecure.SHA1.hash(data: data) == compareHash
+        case .algEdDSA:
+            throw WebAuthnError.unsupportedCOSEAlgorithm
 		}
 	}
 }
