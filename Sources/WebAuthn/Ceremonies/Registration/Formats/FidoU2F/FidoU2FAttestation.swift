@@ -18,17 +18,6 @@ import X509
 
 // https://www.w3.org/TR/webauthn-2/#sctn-fido-u2f-attestation
 struct FidoU2FAttestation: AttestationProtocol {
-    enum FidoU2FAttestationError: Error {
-        case invalidSig
-        case invalidX5C
-        case invalidTrustPath
-        // attestation cert can only have a ecdsaWithSHA256 signature
-        case invalidLeafCertificateSigType
-        case invalidAttestationKeyType
-        // Authenticator data cannot be verified
-        case invalidVerificationData
-    }
-
     static func verify(
         attStmt: CBOR,
         authenticatorData: AuthenticatorData,
@@ -37,25 +26,25 @@ struct FidoU2FAttestation: AttestationProtocol {
         rootCertificates: [Certificate]
     ) async throws -> (AttestationResult.AttestationType, [Certificate]) {
         guard let sigCBOR = attStmt["sig"], case let .byteString(sig) = sigCBOR else {
-            throw FidoU2FAttestationError.invalidSig
+            throw WebAuthnError.invalidSignature
         }
         
         guard case let .ec2(key) = credentialPublicKey, key.algorithm == .algES256 else {
-            throw FidoU2FAttestationError.invalidAttestationKeyType
+            throw WebAuthnError.invalidAttestationPublicKeyType
         }
 
         guard let x5cCBOR = attStmt["x5c"], case let .array(x5cCBOR) = x5cCBOR else {
-                throw FidoU2FAttestationError.invalidX5C
+                throw WebAuthnError.invalidAttestationCertificate
         }
 
         let x5c: [Certificate] = try x5cCBOR.map {
             guard case let .byteString(certificate) = $0 else {
-                throw FidoU2FAttestationError.invalidX5C
+                throw WebAuthnError.invalidAttestationCertificate
             }
             return try Certificate(derEncoded: certificate)
         }
 
-        guard let leafCertificate = x5c.first else { throw FidoU2FAttestationError.invalidX5C }
+        guard let leafCertificate = x5c.first else { throw WebAuthnError.invalidAttestationCertificate }
         let intermediates = CertificateStore(x5c[1...])
         let rootCertificatesStore = CertificateStore(rootCertificates)
 
@@ -67,7 +56,7 @@ struct FidoU2FAttestation: AttestationProtocol {
             intermediates: intermediates
         )
         guard case .validCertificate(let chain) = verifierResult else {
-            throw FidoU2FAttestationError.invalidTrustPath
+            throw WebAuthnError.invalidTrustPath
         }
 
         // With U2F, the public key used when calculating the signature (`sig`) was encoded in ANSI X9.62 format
@@ -89,7 +78,7 @@ struct FidoU2FAttestation: AttestationProtocol {
             Data(sig),
             algorithm: leafCertificate.signatureAlgorithm,
             data: verificationData) else {
-            throw FidoU2FAttestationError.invalidVerificationData
+            throw WebAuthnError.invalidVerificationData
         }
         
         return (.basicFull, chain)

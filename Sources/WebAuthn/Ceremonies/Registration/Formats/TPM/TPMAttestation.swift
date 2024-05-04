@@ -22,19 +22,14 @@ struct TPMAttestation: AttestationProtocol {
     enum TPMAttestationError: Error {
         case pubAreaInvalid
         case certInfoInvalid
-        /// Invalid or unsupported attestation signature algorithm
-        case invalidAlg
         /// Unsupported TPM version
         case invalidVersion
-        case invalidX5c
         case invalidPublicKey
-        case invalidTrustPath
         case attestationCertificateSubjectNotEmpty
         case attestationCertificateMissingTcgKpAIKCertificate
-        /// A leaf (atte4station) cert must not have the CA flag set.
+        /// Leaf (attestation) cert must not have the CA flag set.
         case attestationCertificateIsCA
         case invalidCertAaguid
-        case aaguidMismatch
         case pubAreaExponentDoesNotMatchPubKeyExponent
         case invalidPubAreaCurve
         case extraDataDoesNotMatchAttToBeSignedHash
@@ -56,18 +51,18 @@ struct TPMAttestation: AttestationProtocol {
 
         guard let x5cCBOR = attStmt["x5c"],
             case let .array(x5cCBOR) = x5cCBOR else {
-                throw TPMAttestationError.invalidX5c
+                throw WebAuthnError.invalidAttestationCertificate
         }
         
         // Verify certificate chain
         let x5c: [Certificate] = try x5cCBOR.map {
             guard case let .byteString(certificate) = $0 else {
-                throw TPMAttestationError.invalidX5c
+                throw WebAuthnError.invalidAttestationCertificate
             }
             return try Certificate(derEncoded: certificate)
         }
         
-        guard let aikCert = x5c.first else { throw TPMAttestationError.invalidX5c }
+        guard let aikCert = x5c.first else { throw WebAuthnError.invalidAttestationCertificate }
         let intermediates = CertificateStore(x5c[1...])
         let rootCertificatesStore = CertificateStore(rootCertificates)
 
@@ -80,7 +75,7 @@ struct TPMAttestation: AttestationProtocol {
             intermediates: intermediates
         )
         guard case .validCertificate(let chain) = verifierResult else {
-            throw TPMAttestationError.invalidTrustPath
+            throw WebAuthnError.invalidTrustPath
         }
         
         // Verify that the value of the aaguid extension, if present, matches aaguid in authenticatorData
@@ -94,7 +89,7 @@ struct TPMAttestation: AttestationProtocol {
             }
             
             guard authenticatorData.attestedData?.aaguid == Array(certAaguidValue) else {
-                throw TPMAttestationError.aaguidMismatch
+                throw WebAuthnError.aaguidMismatch
             }
         }
 
@@ -143,7 +138,7 @@ struct TPMAttestation: AttestationProtocol {
         guard let algCBOR = attStmt["alg"],
             case let .negativeInt(algorithmNegative) = algCBOR,
             let alg = COSEAlgorithmIdentifier(rawValue: -1 - Int(algorithmNegative)) else {
-            throw TPMAttestationError.invalidAlg
+            throw WebAuthnError.invalidAttestationSignatureAlgorithm
         }
 
         // Verify that extraData is set to the hash of attToBeSigned using the hash algorithm employed in "alg"

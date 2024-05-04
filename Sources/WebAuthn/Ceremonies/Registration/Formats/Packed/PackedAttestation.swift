@@ -19,18 +19,6 @@ import SwiftASN1
 
 // https://www.w3.org/TR/webauthn-2/#sctn-packed-attestation
 struct PackedAttestation: AttestationProtocol {
-    enum PackedAttestationError: Error {
-        case invalidAlg
-        case invalidSig
-        case invalidX5C
-        case invalidTrustPath
-        case algDoesNotMatch
-        // Authenticator data cannot be verified
-        case invalidVerificationData
-        case invalidCertAaguid
-        case aaguidMismatch
-    }
-
     static func verify(
         attStmt: CBOR,
         authenticatorData: AuthenticatorData,
@@ -41,26 +29,26 @@ struct PackedAttestation: AttestationProtocol {
         guard let algCBOR = attStmt["alg"],
             case let .negativeInt(algorithmNegative) = algCBOR,
             let alg = COSEAlgorithmIdentifier(rawValue: -1 - Int(algorithmNegative)) else {
-            throw PackedAttestationError.invalidAlg
+            throw WebAuthnError.invalidAttestationSignatureAlgorithm
         }
         guard let sigCBOR = attStmt["sig"], case let .byteString(sig) = sigCBOR else {
-            throw PackedAttestationError.invalidSig
+            throw WebAuthnError.invalidSignature
         }
         
         let verificationData = authenticatorData.rawData + clientDataHash
 
         if let x5cCBOR = attStmt["x5c"] {
             guard case let .array(x5cCBOR) = x5cCBOR else {
-                throw PackedAttestationError.invalidX5C
+                throw WebAuthnError.invalidAttestationCertificate
             }
 
             let x5c: [Certificate] = try x5cCBOR.map {
                 guard case let .byteString(certificate) = $0 else {
-                    throw PackedAttestationError.invalidX5C
+                    throw WebAuthnError.invalidAttestationCertificate
                 }
                 return try Certificate(derEncoded: certificate)
             }
-            guard let attestnCert = x5c.first else { throw PackedAttestationError.invalidX5C }
+            guard let attestnCert = x5c.first else { throw WebAuthnError.invalidAttestationCertificate }
             if x5c.count > 1 {
                 
             }
@@ -76,7 +64,7 @@ struct PackedAttestation: AttestationProtocol {
                 intermediates: intermediates
             )
             guard case .validCertificate(let chain) = verifierResult else {
-                throw PackedAttestationError.invalidTrustPath
+                throw WebAuthnError.invalidTrustPath
             }
             
             // 2. Verify signature
@@ -88,7 +76,7 @@ struct PackedAttestation: AttestationProtocol {
                 Data(sig),
                 algorithm: attestnCert.signatureAlgorithm,
                 data: verificationData) else {
-                throw PackedAttestationError.invalidVerificationData
+                throw WebAuthnError.invalidVerificationData
             }
             
             // Verify that the value of the aaguid extension, if present, matches aaguid in authenticatorData
@@ -97,19 +85,17 @@ struct PackedAttestation: AttestationProtocol {
             ) {
                 // The AAGUID is wrapped in two OCTET STRINGS
                 let derValue = try DER.parse(certAAGUID.value)
-                guard case .primitive(let certAaguidValue) = derValue.content else {
-                    throw PackedAttestationError.invalidCertAaguid
-                }
-                
-                guard authenticatorData.attestedData?.aaguid == Array(certAaguidValue) else {
-                    throw PackedAttestationError.aaguidMismatch
+                guard case .primitive(let certAaguidValue) = derValue.content,
+                        authenticatorData.attestedData?.aaguid == Array(certAaguidValue) else {
+                    throw WebAuthnError.aaguidMismatch
                 }
             }
             
             return (.basicFull, chain)
-        } else { // self attestation is in use
+        }
+        else { // self attestation is in use
             guard credentialPublicKey.key.algorithm == alg else {
-                throw PackedAttestationError.algDoesNotMatch
+                throw WebAuthnError.attestationPublicKeyAlgorithmMismatch
             }
 
             try credentialPublicKey.verify(signature: Data(sig), data: verificationData)

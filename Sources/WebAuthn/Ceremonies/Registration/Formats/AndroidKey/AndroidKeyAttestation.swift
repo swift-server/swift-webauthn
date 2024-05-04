@@ -18,16 +18,6 @@ import X509
 
 // https://www.w3.org/TR/webauthn-2/#sctn-android-key-attestation
 struct AndroidKeyAttestation: AttestationProtocol {
-    enum AndroidKeyAttestationError: Error {
-        case invalidSig
-        case invalidX5C
-        case invalidTrustPath
-        /// Authenticator data cannot be verified
-        case invalidVerificationData
-        /// The authenticator certificate public key does not match the attested data public key
-        case credentialPublicKeyMismatch
-    }
-
     static func verify(
         attStmt: CBOR,
         authenticatorData: AuthenticatorData,
@@ -36,21 +26,21 @@ struct AndroidKeyAttestation: AttestationProtocol {
         rootCertificates: [Certificate]
     ) async throws -> (AttestationResult.AttestationType, [Certificate]) {
         guard let sigCBOR = attStmt["sig"], case let .byteString(sig) = sigCBOR else {
-            throw AndroidKeyAttestationError.invalidSig
+            throw WebAuthnError.invalidSignature
         }
         
         guard let x5cCBOR = attStmt["x5c"], case let .array(x5cCBOR) = x5cCBOR else {
-                throw AndroidKeyAttestationError.invalidX5C
+            throw WebAuthnError.invalidAttestationCertificate
         }
 
         let x5c: [Certificate] = try x5cCBOR.map {
             guard case let .byteString(certificate) = $0 else {
-                throw AndroidKeyAttestationError.invalidX5C
+                throw WebAuthnError.invalidAttestationCertificate
             }
             return try Certificate(derEncoded: certificate)
         }
 
-        guard let leafCertificate = x5c.first else { throw AndroidKeyAttestationError.invalidX5C }
+        guard let leafCertificate = x5c.first else { throw WebAuthnError.invalidAttestationCertificate }
         let intermediates = CertificateStore(x5c[1...])
         let rootCertificatesStore = CertificateStore(rootCertificates)
 
@@ -61,7 +51,7 @@ struct AndroidKeyAttestation: AttestationProtocol {
             Data(sig),
             algorithm: leafCertificate.signatureAlgorithm,
             data: verificationData) else {
-            throw AndroidKeyAttestationError.invalidVerificationData
+            throw WebAuthnError.invalidVerificationData
         }
 
         // We need to verify that the authenticator certificate's public key matches the public key present in
@@ -69,7 +59,7 @@ struct AndroidKeyAttestation: AttestationProtocol {
         // We can't directly compare two public keys, so instead we verify the signature with both keys:
         // the authenticator cert (previous step above) and credentialPublicKey (below).
         guard let _ = try? credentialPublicKey.verify(signature: Data(sig), data: verificationData) else {
-            throw AndroidKeyAttestationError.credentialPublicKeyMismatch
+            throw WebAuthnError.attestationPublicKeyMismatch
         }
 
         var verifier = Verifier(rootCertificates: rootCertificatesStore) {
@@ -83,7 +73,7 @@ struct AndroidKeyAttestation: AttestationProtocol {
             }
         )
         guard case .validCertificate(let chain) = verifierResult else {
-            throw AndroidKeyAttestationError.invalidTrustPath
+            throw WebAuthnError.invalidTrustPath
         }
         
         return (.basicFull, chain)
