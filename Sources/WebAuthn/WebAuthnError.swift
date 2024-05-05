@@ -77,6 +77,10 @@ public struct WebAuthnError: Error, Hashable {
         case attestationPublicKeyAlgorithmMismatch
         case aaguidMismatch
         case attestationPublicKeyMismatch
+        case tpmInvalidVersion
+        case tpmInvalidPubArea
+        case tpmInvalidPubAreaPublicKey
+        case tpmInvalidPubAreaCurve
     }
     
     let reason: Reason
@@ -153,4 +157,9 @@ public struct WebAuthnError: Error, Hashable {
     public static let attestationPublicKeyMismatch = Self(reason: .attestationPublicKeyMismatch)
     /// Value of AAGUID in authenticator data doesn't match value in attestation certificate
     public static let aaguidMismatch = Self(reason: .aaguidMismatch)
+    /// Invalid TPM version
+    public static let tpmInvalidVersion = Self(reason: .tpmInvalidVersion)
+    public static let tpmInvalidPubArea = Self(reason: .tpmInvalidPubArea)
+    public static let tpmInvalidPubAreaPublicKey = Self(reason: .tpmInvalidPubAreaPublicKey)
+    public static let tpmInvalidPubAreaCurve = Self(reason: .tpmInvalidPubAreaCurve)
 }

@@ -16,7 +16,7 @@ import Foundation
 import SwiftASN1
 import X509
 
-/// Based on https://www.w3.org/TR/webauthn-2/#sctn-android-key-attestation
+// Based on https://www.w3.org/TR/webauthn-2/#sctn-android-key-attestation
 struct AndroidKeyVerificationPolicy: VerifierPolicy {
     let verifyingCriticalExtensions: [ASN1ObjectIdentifier] = [
         .X509ExtensionID.basicConstraints,

@@ -16,8 +16,7 @@ import Foundation
 import SwiftASN1
 import X509
 
-/// Based on https://www.w3.org/TR/webauthn-2/#sctn-packed-attestation-cert-requirements
-/// Note: we are **not** validating the certificates dates.
+// Based on https://www.w3.org/TR/webauthn-2/#sctn-packed-attestation-cert-requirements
 struct PackedVerificationPolicy: VerifierPolicy {
     let verifyingCriticalExtensions: [ASN1ObjectIdentifier] = [
         .X509ExtensionID.basicConstraints,
@@ -32,14 +31,14 @@ struct PackedVerificationPolicy: VerifierPolicy {
         // Version MUST be set to 3
         guard leaf.version == .v3 else {
             return .failsToMeetPolicy(
-                reason: "Version MUST be set to 3: \(leaf)"
+                reason: "Version must be set to 3: \(leaf)"
             )
         }
         
         // The Basic Constraints extension MUST have the CA component set to false
         guard let basic = try? leaf.extensions.basicConstraints, case .notCertificateAuthority = basic else {
             return .failsToMeetPolicy(
-                reason: "The Basic Constraints extension MUST have CA set to false: \(leaf)"
+                reason: "The Basic Constraints extension must have CA set to false: \(leaf)"
             )
         }
         return .meetsPolicy

@@ -16,8 +16,7 @@ import Foundation
 import SwiftASN1
 import X509
 
-/// Based on https://www.w3.org/TR/webauthn-2/#sctn-tpm-cert-requirements
-/// Note: we are **not** validating the certificates dates.
+// Based on https://www.w3.org/TR/webauthn-2/#sctn-tpm-cert-requirements
 struct TPMVerificationPolicy: VerifierPolicy {
     let verifyingCriticalExtensions: [ASN1ObjectIdentifier] = [
         .X509ExtensionID.basicConstraints,
@@ -40,7 +39,8 @@ struct TPMVerificationPolicy: VerifierPolicy {
         
         // The Subject Alternative Name extension MUST be set as defined in [TPMv2-EK-Profile] section 3.2.9.
         // Note: looks like some TPM attestation certs signed by Microsoft have neither subject nor SAN.
-        /*guard let san = try? leaf.extensions.subjectAlternativeNames else {
+        // I'm unable to find sample TPM attestation payloads that actually pass this verification.
+        /*guard let _ = try? leaf.extensions.subjectAlternativeNames else {
             return .failsToMeetPolicy(
                 reason: "Subject Alternative Name extension MUST be set: \(leaf)"
             )

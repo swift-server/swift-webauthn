@@ -16,7 +16,7 @@ import Foundation
 import SwiftASN1
 import X509
 
-/// Based on https://www.w3.org/TR/webauthn-2/#sctn-fido-u2f-attestation
+// Based on https://www.w3.org/TR/webauthn-2/#sctn-fido-u2f-attestation
 struct FidoU2FVerificationPolicy: VerifierPolicy {
     let verifyingCriticalExtensions: [ASN1ObjectIdentifier] = [
         .X509ExtensionID.basicConstraints,
@@ -26,7 +26,6 @@ struct FidoU2FVerificationPolicy: VerifierPolicy {
     ]
 
     func chainMeetsPolicyRequirements(chain: UnverifiedCertificateChain) -> PolicyEvaluationResult {
-        
         // Check that x5c has exactly one element
         guard chain.count == 1 else {
             return .failsToMeetPolicy(

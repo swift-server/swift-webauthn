@@ -20,18 +20,10 @@ import SwiftASN1
 // https://www.w3.org/TR/webauthn-2/#sctn-tpm-attestation
 struct TPMAttestation: AttestationProtocol {
     enum TPMAttestationError: Error {
-        case pubAreaInvalid
         case certInfoInvalid
-        /// Unsupported TPM version
-        case invalidVersion
-        case invalidPublicKey
-        case attestationCertificateSubjectNotEmpty
         case attestationCertificateMissingTcgKpAIKCertificate
-        /// Leaf (attestation) cert must not have the CA flag set.
-        case attestationCertificateIsCA
         case invalidCertAaguid
         case pubAreaExponentDoesNotMatchPubKeyExponent
-        case invalidPubAreaCurve
         case extraDataDoesNotMatchAttToBeSignedHash
     }
 
@@ -46,7 +38,7 @@ struct TPMAttestation: AttestationProtocol {
         guard let verCBOR = attStmt["ver"],
             case let .utf8String(ver) = verCBOR,
             ver == "2.0" else {
-            throw TPMAttestationError.invalidVersion
+            throw WebAuthnError.tpmInvalidVersion
         }
 
         guard let x5cCBOR = attStmt["x5c"],
@@ -97,13 +89,13 @@ struct TPMAttestation: AttestationProtocol {
         guard let pubAreaCBOR = attStmt["pubArea"],
             case let .byteString(pubAreaRaw) = pubAreaCBOR,
             let pubArea = PubArea(from: Data(pubAreaRaw)) else {
-            throw TPMAttestationError.pubAreaInvalid
+            throw WebAuthnError.tpmInvalidPubArea
         }
         switch pubArea.parameters {
         case let .rsa(rsaParameters):
            guard case let .rsa(rsaPublicKeyData) = credentialPublicKey,
                Array(pubArea.unique.data) == rsaPublicKeyData.n else {
-               throw TPMAttestationError.invalidPublicKey
+               throw WebAuthnError.tpmInvalidPubAreaPublicKey
            }
            var pubAreaExponent: Int = rsaParameters.exponent.toInteger(endian: .big)
            if pubAreaExponent == 0 {
@@ -118,12 +110,12 @@ struct TPMAttestation: AttestationProtocol {
         case let .ecc(eccParameters):
            guard case let .ec2(ec2PublicKeyData) = credentialPublicKey,
                Array(pubArea.unique.data) == ec2PublicKeyData.rawRepresentation else {
-               throw TPMAttestationError.invalidPublicKey
+               throw WebAuthnError.tpmInvalidPubAreaPublicKey
            }
 
            guard let pubAreaCrv = COSECurve(from: eccParameters.curveID),
                pubAreaCrv == ec2PublicKeyData.curve else {
-               throw TPMAttestationError.invalidPubAreaCurve
+               throw WebAuthnError.tpmInvalidPubAreaCurve
            }
         }
         // Verify certInfo
@@ -143,7 +135,7 @@ struct TPMAttestation: AttestationProtocol {
 
         // Verify that extraData is set to the hash of attToBeSigned using the hash algorithm employed in "alg"
         let attToBeSigned = authenticatorData.rawData + clientDataHash
-        guard alg.hashAndCompare(data: attToBeSigned, to: parsedCertInfo.extraData) else {
+        guard try alg.hashAndCompare(data: attToBeSigned, to: parsedCertInfo.extraData) else {
             throw TPMAttestationError.extraDataDoesNotMatchAttToBeSignedHash
         }
         
