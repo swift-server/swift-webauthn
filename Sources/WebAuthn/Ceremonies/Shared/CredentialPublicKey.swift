@@ -228,9 +228,15 @@ struct OKPPublicKey: PublicKey {
     }
 
     func verify(signature: some DataProtocol, data: some DataProtocol) throws {
-        let pkey = try Curve25519.Signing.PublicKey(rawRepresentation: self.xCoordinate)
-        guard pkey.isValidSignature(signature, for: data) else {
-            throw WebAuthnError.invalidSignature
+        switch algorithm {
+        case .algEdDSA:
+            let pkey = try Curve25519.Signing.PublicKey(rawRepresentation: self.xCoordinate)
+            guard pkey.isValidSignature(signature, for: data) else {
+                throw WebAuthnError.invalidSignature
+            }
+        default:
+            throw WebAuthnError.unsupportedCOSEAlgorithm
         }
+        
     }
 }
