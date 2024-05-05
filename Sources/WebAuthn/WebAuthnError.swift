@@ -169,5 +169,5 @@ public struct WebAuthnError: Error, Hashable {
     public static let tpmCertInfoInvalid = Self(reason: .tpmCertInfoInvalid)
     public static let tpmInvalidCertAaguid = Self(reason: .tpmInvalidCertAaguid)
     public static let tpmPubAreaExponentDoesNotMatchPubKeyExponent = Self(reason: .tpmPubAreaExponentDoesNotMatchPubKeyExponent)
-    public static let tpmExtraDataDoesNotMatchAttToBeSignedHash = (Self: reason: .tpmExtraDataDoesNotMatchAttToBeSignedHash)
+    public static let tpmExtraDataDoesNotMatchAttToBeSignedHash = Self( reason: .tpmExtraDataDoesNotMatchAttToBeSignedHash)
 }
