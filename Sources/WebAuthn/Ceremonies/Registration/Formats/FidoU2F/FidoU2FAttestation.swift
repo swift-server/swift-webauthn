@@ -49,6 +49,7 @@ struct FidoU2FAttestation: AttestationProtocol {
         let rootCertificatesStore = CertificateStore(rootCertificates)
 
         var verifier = Verifier(rootCertificates: rootCertificatesStore) {
+            RFC5280Policy(validationTime: Date())
             FidoU2FVerificationPolicy()
         }
         let verifierResult: VerificationResult = await verifier.validate(
@@ -76,7 +77,7 @@ struct FidoU2FAttestation: AttestationProtocol {
         let leafCertificatePublicKey: Certificate.PublicKey = leafCertificate.publicKey
         guard try leafCertificatePublicKey.verifySignature(
             Data(sig),
-            algorithm: leafCertificate.signatureAlgorithm,
+            algorithm: .algES256,
             data: verificationData) else {
             throw WebAuthnError.invalidVerificationData
         }

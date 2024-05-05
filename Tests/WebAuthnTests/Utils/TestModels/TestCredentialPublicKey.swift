@@ -60,7 +60,7 @@ struct TestCredentialPublicKeyBuilder {
             .crv(.p256)
             .alg(.algES256)
             .xCoordinate(TestECCKeyPair.publicKeyXCoordinate)
-            .yCoordiante(TestECCKeyPair.publicKeyYCoordinate)
+            .yCoordinate(TestECCKeyPair.publicKeyYCoordinate)
     }
 
     func kty(_ kty: COSEKeyType) -> Self {
@@ -87,7 +87,7 @@ struct TestCredentialPublicKeyBuilder {
         return temp
     }
 
-    func yCoordiante(_ yCoordinate: [UInt8]) -> Self {
+    func yCoordinate(_ yCoordinate: [UInt8]) -> Self {
         var temp = self
         temp.wrapped.yCoordinate = .byteString(yCoordinate)
         return temp

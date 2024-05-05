@@ -40,7 +40,7 @@ public struct Credential {
     public let isBackedUp: Bool
 
     // MARK: Optional content
-    
+
     public let attestationResult: AttestationResult
 
     public let attestationClientDataJSON: CollectedClientData

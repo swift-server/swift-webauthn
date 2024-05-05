@@ -35,22 +35,22 @@ public enum COSEAlgorithmIdentifier: Int, RawRepresentable, CaseIterable, Encoda
 	/// AlgRS512 RSASSA-PKCS1-v1_5 with SHA-512
 	case algRS512 = -259
 	/// AlgPS256 RSASSA-PSS with SHA-256
-	//case algPS256 = -37
+	case algPS256 = -37
 	/// AlgPS384 RSASSA-PSS with SHA-384
-	//case algPS384 = -38
+	case algPS384 = -38
 	/// AlgPS512 RSASSA-PSS with SHA-512
-	//case algPS512 = -39
+	case algPS512 = -39
 	// AlgEdDSA EdDSA
 	case algEdDSA = -8
 
     // This is only called for TPM attestations.
 	func hashAndCompare(data: Data, to compareHash: Data) throws -> Bool {
 		switch self {
-        case .algES256, .algRS256:
+        case .algES256, .algRS256, .algPS256:
 			return SHA256.hash(data: data) == compareHash
-        case .algES384, .algRS384:
+        case .algES384, .algRS384, .algPS384:
 			return SHA384.hash(data: data) == compareHash
-        case .algES512, .algRS512:
+        case .algES512, .algRS512, .algPS512:
 			return SHA512.hash(data: data) == compareHash
         case .algRS1:
             return Insecure.SHA1.hash(data: data) == compareHash

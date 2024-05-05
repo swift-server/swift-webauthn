@@ -34,7 +34,7 @@ struct PackedAttestation: AttestationProtocol {
         guard let sigCBOR = attStmt["sig"], case let .byteString(sig) = sigCBOR else {
             throw WebAuthnError.invalidSignature
         }
-        
+
         let verificationData = authenticatorData.rawData + clientDataHash
 
         if let x5cCBOR = attStmt["x5c"] {
@@ -49,9 +49,7 @@ struct PackedAttestation: AttestationProtocol {
                 return try Certificate(derEncoded: certificate)
             }
             guard let attestnCert = x5c.first else { throw WebAuthnError.invalidAttestationCertificate }
-            if x5c.count > 1 {
-                
-            }
+
             let intermediates = CertificateStore(x5c[1...])
             let rootCertificatesStore = CertificateStore(rootCertificates)
 
@@ -62,11 +60,14 @@ struct PackedAttestation: AttestationProtocol {
             let verifierResult: VerificationResult = await verifier.validate(
                 leafCertificate: attestnCert,
                 intermediates: intermediates
+                /*diagnosticCallback: { result in
+                    print("\n •••• \(Self.self) result=\(result)")
+                }*/
             )
             guard case .validCertificate(let chain) = verifierResult else {
                 throw WebAuthnError.invalidTrustPath
             }
-            
+
             // 2. Verify signature
             // 2.1 Determine key type (with new Swift ASN.1/ Certificates library)
             // 2.2 Create corresponding public key object (EC2PublicKey/RSAPublicKey/OKPPublicKey)
@@ -74,11 +75,11 @@ struct PackedAttestation: AttestationProtocol {
             let leafCertificatePublicKey: Certificate.PublicKey = attestnCert.publicKey
             guard try leafCertificatePublicKey.verifySignature(
                 Data(sig),
-                algorithm: attestnCert.signatureAlgorithm,
+                algorithm: alg ,
                 data: verificationData) else {
                 throw WebAuthnError.invalidVerificationData
             }
-            
+
             // Verify that the value of the aaguid extension, if present, matches aaguid in authenticatorData
             if let certAAGUID = attestnCert.extensions.first(
                 where: {$0.oid == .idFidoGenCeAaguid}

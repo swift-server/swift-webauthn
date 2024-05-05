@@ -25,6 +25,11 @@ struct AndroidKeyAttestation: AttestationProtocol {
         credentialPublicKey: CredentialPublicKey,
         rootCertificates: [Certificate]
     ) async throws -> (AttestationResult.AttestationType, [Certificate]) {
+        guard let algCBOR = attStmt["alg"],
+            case let .negativeInt(algorithmNegative) = algCBOR,
+            let alg = COSEAlgorithmIdentifier(rawValue: -1 - Int(algorithmNegative)) else {
+            throw WebAuthnError.invalidAttestationSignatureAlgorithm
+        }
         guard let sigCBOR = attStmt["sig"], case let .byteString(sig) = sigCBOR else {
             throw WebAuthnError.invalidSignature
         }
@@ -49,7 +54,7 @@ struct AndroidKeyAttestation: AttestationProtocol {
         let leafCertificatePublicKey: Certificate.PublicKey = leafCertificate.publicKey
         guard try leafCertificatePublicKey.verifySignature(
             Data(sig),
-            algorithm: leafCertificate.signatureAlgorithm,
+            algorithm: alg,
             data: verificationData) else {
             throw WebAuthnError.invalidVerificationData
         }
@@ -67,10 +72,7 @@ struct AndroidKeyAttestation: AttestationProtocol {
         }
         let verifierResult: VerificationResult = await verifier.validate(
             leafCertificate: leafCertificate,
-            intermediates: intermediates,
-            diagnosticCallback: { result in
-                print("\n •••• \(Self.self) result=\(result)")
-            }
+            intermediates: intermediates
         )
         guard case .validCertificate(let chain) = verifierResult else {
             throw WebAuthnError.invalidTrustPath

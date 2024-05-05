@@ -19,35 +19,48 @@ import Crypto
 import _CryptoExtras
 
 extension Certificate.PublicKey {
-    func verifySignature(_ signature: Data, algorithm: Certificate.SignatureAlgorithm, data: Data) throws -> Bool {
+    func verifySignature(_ signature: Data, algorithm: COSEAlgorithmIdentifier, data: Data) throws -> Bool {
         switch algorithm {
-
-        case .ecdsaWithSHA256:
+        case .algES256:
             guard let key = P256.Signing.PublicKey(self) else {
                 return false
             }
             let signature = try P256.Signing.ECDSASignature(derRepresentation: signature)
             return key.isValidSignature(signature, for: data)
-        case .ecdsaWithSHA384:
+        case .algES384:
             guard let key = P384.Signing.PublicKey(self) else {
                 return false
             }
             let signature = try P384.Signing.ECDSASignature(derRepresentation: signature)
             return key.isValidSignature(signature, for: data)
-        case .ecdsaWithSHA512:
+        case .algES512:
             guard let key = P521.Signing.PublicKey(self) else {
                 return false
             }
             let signature = try P521.Signing.ECDSASignature(derRepresentation: signature)
             return key.isValidSignature(signature, for: data)
-        // This hasn't been tested
-        /*case .sha1WithRSAEncryption, .sha256WithRSAEncryption, .sha384WithRSAEncryption, .sha512WithRSAEncryption:
-            guard let key = _RSA.Signing.PublicKey(self) else {
-                return false
+        case .algPS256, .algPS384, .algPS512, .algRS1, .algRS256, .algRS384, .algRS512:
+            // We currently have no way to access the publickey `backing` so we try various possibilities
+            if let key = _RSA.Signing.PublicKey(self) {
+                let signature = _RSA.Signing.RSASignature(rawRepresentation: signature)
+                return key.isValidSignature(signature, for: data)
             }
-            let signature = _RSA.Signing.RSASignature(rawRepresentation: signature)
-            return key.isValidSignature(signature, for: data)*/
-        default: // Should we return more explicit info (signature alg not supported) in that case?
+            else if let key = P256.Signing.PublicKey(self) {
+                let signature = try P256.Signing.ECDSASignature(derRepresentation: signature)
+                return key.isValidSignature(signature, for: data)
+            }
+            else if let key = P384.Signing.PublicKey(self) {
+                let signature = try P384.Signing.ECDSASignature(derRepresentation: signature)
+                return key.isValidSignature(signature, for: data)
+            }
+            else if let key = P521.Signing.PublicKey(self) {
+                let signature = try P521.Signing.ECDSASignature(derRepresentation: signature)
+                return key.isValidSignature(signature, for: data)
+            }
+            else {
+                throw WebAuthnError.unsupported
+            }
+        default:
             throw WebAuthnError.unsupported
         }
     }
