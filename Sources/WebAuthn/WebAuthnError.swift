@@ -81,6 +81,10 @@ public struct WebAuthnError: Error, Hashable {
         case tpmInvalidPubArea
         case tpmInvalidPubAreaPublicKey
         case tpmInvalidPubAreaCurve
+        case tpmCertInfoInvalid
+        case tpmInvalidCertAaguid
+        case tpmPubAreaExponentDoesNotMatchPubKeyExponent
+        case tpmExtraDataDoesNotMatchAttToBeSignedHash
     }
     
     let reason: Reason
@@ -162,4 +166,8 @@ public struct WebAuthnError: Error, Hashable {
     public static let tpmInvalidPubArea = Self(reason: .tpmInvalidPubArea)
     public static let tpmInvalidPubAreaPublicKey = Self(reason: .tpmInvalidPubAreaPublicKey)
     public static let tpmInvalidPubAreaCurve = Self(reason: .tpmInvalidPubAreaCurve)
+    public static let tpmCertInfoInvalid = Self(reason: .tpmCertInfoInvalid)
+    public static let tpmInvalidCertAaguid = Self(reason: .tpmInvalidCertAaguid)
+    public static let tpmPubAreaExponentDoesNotMatchPubKeyExponent = Self(reason: .tpmPubAreaExponentDoesNotMatchPubKeyExponent)
+    public static let tpmExtraDataDoesNotMatchAttToBeSignedHash = (Self: reason: .tpmExtraDataDoesNotMatchAttToBeSignedHash)
 }

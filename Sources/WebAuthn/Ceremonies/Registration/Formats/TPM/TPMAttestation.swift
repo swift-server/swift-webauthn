@@ -19,14 +19,6 @@ import SwiftASN1
 
 // https://www.w3.org/TR/webauthn-2/#sctn-tpm-attestation
 struct TPMAttestation: AttestationProtocol {
-    enum TPMAttestationError: Error {
-        case certInfoInvalid
-        case attestationCertificateMissingTcgKpAIKCertificate
-        case invalidCertAaguid
-        case pubAreaExponentDoesNotMatchPubKeyExponent
-        case extraDataDoesNotMatchAttToBeSignedHash
-    }
-
     static func verify(
         attStmt: CBOR,
         authenticatorData: AuthenticatorData,
@@ -77,7 +69,7 @@ struct TPMAttestation: AttestationProtocol {
             // The AAGUID is wrapped in two OCTET STRINGS
             let derValue = try DER.parse(certAAGUID.value)
             guard case .primitive(let certAaguidValue) = derValue.content else {
-                throw TPMAttestationError.invalidCertAaguid
+                throw WebAuthnError.tpmInvalidCertAaguid
             }
             
             guard authenticatorData.attestedData?.aaguid == Array(certAaguidValue) else {
@@ -105,7 +97,7 @@ struct TPMAttestation: AttestationProtocol {
 
            let pubKeyExponent: Int = rsaPublicKeyData.e.toInteger(endian: .big)
            guard pubAreaExponent == pubKeyExponent else {
-               throw TPMAttestationError.pubAreaExponentDoesNotMatchPubKeyExponent
+               throw WebAuthnError.tpmPubAreaExponentDoesNotMatchPubKeyExponent
            }
         case let .ecc(eccParameters):
            guard case let .ec2(ec2PublicKeyData) = credentialPublicKey,
@@ -122,7 +114,7 @@ struct TPMAttestation: AttestationProtocol {
         guard let certInfoCBOR = attStmt["certInfo"],
             case let .byteString(certInfo) = certInfoCBOR,
             let parsedCertInfo = CertInfo(fromBytes: Data(certInfo)) else {
-            throw TPMAttestationError.certInfoInvalid
+            throw WebAuthnError.tpmCertInfoInvalid
         }
 
         try parsedCertInfo.verify(pubArea: Data(pubAreaRaw))
@@ -136,7 +128,7 @@ struct TPMAttestation: AttestationProtocol {
         // Verify that extraData is set to the hash of attToBeSigned using the hash algorithm employed in "alg"
         let attToBeSigned = authenticatorData.rawData + clientDataHash
         guard try alg.hashAndCompare(data: attToBeSigned, to: parsedCertInfo.extraData) else {
-            throw TPMAttestationError.extraDataDoesNotMatchAttToBeSignedHash
+            throw WebAuthnError.tpmExtraDataDoesNotMatchAttToBeSignedHash
         }
         
         return (.attCA, chain)
