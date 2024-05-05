@@ -79,7 +79,7 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
             credentialCreationData: registrationResponse,
             requireUserVerification: true,
             supportedPublicKeyAlgorithms: publicKeyCredentialParameters,
-            pemRootCertificatesByFormat: [:],
+            rootCertificatesByFormat: [:],
             confirmCredentialIDNotRegisteredYet: { _ in true }
         )
 

@@ -228,6 +228,9 @@ struct OKPPublicKey: PublicKey {
     }
 
     func verify(signature: some DataProtocol, data: some DataProtocol) throws {
-        throw WebAuthnError.unsupported
+        let pkey = try Curve25519.Signing.PublicKey(rawRepresentation: self.xCoordinate)
+        guard pkey.isValidSignature(signature, for: data) else {
+            throw WebAuthnError.invalidSignature
+        }
     }
 }
