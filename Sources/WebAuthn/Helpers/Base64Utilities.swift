@@ -16,7 +16,7 @@ import Foundation
 import Logging
 
 /// Container for base64 encoded data
-public struct EncodedBase64: ExpressibleByStringLiteral, Codable, Hashable, Equatable {
+public struct EncodedBase64: ExpressibleByStringLiteral, Codable, Hashable, Equatable, Sendable {
     private let base64: String
 
     public init(_ string: String) {
@@ -58,7 +58,7 @@ public struct EncodedBase64: ExpressibleByStringLiteral, Codable, Hashable, Equa
 }
 
 /// Container for URL encoded base64 data
-public struct URLEncodedBase64: ExpressibleByStringLiteral, Codable, Hashable, Equatable {
+public struct URLEncodedBase64: ExpressibleByStringLiteral, Codable, Hashable, Equatable, Sendable {
     let base64URL: String
 
     /// Decodes Base64URL string and transforms result into `[UInt8]`

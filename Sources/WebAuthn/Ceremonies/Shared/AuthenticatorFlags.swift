@@ -12,7 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-struct AuthenticatorFlags: Equatable {
+struct AuthenticatorFlags: Equatable, Sendable {
 
     /**
      Taken from https://w3c.github.io/webauthn/#sctn-authenticator-data

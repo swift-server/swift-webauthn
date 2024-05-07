@@ -19,7 +19,7 @@ import Foundation
 /// When encoding using `Encodable`, the byte arrays are encoded as base64url.
 ///
 /// - SeeAlso: https://www.w3.org/TR/webauthn-2/#dictionary-assertion-options
-public struct PublicKeyCredentialRequestOptions: Encodable {
+public struct PublicKeyCredentialRequestOptions: Encodable, Sendable {
     /// A challenge that the authenticator signs, along with other data, when producing an authentication assertion
     ///
     /// When encoding using `Encodable` this is encoded as base64url.
@@ -68,10 +68,10 @@ public struct PublicKeyCredentialRequestOptions: Encodable {
 /// Information about a generated credential.
 ///
 /// When encoding using `Encodable`, `id` is encoded as base64url.
-public struct PublicKeyCredentialDescriptor: Equatable, Encodable {
+public struct PublicKeyCredentialDescriptor: Equatable, Encodable, Sendable {
     /// Defines hints as to how clients might communicate with a particular authenticator in order to obtain an
     /// assertion for a specific credential
-    public enum AuthenticatorTransport: String, Equatable, Encodable {
+    public enum AuthenticatorTransport: String, Equatable, Encodable, Sendable {
         /// Indicates the respective authenticator can be contacted over removable USB.
         case usb
         /// Indicates the respective authenticator can be contacted over Near Field Communication (NFC).
@@ -125,7 +125,7 @@ public struct PublicKeyCredentialDescriptor: Equatable, Encodable {
 
 /// The Relying Party may require user verification for some of its operations but not for others, and may use this
 /// type to express its needs.
-public enum UserVerificationRequirement: String, Encodable {
+public enum UserVerificationRequirement: String, Encodable, Sendable {
     /// The Relying Party requires user verification for the operation and will fail the overall ceremony if the
     /// user wasn't verified.
     case required

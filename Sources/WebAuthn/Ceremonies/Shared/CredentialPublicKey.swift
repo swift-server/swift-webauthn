@@ -17,13 +17,13 @@ import _CryptoExtras
 import Foundation
 import SwiftCBOR
 
-protocol PublicKey {
+protocol PublicKey: Sendable {
     var algorithm: COSEAlgorithmIdentifier { get }
     /// Verify a signature was signed with the private key corresponding to the public key.
     func verify(signature: some DataProtocol, data: some DataProtocol) throws
 }
 
-enum CredentialPublicKey {
+enum CredentialPublicKey: Sendable {
     case okp(OKPPublicKey)
     case ec2(EC2PublicKey)
     case rsa(RSAPublicKeyData)
@@ -91,7 +91,7 @@ enum CredentialPublicKey {
     }
 }
 
-struct EC2PublicKey: PublicKey {
+struct EC2PublicKey: PublicKey, Sendable {
     let algorithm: COSEAlgorithmIdentifier
     /// The curve on which we derive the signature from.
     let curve: COSECurve
@@ -159,7 +159,7 @@ struct EC2PublicKey: PublicKey {
 }
 
 /// Currently not in use
-struct RSAPublicKeyData: PublicKey {
+struct RSAPublicKeyData: PublicKey, Sendable {
     let algorithm: COSEAlgorithmIdentifier
     // swiftlint:disable:next identifier_name
     let n: [UInt8]
@@ -209,7 +209,7 @@ struct RSAPublicKeyData: PublicKey {
 }
 
 /// Currently not in use
-struct OKPPublicKey: PublicKey {
+struct OKPPublicKey: PublicKey, Sendable {
     let algorithm: COSEAlgorithmIdentifier
     let curve: UInt64
     let xCoordinate: [UInt8]

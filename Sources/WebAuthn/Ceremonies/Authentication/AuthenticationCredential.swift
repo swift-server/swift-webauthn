@@ -17,7 +17,7 @@ import Foundation
 /// The unprocessed response received from `navigator.credentials.get()`.
 ///
 /// When decoding using `Decodable`, the `rawID` is decoded from base64url to bytes.
-public struct AuthenticationCredential {
+public struct AuthenticationCredential: Sendable {
     /// The credential ID of the newly created credential.
     public let id: URLEncodedBase64
 
