@@ -60,22 +60,16 @@ struct PackedAttestation: AttestationProtocol {
             let verifierResult: VerificationResult = await verifier.validate(
                 leafCertificate: attestnCert,
                 intermediates: intermediates
-                /*diagnosticCallback: { result in
-                    print("\n •••• \(Self.self) result=\(result)")
-                }*/
             )
             guard case .validCertificate(let chain) = verifierResult else {
                 throw WebAuthnError.invalidTrustPath
             }
 
             // 2. Verify signature
-            // 2.1 Determine key type (with new Swift ASN.1/ Certificates library)
-            // 2.2 Create corresponding public key object (EC2PublicKey/RSAPublicKey/OKPPublicKey)
-            // 2.3 Call verify method on public key with signature + data
             let leafCertificatePublicKey: Certificate.PublicKey = attestnCert.publicKey
             guard try leafCertificatePublicKey.verifySignature(
                 Data(sig),
-                algorithm: alg ,
+                algorithm: alg,
                 data: verificationData) else {
                 throw WebAuthnError.invalidVerificationData
             }
@@ -99,7 +93,10 @@ struct PackedAttestation: AttestationProtocol {
                 throw WebAuthnError.attestationPublicKeyAlgorithmMismatch
             }
 
-            try credentialPublicKey.verify(signature: Data(sig), data: verificationData)
+            guard (try? credentialPublicKey.verify(signature: Data(sig), data: verificationData)) != nil else {
+                throw WebAuthnError.invalidVerificationData
+            }
+            
             return (.`self`, [])
         }
     }

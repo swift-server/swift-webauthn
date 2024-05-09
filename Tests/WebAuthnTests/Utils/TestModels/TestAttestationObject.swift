@@ -74,6 +74,12 @@ struct TestAttestationObjectBuilder {
         temp.wrapped.fmt = .utf8String(utf8String)
         return temp
     }
+    
+    func fmt(_ format: AttestationFormat) -> Self {
+        var temp = self
+        temp.wrapped.fmt = .utf8String(format.rawValue)
+        return temp
+    }
 
     // MARK: attStmt
 

@@ -21,6 +21,8 @@ struct TestCredentialPublicKey {
     var crv: CBOR?
     var xCoordinate: CBOR?
     var yCoordinate: CBOR?
+    var e: CBOR?
+    var n: CBOR?
 
     var byteArrayRepresentation: [UInt8] {
         var value: [CBOR: CBOR] = [:]
@@ -38,6 +40,12 @@ struct TestCredentialPublicKey {
         }
         if let yCoordinate {
             value[COSEKey.y.cbor] = yCoordinate
+        }
+        if let n {
+            value[COSEKey.n.cbor] = n
+        }
+        if let e {
+            value[COSEKey.e.cbor] = e
         }
         return CBOR.map(value).encode()
     }
@@ -62,7 +70,24 @@ struct TestCredentialPublicKeyBuilder {
             .xCoordinate(TestECCKeyPair.publicKeyXCoordinate)
             .yCoordinate(TestECCKeyPair.publicKeyYCoordinate)
     }
+    
+    func validMockRSA() -> Self {
+        return self
+            .kty(.rsaKey)
+            .alg(.algRS256)
+            .modulus(TestRSAKeyPair.publicKeyModulus)
+            .exponent(TestRSAKeyPair.publicKeyExponent)
+    }
 
+    func validMockEdDSA() -> Self {
+        return self
+            .kty(.octetKey)
+            .crv(.ed25519)
+            .alg(.algEdDSA)
+            .xCoordinate(TestECCKeyPair.publicKeyXCoordinate)
+            //.yCoordinate(TestECCKeyPair.publicKeyYCoordinate)
+    }
+    
     func kty(_ kty: COSEKeyType) -> Self {
         var temp = self
         temp.wrapped.kty = .unsignedInt(kty.rawValue)
@@ -90,6 +115,18 @@ struct TestCredentialPublicKeyBuilder {
     func yCoordinate(_ yCoordinate: [UInt8]) -> Self {
         var temp = self
         temp.wrapped.yCoordinate = .byteString(yCoordinate)
+        return temp
+    }
+    
+    func modulus(_ modulus: [UInt8]) -> Self {
+        var temp = self
+        temp.wrapped.n = .byteString(modulus)
+        return temp
+    }
+    
+    func exponent(_ exponent: [UInt8]) -> Self {
+        var temp = self
+        temp.wrapped.e = .byteString(exponent)
         return temp
     }
 }

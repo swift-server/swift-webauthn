@@ -15,6 +15,8 @@
 import Foundation
 import Crypto
 import WebAuthn
+import X509
+import SwiftASN1
 
 struct TestECCKeyPair {
     static let privateKeyPEM = """
@@ -54,5 +56,52 @@ struct TestECCKeyPair {
         let signature = try! TestECCKeyPair.signature(data: signatureBase).derRepresentation
 
         return [UInt8](signature)
+    }
+    
+    static func certificates() throws -> (leaf: Data, ca: Certificate) {
+        let caPrivateKey = P256.KeyAgreement.PrivateKey()
+        let ca = try Certificate.init(
+            version: .v3,
+            serialNumber: .init(),
+            publicKey: .init(pemEncoded: caPrivateKey.publicKey.pemRepresentation),
+            notValidBefore: Date(),
+            notValidAfter: Date().advanced(by: 3600),
+            issuer: DistinguishedName { CommonName("Example CA") },
+            subject: DistinguishedName { CommonName("Example CA") },
+            signatureAlgorithm: .ecdsaWithSHA256,
+            extensions: try .init{
+                Critical(BasicConstraints.isCertificateAuthority(maxPathLength: 1))
+            },
+            issuerPrivateKey: .init(pemEncoded: caPrivateKey.pemRepresentation)
+        )
+        
+        let privateKey = try P256.KeyAgreement.PrivateKey(pemRepresentation: privateKeyPEM)
+        let leaf = try Certificate.init(
+            version: .v3,
+            serialNumber: .init(),
+            publicKey: .init(pemEncoded: privateKey.publicKey.pemRepresentation),
+            notValidBefore: Date(),
+            notValidAfter: Date().advanced(by: 3600),
+            issuer: ca.subject,
+            subject: DistinguishedName {
+                CommonName("Example leaf certificate")
+                OrganizationalUnitName("Authenticator Attestation")
+                OrganizationName("Example vendor")
+                CountryName("US")
+            },
+            signatureAlgorithm: .ecdsaWithSHA256,
+            extensions: try Certificate.Extensions {
+                Critical(BasicConstraints.notCertificateAuthority)
+                try ExtendedKeyUsage([
+                    .init(oid: .init(arrayLiteral: 2, 23, 133, 8, 3))
+                ])
+            },
+            issuerPrivateKey: .init(pemEncoded: caPrivateKey.pemRepresentation)
+        )
+        var leafSerializer = DER.Serializer()
+        try leafSerializer.serialize(leaf)
+        let leafDER = leafSerializer.serializedBytes
+        
+        return (leaf: Data(leafDER), ca: ca)
     }
 }

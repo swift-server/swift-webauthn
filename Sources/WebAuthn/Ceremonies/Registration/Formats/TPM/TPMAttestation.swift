@@ -77,6 +77,10 @@ struct TPMAttestation: AttestationProtocol {
             }
         }
 
+        if let pubAreaCBOR = attStmt["pubArea"], case let .byteString(pubAreaRaw) = pubAreaCBOR {
+            let pubArea = PubArea(from: Data(pubAreaRaw))
+            print("\n••• \(Self.self) pubAreaRaw64=\(Data(pubAreaRaw).base64EncodedString())\npubArea=\(pubArea!)")
+        }
         // Verify pubArea
         guard let pubAreaCBOR = attStmt["pubArea"],
             case let .byteString(pubAreaRaw) = pubAreaCBOR,
@@ -85,31 +89,40 @@ struct TPMAttestation: AttestationProtocol {
         }
         switch pubArea.parameters {
         case let .rsa(rsaParameters):
-           guard case let .rsa(rsaPublicKeyData) = credentialPublicKey,
-               Array(pubArea.unique.data) == rsaPublicKeyData.n else {
-               throw WebAuthnError.tpmInvalidPubAreaPublicKey
-           }
-           var pubAreaExponent: Int = rsaParameters.exponent.toInteger(endian: .big)
-           if pubAreaExponent == 0 {
-               // "When zero, indicates that the exponent is the default of 2^16 + 1"
-               pubAreaExponent = 65537
-           }
+            if case let .rsa(rsaPublicKeyData) = credentialPublicKey {
+                print("\n •••• \(Self.self) pubArea.unique.data=\(Array(pubArea.unique.data)), rsaPublicKeyData.n=\(rsaPublicKeyData.n)")
+            }
+            guard case let .rsa(rsaPublicKeyData) = credentialPublicKey,
+                Array(pubArea.unique.data) == rsaPublicKeyData.n else {
+                throw WebAuthnError.tpmInvalidPubAreaPublicKey
+            }
+            var pubAreaExponent: Int = rsaParameters.exponent.toInteger(endian: .big)
+            if pubAreaExponent == 0 {
+                // "When zero, indicates that the exponent is the default of 2^16 + 1"
+                pubAreaExponent = 65537
+            }
 
-           let pubKeyExponent: Int = rsaPublicKeyData.e.toInteger(endian: .big)
-           guard pubAreaExponent == pubKeyExponent else {
-               throw WebAuthnError.tpmPubAreaExponentDoesNotMatchPubKeyExponent
-           }
+            let pubKeyExponent: Int = rsaPublicKeyData.e.toInteger(endian: .big)
+            guard pubAreaExponent == pubKeyExponent else {
+                throw WebAuthnError.tpmPubAreaExponentDoesNotMatchPubKeyExponent
+            }
         case let .ecc(eccParameters):
-           guard case let .ec2(ec2PublicKeyData) = credentialPublicKey,
-               Array(pubArea.unique.data) == ec2PublicKeyData.rawRepresentation else {
-               throw WebAuthnError.tpmInvalidPubAreaPublicKey
-           }
+            guard case let .ec2(ec2PublicKeyData) = credentialPublicKey,
+                Array(pubArea.unique.data) == ec2PublicKeyData.rawRepresentation else {
+                throw WebAuthnError.tpmInvalidPubAreaPublicKey
+            }
 
-           guard let pubAreaCrv = COSECurve(from: eccParameters.curveID),
-               pubAreaCrv == ec2PublicKeyData.curve else {
-               throw WebAuthnError.tpmInvalidPubAreaCurve
-           }
+            guard let pubAreaCrv = COSECurve(from: eccParameters.curveID),
+                pubAreaCrv == ec2PublicKeyData.curve else {
+                throw WebAuthnError.tpmInvalidPubAreaCurve
+            }
         }
+        
+        /*if let certInfoCBOR = attStmt["certInfo"],
+           case let .byteString(certInfo) = certInfoCBOR {
+            let parsedCertInfo = CertInfo(fromBytes: Data(certInfo))
+            print("\n••• \(Self.self) certInfo64=\(Data(certInfo).base64EncodedString())\nparsedCertInfo=\(parsedCertInfo!)")
+        }*/
         // Verify certInfo
         guard let certInfoCBOR = attStmt["certInfo"],
             case let .byteString(certInfo) = certInfoCBOR,

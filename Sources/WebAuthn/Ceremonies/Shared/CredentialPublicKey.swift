@@ -16,6 +16,7 @@ import Crypto
 import _CryptoExtras
 import Foundation
 import SwiftCBOR
+import SwiftASN1
 
 protocol PublicKey {
     var algorithm: COSEAlgorithmIdentifier { get }
@@ -72,6 +73,7 @@ enum CredentialPublicKey {
             throw WebAuthnError.unsupportedCOSEAlgorithm
         }
 
+        print("\n•••• \(Self.self).init() keyType=\(keyType), algorithm=\(algorithm)")
         switch keyType {
         case .ellipticKey:
             self = try .ec2(EC2PublicKey(publicKeyObject: publicKeyObject, algorithm: algorithm))
@@ -182,6 +184,24 @@ struct RSAPublicKeyData: PublicKey {
         e = eBytes
     }
 
+    // We receive a "raw" public key but the RSA PublicKey constructor requires a DER-encoded value
+    private struct RSAPublicKeyDER: DERSerializable {
+        var n: ArraySlice<UInt8>
+        var e: ArraySlice<UInt8>
+
+        init(n: [UInt8], e: [UInt8]) {
+            self.n = ArraySlice(n)
+            self.e = ArraySlice(e)
+        }
+
+        func serialize(into coder: inout SwiftASN1.DER.Serializer) throws {
+            try coder.appendConstructedNode(identifier: .sequence) { coder in
+                try coder.serialize(self.n)
+                try coder.serialize(self.e)
+            }
+        }
+    }
+    
     func verify(signature: some DataProtocol, data: some DataProtocol) throws {
         let rsaSignature = _RSA.Signing.RSASignature(rawRepresentation: signature)
 
@@ -195,7 +215,10 @@ struct RSAPublicKeyData: PublicKey {
             throw WebAuthnError.unsupportedCOSEAlgorithmForRSAPublicKey
         }
 
-        guard try _RSA.Signing.PublicKey(derRepresentation: rawRepresentation).isValidSignature(
+        var serializer = DER.Serializer()
+        let keyDER = RSAPublicKeyDER(n: self.n, e: self.e)
+        try serializer.serialize(keyDER)
+        guard try _RSA.Signing.PublicKey(derRepresentation: serializer.serializedBytes).isValidSignature(
             rsaSignature,
             for: data,
             padding: rsaPadding

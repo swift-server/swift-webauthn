@@ -28,6 +28,7 @@ final class CertInfoTests: XCTestCase {
 
     func testVerifyThrowsIfTypeIsInvalid() throws {
         let certInfoBytes: [UInt8] = [0xFF, 0x54, 0x43, 0x47] + [UInt8](repeating: 0, count: 80)
+       
         let certInfo = TPMAttestation.CertInfo(fromBytes: Data(certInfoBytes))!
         try assertThrowsError(certInfo.verify(pubArea: Data()), expect: TPMAttestation.CertInfoError.typeInvalid)
     }

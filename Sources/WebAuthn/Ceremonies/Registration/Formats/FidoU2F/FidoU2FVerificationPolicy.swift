@@ -26,13 +26,6 @@ struct FidoU2FVerificationPolicy: VerifierPolicy {
     ]
 
     func chainMeetsPolicyRequirements(chain: UnverifiedCertificateChain) -> PolicyEvaluationResult {
-        // Check that x5c has exactly one element
-        guard chain.count == 1 else {
-            return .failsToMeetPolicy(
-                reason: "Authenticator attestation must return exactly 1 certificate, got \(chain.count)"
-            )
-        }
-        
         let leaf = chain.leaf
         // Certificate public key must be an Elliptic Curve (EC) public key over the P-256 curve,
         guard leaf.signatureAlgorithm == .ecdsaWithSHA256 else {

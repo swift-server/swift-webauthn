@@ -61,6 +61,7 @@ public struct AttestationObject {
         let rootCertificates = rootCertificatesByFormat[format] ?? []
         var attestationType: AttestationResult.AttestationType = .none
         var trustedPath: [Certificate] = []
+        print("\n •••• \(Self.self).verify() format=\(format)")
         switch format {
         case .none:
             // if format is `none` statement must be empty

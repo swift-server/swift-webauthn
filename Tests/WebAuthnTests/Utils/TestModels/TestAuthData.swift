@@ -46,7 +46,7 @@ struct TestAuthData {
 
 struct TestAuthDataBuilder {
     private var wrapped: TestAuthData
-
+    
     init(wrapped: TestAuthData = TestAuthData()) {
         self.wrapped = wrapped
     }
@@ -72,6 +72,7 @@ struct TestAuthDataBuilder {
             )
             .extensions([UInt8](repeating: 0, count: 20))
     }
+    
 
     /// Creates a valid authData
     ///

@@ -44,8 +44,12 @@ struct FidoU2FAttestation: AttestationProtocol {
             return try Certificate(derEncoded: certificate)
         }
 
+        // Check that x5c has exactly one element
+        guard x5c.count == 1 else {
+            throw WebAuthnError.invalidTrustPath
+        }
+        
         guard let leafCertificate = x5c.first else { throw WebAuthnError.invalidAttestationCertificate }
-        let intermediates = CertificateStore(x5c[1...])
         let rootCertificatesStore = CertificateStore(rootCertificates)
 
         var verifier = Verifier(rootCertificates: rootCertificatesStore) {
@@ -54,7 +58,7 @@ struct FidoU2FAttestation: AttestationProtocol {
         }
         let verifierResult: VerificationResult = await verifier.validate(
             leafCertificate: leafCertificate,
-            intermediates: intermediates
+            intermediates: .init()
         )
         guard case .validCertificate(let chain) = verifierResult else {
             throw WebAuthnError.invalidTrustPath

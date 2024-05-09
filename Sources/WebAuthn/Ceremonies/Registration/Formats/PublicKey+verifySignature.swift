@@ -20,6 +20,7 @@ import _CryptoExtras
 
 extension Certificate.PublicKey {
     func verifySignature(_ signature: Data, algorithm: COSEAlgorithmIdentifier, data: Data) throws -> Bool {
+        print("\n •••• \(Self.self).verifySignature() 1, algorithm=\(algorithm)")
         switch algorithm {
         case .algES256:
             guard let key = P256.Signing.PublicKey(self) else {
@@ -27,39 +28,35 @@ extension Certificate.PublicKey {
             }
             let signature = try P256.Signing.ECDSASignature(derRepresentation: signature)
             return key.isValidSignature(signature, for: data)
+            
         case .algES384:
             guard let key = P384.Signing.PublicKey(self) else {
                 return false
             }
             let signature = try P384.Signing.ECDSASignature(derRepresentation: signature)
             return key.isValidSignature(signature, for: data)
+            
         case .algES512:
             guard let key = P521.Signing.PublicKey(self) else {
                 return false
             }
             let signature = try P521.Signing.ECDSASignature(derRepresentation: signature)
             return key.isValidSignature(signature, for: data)
-        case .algPS256, .algPS384, .algPS512, .algRS1, .algRS256, .algRS384, .algRS512:
-            // We currently have no way to access the publickey `backing` so we try various possibilities
-            if let key = _RSA.Signing.PublicKey(self) {
-                let signature = _RSA.Signing.RSASignature(rawRepresentation: signature)
-                return key.isValidSignature(signature, for: data)
+            
+        case .algRS1, .algRS256, .algRS384, .algRS512:
+            guard let key = _RSA.Signing.PublicKey(self) else {
+                return false
             }
-            else if let key = P256.Signing.PublicKey(self) {
-                let signature = try P256.Signing.ECDSASignature(derRepresentation: signature)
-                return key.isValidSignature(signature, for: data)
+            let signature = _RSA.Signing.RSASignature(rawRepresentation: signature)
+            return key.isValidSignature(signature, for: data, padding: .insecurePKCS1v1_5)
+            
+        case .algPS256, .algPS384, .algPS512:
+            guard let key = _RSA.Signing.PublicKey(self) else {
+                return false
             }
-            else if let key = P384.Signing.PublicKey(self) {
-                let signature = try P384.Signing.ECDSASignature(derRepresentation: signature)
-                return key.isValidSignature(signature, for: data)
-            }
-            else if let key = P521.Signing.PublicKey(self) {
-                let signature = try P521.Signing.ECDSASignature(derRepresentation: signature)
-                return key.isValidSignature(signature, for: data)
-            }
-            else {
-                throw WebAuthnError.unsupported
-            }
+            let signature = _RSA.Signing.RSASignature(rawRepresentation: signature)
+            return key.isValidSignature(signature, for: data, padding: .PSS)
+            
         default:
             throw WebAuthnError.unsupported
         }
