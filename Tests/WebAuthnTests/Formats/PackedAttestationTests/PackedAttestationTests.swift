@@ -255,7 +255,7 @@ final class RegistrationPackedAttestationTests: XCTestCase {
             )
             .build()
             .cborEncoded
-        
+
         let credential = try await finishRegistration(attestationObject: mockAttestationObject)
 
         XCTAssertEqual(credential.attestationResult.format, .packed)
@@ -284,7 +284,7 @@ final class RegistrationPackedAttestationTests: XCTestCase {
             )
             .build()
             .cborEncoded
-        
+
         let credential = try await finishRegistration(
             attestationObject: mockAttestationObject,
             rootCertificatesByFormat: [.packed: [mockCerts.ca]]
@@ -294,7 +294,7 @@ final class RegistrationPackedAttestationTests: XCTestCase {
         XCTAssertEqual(credential.attestationResult.type, .basicFull)
         XCTAssertEqual(credential.attestationResult.trustChain.count, 2)
     }
-    
+
     private func finishRegistration(
         challenge: [UInt8] = TestConstants.mockChallenge,
         type: CredentialType = .publicKey,
