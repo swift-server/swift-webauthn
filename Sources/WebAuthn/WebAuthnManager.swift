@@ -28,7 +28,7 @@ import X509
 /// ``PublicKeyCredentialRequestOptions`` to the client.
 /// When the client has received the response from the authenticator, pass the response to
 /// `finishAuthentication()`.
-public struct WebAuthnManager {
+public struct WebAuthnManager: Sendable {
     private let configuration: Configuration
 
     private let challengeGenerator: ChallengeGenerator

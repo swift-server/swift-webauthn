@@ -15,7 +15,7 @@
 import Foundation
 
 /// The Key Type derived from the IANA COSE AuthData
-enum COSEKeyType: UInt64, RawRepresentable {
+enum COSEKeyType: UInt64, RawRepresentable, Sendable {
     /// OctetKey is an Octet Key
 	case octetKey = 1
 	/// EllipticKey is an Elliptic Curve Public Key

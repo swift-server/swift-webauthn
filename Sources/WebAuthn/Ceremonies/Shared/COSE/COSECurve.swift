@@ -12,7 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-enum COSECurve: UInt64 {
+enum COSECurve: UInt64, Sendable {
     /// EC2, NIST P-256 also known as secp256r1
     case p256 = 1
     /// EC2, NIST P-384 also known as secp384r1

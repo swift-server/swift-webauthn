@@ -39,10 +39,15 @@ let package = Package(
                 .product(name: "_CryptoExtras", package: "swift-crypto"),
                 .product(name: "X509", package: "swift-certificates"),
                 .product(name: "Logging", package: "swift-log"),
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency=complete")]
         ),
-        .testTarget(name: "WebAuthnTests", dependencies: [
-            .target(name: "WebAuthn")
-        ])
+        .testTarget(
+            name: "WebAuthnTests",
+            dependencies: [
+                .target(name: "WebAuthn")
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency=complete")]
+        )
     ]
 )

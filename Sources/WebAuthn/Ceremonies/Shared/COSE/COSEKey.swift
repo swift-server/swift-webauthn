@@ -14,7 +14,7 @@
 
 import SwiftCBOR
 
-enum COSEKey {
+enum COSEKey: Sendable {
     // swiftlint:disable identifier_name
     case kty
     case alg

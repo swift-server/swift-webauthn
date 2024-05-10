@@ -18,7 +18,7 @@
 /// - SeeAlso: [WebAuthn Level 3 Editor's Draft §5.4.5. Authenticator Attachment Enumeration (enum AuthenticatorAttachment)](https://w3c.github.io/webauthn/#enum-attachment)
 /// - SeeAlso: [WebAuthn Level 3 Editor's Draft §6.2.1. Authenticator Attachment Modality](https://w3c.github.io/webauthn/#sctn-authenticator-attachment-modality)
 ///
-public struct AuthenticatorAttachment: UnreferencedStringEnumeration {
+public struct AuthenticatorAttachment: UnreferencedStringEnumeration, Sendable {
     public var rawValue: String
     public init(_ rawValue: String) {
         self.rawValue = rawValue
