@@ -69,8 +69,7 @@ final class RegistrationFidoU2FAttestationTests: XCTestCase {
     }
     
     func testAttestationMissingx5c() async throws {
-        let authData = TestAuthDataBuilder().validMock()
-        
+        let authData = TestAuthDataBuilder().validMock()        
         let mockAttestationObject = TestAttestationObjectBuilder()
             .fmt(.fidoU2F)
             .authData(authData)
@@ -98,7 +97,7 @@ final class RegistrationFidoU2FAttestationTests: XCTestCase {
         let mockCerts = try TestECCKeyPair.certificates()
         let credentialId: [UInt8] = [0b00000001]
         let authData = TestAuthDataBuilder()
-            .relyingPartyIDHash(fromRelyingPartyID: "example.com")
+            .relyingPartyIDHash(fromRelyingPartyID: relyingPartyID)
             .flags(0b11000101)
             .counter([0b00000000, 0b00000000, 0b00000000, 0b00000000])
             .attestedCredData(

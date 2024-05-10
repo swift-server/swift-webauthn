@@ -73,6 +73,20 @@ struct TestAuthDataBuilder {
             .extensions([UInt8](repeating: 0, count: 20))
     }
     
+    func validMockRSA() -> Self {
+        self
+            .relyingPartyIDHash(fromRelyingPartyID: "example.com")
+            .flags(0b11000101)
+            .counter([0b00000000, 0b00000000, 0b00000000, 0b00000000])
+            .attestedCredData(
+                aaguid: [UInt8](repeating: 0, count: 16),
+                credentialIDLength: [0b00000000, 0b00000001],
+                credentialID: [0b00000001],
+                credentialPublicKey: TestCredentialPublicKeyBuilder().validMockRSA().buildAsByteArray()
+            )
+            .extensions([UInt8](repeating: 0, count: 20))
+    }
+    
 
     /// Creates a valid authData
     ///

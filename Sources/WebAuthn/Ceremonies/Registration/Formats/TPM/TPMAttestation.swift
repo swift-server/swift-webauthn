@@ -57,6 +57,9 @@ struct TPMAttestation: AttestationProtocol {
         let verifierResult: VerificationResult = await verifier.validate(
             leafCertificate: aikCert,
             intermediates: intermediates
+            /*diagnosticCallback: { result in
+                print("\n •••• \(Self.self) result=\(result)")
+            }*/
         )
         guard case .validCertificate(let chain) = verifierResult else {
             throw WebAuthnError.invalidTrustPath
@@ -79,7 +82,6 @@ struct TPMAttestation: AttestationProtocol {
 
         if let pubAreaCBOR = attStmt["pubArea"], case let .byteString(pubAreaRaw) = pubAreaCBOR {
             let pubArea = PubArea(from: Data(pubAreaRaw))
-            print("\n••• \(Self.self) pubAreaRaw64=\(Data(pubAreaRaw).base64EncodedString())\npubArea=\(pubArea!)")
         }
         // Verify pubArea
         guard let pubAreaCBOR = attStmt["pubArea"],
@@ -90,7 +92,6 @@ struct TPMAttestation: AttestationProtocol {
         switch pubArea.parameters {
         case let .rsa(rsaParameters):
             if case let .rsa(rsaPublicKeyData) = credentialPublicKey {
-                print("\n •••• \(Self.self) pubArea.unique.data=\(Array(pubArea.unique.data)), rsaPublicKeyData.n=\(rsaPublicKeyData.n)")
             }
             guard case let .rsa(rsaPublicKeyData) = credentialPublicKey,
                 Array(pubArea.unique.data) == rsaPublicKeyData.n else {
@@ -117,12 +118,7 @@ struct TPMAttestation: AttestationProtocol {
                 throw WebAuthnError.tpmInvalidPubAreaCurve
             }
         }
-        
-        /*if let certInfoCBOR = attStmt["certInfo"],
-           case let .byteString(certInfo) = certInfoCBOR {
-            let parsedCertInfo = CertInfo(fromBytes: Data(certInfo))
-            print("\n••• \(Self.self) certInfo64=\(Data(certInfo).base64EncodedString())\nparsedCertInfo=\(parsedCertInfo!)")
-        }*/
+
         // Verify certInfo
         guard let certInfoCBOR = attStmt["certInfo"],
             case let .byteString(certInfo) = certInfoCBOR,

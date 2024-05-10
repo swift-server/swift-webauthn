@@ -117,7 +117,12 @@ struct TestRSAKeyPair {
                 CountryName("US")
             },
             signatureAlgorithm: .sha256WithRSAEncryption,
-            extensions: try Certificate.Extensions {Critical(BasicConstraints.notCertificateAuthority)},
+            extensions: try Certificate.Extensions {
+                Critical(BasicConstraints.notCertificateAuthority)
+                try ExtendedKeyUsage([
+                    .init(oid: .init(arrayLiteral: 2, 23, 133, 8, 3))
+                ])
+            },
             issuerPrivateKey: .init(pemEncoded: caPrivateKey.pemRepresentation)
         )
         var leafSerializer = DER.Serializer()

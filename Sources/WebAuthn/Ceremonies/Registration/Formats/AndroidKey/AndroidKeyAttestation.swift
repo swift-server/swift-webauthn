@@ -46,9 +46,6 @@ struct AndroidKeyAttestation: AttestationProtocol {
         }
 
         guard let leafCertificate = x5c.first else { throw WebAuthnError.invalidAttestationCertificate }
-        let intermediates = CertificateStore(x5c[1...])
-        let rootCertificatesStore = CertificateStore(rootCertificates)
-
         let verificationData = authenticatorData.rawData + clientDataHash
         // Verify signature
         let leafCertificatePublicKey: Certificate.PublicKey = leafCertificate.publicKey
@@ -67,6 +64,8 @@ struct AndroidKeyAttestation: AttestationProtocol {
             throw WebAuthnError.attestationPublicKeyMismatch
         }
 
+        let intermediates = CertificateStore(x5c[1...])
+        let rootCertificatesStore = CertificateStore(rootCertificates)
         var verifier = Verifier(rootCertificates: rootCertificatesStore) {
             AndroidKeyVerificationPolicy(clientDataHash: clientDataHash)
         }

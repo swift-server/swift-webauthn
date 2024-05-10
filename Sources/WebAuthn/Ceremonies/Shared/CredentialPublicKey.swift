@@ -73,7 +73,6 @@ enum CredentialPublicKey {
             throw WebAuthnError.unsupportedCOSEAlgorithm
         }
 
-        print("\n•••• \(Self.self).init() keyType=\(keyType), algorithm=\(algorithm)")
         switch keyType {
         case .ellipticKey:
             self = try .ec2(EC2PublicKey(publicKeyObject: publicKeyObject, algorithm: algorithm))

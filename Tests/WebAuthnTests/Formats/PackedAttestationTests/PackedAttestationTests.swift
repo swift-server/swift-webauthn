@@ -51,6 +51,33 @@ final class RegistrationPackedAttestationTests: XCTestCase {
         clientDataHash = SHA256.hash(data: Data(mockClientDataJSONBytes))
     }
 
+    func testInvalidAlg() async throws {
+        let mockAttestationObject = TestAttestationObjectBuilder()
+            .fmt(.packed)
+            .authData(authDataECC)
+            .attStmt(
+                .map([
+                    .utf8String("alg"): .negativeInt(999),
+                    .utf8String("sig"): .byteString(Array(
+                        try TestECCKeyPair
+                            .signature(data: Data(authDataECC.build().byteArrayRepresentation) + clientDataHash)
+                            .derRepresentation
+                    )),
+                ])
+                
+            )
+            .build()
+            .cborEncoded
+        
+        await assertThrowsError(
+            try await finishRegistration(
+                attestationObject: mockAttestationObject,
+                rootCertificatesByFormat: [:]
+            ),
+            expect: WebAuthnError.invalidAttestationSignatureAlgorithm
+        )
+    }
+    
     func testSelfAttestationAlgMismatch() async throws {
         let mockAttestationObject = TestAttestationObjectBuilder()
             .fmt(.packed)
@@ -75,7 +102,31 @@ final class RegistrationPackedAttestationTests: XCTestCase {
             expect: WebAuthnError.attestationPublicKeyAlgorithmMismatch
         )
     }
-    
+
+    func testInvalidCert() async throws {
+        let authData = TestAuthDataBuilder().validMock()
+        let mockAttestationObject = TestAttestationObjectBuilder()
+            .fmt(.packed)
+            .authData(authData)
+            .attStmt(
+                .map([
+                    .utf8String("alg"): .negativeInt(UInt64(abs(COSEAlgorithmIdentifier.algES256.rawValue) - 1)),
+                    .utf8String("sig"): .byteString([0x00]),
+                    .utf8String("x5c"): .byteString([0x00])
+                ])
+            )
+            .build()
+            .cborEncoded
+        
+        await assertThrowsError(
+            try await finishRegistration(
+                attestationObject: mockAttestationObject,
+                rootCertificatesByFormat: [:]
+            ),
+            expect: WebAuthnError.invalidAttestationCertificate
+        )
+    }
+
     func testBasicAttestationInvalidVerifData() async throws {
         let verificationData: [UInt8] = [0x01]
         let mockCerts = try TestECCKeyPair.certificates()
