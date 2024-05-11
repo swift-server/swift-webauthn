@@ -14,6 +14,7 @@
 
 import Foundation
 import Crypto
+import X509
 
 /// The unprocessed response received from `navigator.credentials.create()`.
 ///
@@ -86,8 +87,8 @@ struct ParsedCredentialCreationResponse {
         relyingPartyID: String,
         relyingPartyOrigin: String,
         supportedPublicKeyAlgorithms: [PublicKeyCredentialParameters],
-        pemRootCertificatesByFormat: [AttestationFormat: [Data]]
-    ) async throws -> AttestedCredentialData {
+        rootCertificatesByFormat: [AttestationFormat: [Certificate]]
+    ) async throws -> AttestationResult {
         // Step 7. - 9.
         try response.clientData.verify(
             storedChallenge: storedChallenge,
@@ -101,12 +102,12 @@ struct ParsedCredentialCreationResponse {
         // CBOR decoding happened already. Skipping Step 11.
 
         // Step 12. - 17.
-        let attestedCredentialData = try await response.attestationObject.verify(
+        let attestationResult = try await response.attestationObject.verify(
             relyingPartyID: relyingPartyID,
             verificationRequired: verifyUser,
             clientDataHash: hash,
             supportedPublicKeyAlgorithms: supportedPublicKeyAlgorithms,
-            pemRootCertificatesByFormat: pemRootCertificatesByFormat
+            rootCertificatesByFormat: rootCertificatesByFormat
         )
 
         // Step 23.
@@ -114,6 +115,6 @@ struct ParsedCredentialCreationResponse {
             throw WebAuthnError.credentialRawIDTooLong
         }
 
-        return attestedCredentialData
+        return attestationResult
     }
 }

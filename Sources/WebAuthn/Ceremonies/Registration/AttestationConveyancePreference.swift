@@ -19,6 +19,6 @@ public enum AttestationConveyancePreference: String, Encodable {
     /// Indicates the Relying Party is not interested in authenticator attestation.
     case none
     // case indirect
-    // case direct
+    case direct
     // case enterprise
 }

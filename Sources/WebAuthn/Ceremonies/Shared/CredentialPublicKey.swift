@@ -16,6 +16,7 @@ import Crypto
 import _CryptoExtras
 import Foundation
 import SwiftCBOR
+import SwiftASN1
 
 protocol PublicKey: Sendable {
     var algorithm: COSEAlgorithmIdentifier { get }
@@ -72,16 +73,13 @@ enum CredentialPublicKey: Sendable {
             throw WebAuthnError.unsupportedCOSEAlgorithm
         }
 
-        // Currently we only support elliptic curve algorithms
         switch keyType {
         case .ellipticKey:
             self = try .ec2(EC2PublicKey(publicKeyObject: publicKeyObject, algorithm: algorithm))
         case .rsaKey:
-            throw WebAuthnError.unsupported
-            // self = try .rsa(RSAPublicKeyData(publicKeyObject: publicKeyObject, algorithm: algorithm))
+            self = try .rsa(RSAPublicKeyData(publicKeyObject: publicKeyObject, algorithm: algorithm))
         case .octetKey:
-            throw WebAuthnError.unsupported
-            // self = try .okp(OKPPublicKey(publicKeyObject: publicKeyObject, algorithm: algorithm))
+            self = try .okp(OKPPublicKey(publicKeyObject: publicKeyObject, algorithm: algorithm))
         }
     }
 
@@ -154,11 +152,12 @@ struct EC2PublicKey: PublicKey, Sendable {
                 .isValidSignature(ecdsaSignature, for: data) else {
                 throw WebAuthnError.invalidSignature
             }
+        default:
+            throw WebAuthnError.unsupportedCOSEAlgorithm
         }
     }
 }
 
-/// Currently not in use
 struct RSAPublicKeyData: PublicKey, Sendable {
     let algorithm: COSEAlgorithmIdentifier
     // swiftlint:disable:next identifier_name
@@ -184,31 +183,51 @@ struct RSAPublicKeyData: PublicKey, Sendable {
         e = eBytes
     }
 
+    // We receive a "raw" public key but the RSA PublicKey constructor requires a DER-encoded value
+    private struct RSAPublicKeyDER: DERSerializable {
+        var n: ArraySlice<UInt8>
+        var e: ArraySlice<UInt8>
+
+        init(n: [UInt8], e: [UInt8]) {
+            self.n = ArraySlice(n)
+            self.e = ArraySlice(e)
+        }
+
+        func serialize(into coder: inout SwiftASN1.DER.Serializer) throws {
+            try coder.appendConstructedNode(identifier: .sequence) { coder in
+                try coder.serialize(self.n)
+                try coder.serialize(self.e)
+            }
+        }
+    }
+    
     func verify(signature: some DataProtocol, data: some DataProtocol) throws {
-        throw WebAuthnError.unsupported
-        // let rsaSignature = _RSA.Signing.RSASignature(derRepresentation: signature)
+        let rsaSignature = _RSA.Signing.RSASignature(rawRepresentation: signature)
 
-        // var rsaPadding: _RSA.Signing.Padding
-        // switch algorithm {
-        // case .algRS1, .algRS256, .algRS384, .algRS512:
-        //     rsaPadding = .insecurePKCS1v1_5
-        // case .algPS256, .algPS384, .algPS512:
-        //     rsaPadding = .PSS
-        // default:
-        //     throw WebAuthnError.unsupportedCOSEAlgorithmForRSAPublicKey
-        // }
+        var rsaPadding: _RSA.Signing.Padding
+        switch algorithm {
+        case .algRS1, .algRS256, .algRS384, .algRS512:
+            rsaPadding = .insecurePKCS1v1_5
+        case .algPS256, .algPS384, .algPS512:
+            rsaPadding = .PSS
+        default:
+            throw WebAuthnError.unsupportedCOSEAlgorithmForRSAPublicKey
+        }
 
-        // guard try _RSA.Signing.PublicKey(rawRepresentation: rawRepresentation).isValidSignature(
-        //     rsaSignature,
-        //     for: data,
-        //     padding: rsaPadding
-        // ) else {
-        //     throw WebAuthnError.invalidSignature
-        // }
+        var serializer = DER.Serializer()
+        let keyDER = RSAPublicKeyDER(n: self.n, e: self.e)
+        try serializer.serialize(keyDER)
+        guard try _RSA.Signing.PublicKey(derRepresentation: serializer.serializedBytes).isValidSignature(
+            rsaSignature,
+            for: data,
+            padding: rsaPadding
+        ) else {
+            throw WebAuthnError.invalidSignature
+        }
     }
 }
 
-/// Currently not in use
+
 struct OKPPublicKey: PublicKey, Sendable {
     let algorithm: COSEAlgorithmIdentifier
     let curve: UInt64
@@ -230,6 +249,15 @@ struct OKPPublicKey: PublicKey, Sendable {
     }
 
     func verify(signature: some DataProtocol, data: some DataProtocol) throws {
-        throw WebAuthnError.unsupported
+        switch algorithm {
+        case .algEdDSA:
+            let pkey = try Curve25519.Signing.PublicKey(rawRepresentation: self.xCoordinate)
+            guard pkey.isValidSignature(signature, for: data) else {
+                throw WebAuthnError.invalidSignature
+            }
+        default:
+            throw WebAuthnError.unsupportedCOSEAlgorithm
+        }
+        
     }
 }

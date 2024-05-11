@@ -67,6 +67,24 @@ public struct WebAuthnError: Error, Hashable, Sendable {
         case invalidExponent
         case unsupportedCOSEAlgorithmForRSAPublicKey
         case unsupported
+        
+        // MARK: Attestation
+        case invalidAttestationCertificate
+        case invalidTrustPath
+        case invalidAttestationSignatureAlgorithm
+        case invalidAttestationPublicKeyType
+        case invalidVerificationData
+        case attestationPublicKeyAlgorithmMismatch
+        case aaguidMismatch
+        case attestationPublicKeyMismatch
+        case tpmInvalidVersion
+        case tpmInvalidPubArea
+        case tpmInvalidPubAreaPublicKey
+        case tpmInvalidPubAreaCurve
+        case tpmCertInfoInvalid
+        case tpmInvalidCertAaguid
+        case tpmPubAreaExponentDoesNotMatchPubKeyExponent
+        case tpmExtraDataDoesNotMatchAttToBeSignedHash
     }
     
     let reason: Reason
@@ -127,4 +145,29 @@ public struct WebAuthnError: Error, Hashable, Sendable {
     public static let invalidExponent = Self(reason: .invalidExponent)
     public static let unsupportedCOSEAlgorithmForRSAPublicKey = Self(reason: .unsupportedCOSEAlgorithmForRSAPublicKey)
     public static let unsupported = Self(reason: .unsupported)
+    
+    // MARK: Attestation
+    /// Cannot read or parse attestation certificate from attestation statement
+    public static let invalidAttestationCertificate = Self(reason: .invalidAttestationCertificate)
+    /// Cannot authenticator attestation certificate trust chain up to root CA
+    public static let invalidTrustPath = Self(reason: .invalidTrustPath)
+    /// Attestation statement algorithm has invalid or unsupported COSE algorithm identifier
+    public static let invalidAttestationSignatureAlgorithm = Self(reason: .invalidAttestationSignatureAlgorithm)
+    public static let invalidAttestationPublicKeyType = Self(reason: .invalidAttestationPublicKeyType)
+    /// Authenticator verification data cannot be validated against attestation signature (authenticator data has been corrupted or tampered with?)
+    public static let invalidVerificationData = Self(reason: .invalidVerificationData)
+    public static let attestationPublicKeyAlgorithmMismatch = Self(reason: .attestationPublicKeyAlgorithmMismatch)
+    /// The authenticator certificate public key does not match the attested data public key
+    public static let attestationPublicKeyMismatch = Self(reason: .attestationPublicKeyMismatch)
+    /// Value of AAGUID in authenticator data doesn't match value in attestation certificate
+    public static let aaguidMismatch = Self(reason: .aaguidMismatch)
+    /// Invalid TPM version
+    public static let tpmInvalidVersion = Self(reason: .tpmInvalidVersion)
+    public static let tpmInvalidPubArea = Self(reason: .tpmInvalidPubArea)
+    public static let tpmInvalidPubAreaPublicKey = Self(reason: .tpmInvalidPubAreaPublicKey)
+    public static let tpmInvalidPubAreaCurve = Self(reason: .tpmInvalidPubAreaCurve)
+    public static let tpmCertInfoInvalid = Self(reason: .tpmCertInfoInvalid)
+    public static let tpmInvalidCertAaguid = Self(reason: .tpmInvalidCertAaguid)
+    public static let tpmPubAreaExponentDoesNotMatchPubKeyExponent = Self(reason: .tpmPubAreaExponentDoesNotMatchPubKeyExponent)
+    public static let tpmExtraDataDoesNotMatchAttToBeSignedHash = Self( reason: .tpmExtraDataDoesNotMatchAttToBeSignedHash)
 }

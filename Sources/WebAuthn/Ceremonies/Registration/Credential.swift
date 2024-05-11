@@ -41,7 +41,7 @@ public struct Credential {
 
     // MARK: Optional content
 
-    public let attestationObject: AttestationObject
+    public let attestationResult: AttestationResult
 
     public let attestationClientDataJSON: CollectedClientData
 }

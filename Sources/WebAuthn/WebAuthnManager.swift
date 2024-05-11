@@ -13,6 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 import Foundation
+import X509
 
 /// Main entrypoint for WebAuthn operations.
 ///
@@ -94,17 +95,17 @@ public struct WebAuthnManager: Sendable {
         credentialCreationData: RegistrationCredential,
         requireUserVerification: Bool = false,
         supportedPublicKeyAlgorithms: [PublicKeyCredentialParameters] = .supported,
-        pemRootCertificatesByFormat: [AttestationFormat: [Data]] = [:],
+        rootCertificatesByFormat: [AttestationFormat: [Certificate]] = [:],
         confirmCredentialIDNotRegisteredYet: (String) async throws -> Bool
     ) async throws -> Credential {
         let parsedData = try ParsedCredentialCreationResponse(from: credentialCreationData)
-        let attestedCredentialData = try await parsedData.verify(
+        let attestationResult = try await parsedData.verify(
             storedChallenge: challenge,
             verifyUser: requireUserVerification,
             relyingPartyID: configuration.relyingPartyID,
             relyingPartyOrigin: configuration.relyingPartyOrigin,
             supportedPublicKeyAlgorithms: supportedPublicKeyAlgorithms,
-            pemRootCertificatesByFormat: pemRootCertificatesByFormat
+            rootCertificatesByFormat: rootCertificatesByFormat
         )
 
         // TODO: Step 18. -> Verify client extensions
@@ -118,11 +119,11 @@ public struct WebAuthnManager: Sendable {
         return Credential(
             type: parsedData.type,
             id: parsedData.id.urlDecoded.asString(),
-            publicKey: attestedCredentialData.publicKey,
+            publicKey: attestationResult.attestedCredentialData.publicKey,
             signCount: parsedData.response.attestationObject.authenticatorData.counter,
             backupEligible: parsedData.response.attestationObject.authenticatorData.flags.isBackupEligible,
             isBackedUp: parsedData.response.attestationObject.authenticatorData.flags.isCurrentlyBackedUp,
-            attestationObject: parsedData.response.attestationObject,
+            attestationResult: attestationResult,
             attestationClientDataJSON: parsedData.response.clientData
         )
     }

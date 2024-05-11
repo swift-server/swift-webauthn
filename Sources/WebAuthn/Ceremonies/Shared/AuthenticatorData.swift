@@ -25,6 +25,7 @@ struct AuthenticatorData: Equatable, Sendable {
     /// For attestation signatures this value will be set. For assertion signatures not.
     let attestedData: AttestedCredentialData?
     let extData: [UInt8]?
+    let rawData: Data
 }
 
 extension AuthenticatorData {
@@ -75,7 +76,7 @@ extension AuthenticatorData {
         self.counter = counter
         self.attestedData = attestedCredentialData
         self.extData = extensionData
-
+        self.rawData = Data(bytes)
     }
 
     /// Parse and return the attested credential data and its length.

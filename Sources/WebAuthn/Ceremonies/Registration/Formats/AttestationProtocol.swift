@@ -2,7 +2,7 @@
 //
 // This source file is part of the WebAuthn Swift open source project
 //
-// Copyright (c) 2022 the WebAuthn Swift project authors
+// Copyright (c) 2023 the WebAuthn Swift project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE.txt for license information
@@ -12,9 +12,16 @@
 //
 //===----------------------------------------------------------------------===//
 
-// Contains the new public key created by the authenticator.
-public struct AttestedCredentialData: Equatable, Sendable {
-    public let aaguid: [UInt8]
-    public let credentialID: [UInt8]
-    public let publicKey: [UInt8]
+import Foundation
+import SwiftCBOR
+import X509
+
+protocol AttestationProtocol {
+    static func verify(
+        attStmt: CBOR,
+        authenticatorData: AuthenticatorData,
+        clientDataHash: Data,
+        credentialPublicKey: CredentialPublicKey,
+        rootCertificates: [Certificate]
+    ) async throws -> (AttestationResult.AttestationType, [Certificate])
 }
