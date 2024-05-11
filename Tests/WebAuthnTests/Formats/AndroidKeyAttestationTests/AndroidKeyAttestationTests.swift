@@ -171,16 +171,7 @@ final class RegistrationAndroidKeyAttestationTests: XCTestCase {
         )
     }
 
-    /*func testAttCAAttestationRSASucceeds() async throws {
-        let credential = try await finishRegistration(
-            challenge: challenge,
-            attestationObject: Array(Data(base64Encoded: attestationObjectBase64.urlDecoded.asString())!),
-            rootCertificatesByFormat: [.tpm: [caCert]]
-        )
-        XCTAssertEqual(credential.attestationResult.format, .tpm)
-        XCTAssertEqual(credential.attestationResult.type, .attCA)
-        XCTAssertEqual(credential.attestationResult.trustChain.count, 3)
-    }*/
+    // TODO: add test for successful attestation verification
 
     private func finishRegistration(
         challenge: [UInt8] = TestConstants.mockChallenge,

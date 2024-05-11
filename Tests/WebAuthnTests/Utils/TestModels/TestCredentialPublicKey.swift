@@ -78,15 +78,6 @@ struct TestCredentialPublicKeyBuilder {
             .modulus(TestRSAKeyPair.publicKeyModulus)
             .exponent(TestRSAKeyPair.publicKeyExponent)
     }
-
-    func validMockEdDSA() -> Self {
-        return self
-            .kty(.octetKey)
-            .crv(.ed25519)
-            .alg(.algEdDSA)
-            .xCoordinate(TestECCKeyPair.publicKeyXCoordinate)
-            //.yCoordinate(TestECCKeyPair.publicKeyYCoordinate)
-    }
     
     func kty(_ kty: COSEKeyType) -> Self {
         var temp = self
