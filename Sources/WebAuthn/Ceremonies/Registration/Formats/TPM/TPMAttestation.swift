@@ -80,9 +80,6 @@ struct TPMAttestation: AttestationProtocol {
             }
         }
 
-        if let pubAreaCBOR = attStmt["pubArea"], case let .byteString(pubAreaRaw) = pubAreaCBOR {
-            let pubArea = PubArea(from: Data(pubAreaRaw))
-        }
         // Verify pubArea
         guard let pubAreaCBOR = attStmt["pubArea"],
             case let .byteString(pubAreaRaw) = pubAreaCBOR,
@@ -91,8 +88,6 @@ struct TPMAttestation: AttestationProtocol {
         }
         switch pubArea.parameters {
         case let .rsa(rsaParameters):
-            if case let .rsa(rsaPublicKeyData) = credentialPublicKey {
-            }
             guard case let .rsa(rsaPublicKeyData) = credentialPublicKey,
                 Array(pubArea.unique.data) == rsaPublicKeyData.n else {
                 throw WebAuthnError.tpmInvalidPubAreaPublicKey

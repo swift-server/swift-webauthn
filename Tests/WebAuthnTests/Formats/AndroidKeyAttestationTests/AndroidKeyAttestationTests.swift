@@ -142,7 +142,6 @@ final class RegistrationAndroidKeyAttestationTests: XCTestCase {
     
     func testPublicKeysMismatch() async throws {
         let mockCerts = try TestECCKeyPair.certificates()
-        let verificationData: [UInt8] = [0x01]
         let authData = TestAuthDataBuilder().validMockRSA()
         let clientDataHash = SHA256.hash(data: Data(mockClientDataJSONBytes))
         let mockAttestationObject = TestAttestationObjectBuilder()

@@ -13,7 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 // Contains the new public key created by the authenticator.
-public struct AttestedCredentialData: Equatable {
+public struct AttestedCredentialData: Equatable, Sendable {
     public let aaguid: [UInt8]
     public let credentialID: [UInt8]
     public let publicKey: [UInt8]

@@ -20,7 +20,6 @@ import _CryptoExtras
 
 extension Certificate.PublicKey {
     func verifySignature(_ signature: Data, algorithm: COSEAlgorithmIdentifier, data: Data) throws -> Bool {
-        print("\n •••• \(Self.self).verifySignature() 1, algorithm=\(algorithm)")
         switch algorithm {
         case .algES256:
             guard let key = P256.Signing.PublicKey(self) else {
