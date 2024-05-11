@@ -57,7 +57,7 @@ extension Certificate.PublicKey {
             return key.isValidSignature(signature, for: data, padding: .PSS)
             
         default:
-            throw WebAuthnError.unsupported
+            throw WebAuthnError.unsupportedCOSEAlgorithm
         }
     }
 }
