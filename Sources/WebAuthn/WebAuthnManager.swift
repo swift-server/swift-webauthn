@@ -58,7 +58,7 @@ public struct WebAuthnManager: Sendable {
     /// - Returns: Registration options ready for the browser.
     public func beginRegistration(
         user: PublicKeyCredentialUserEntity,
-        timeout: Duration? = .seconds(60*5),
+        timeout: Duration? = .seconds(5*60),
         attestation: AttestationConveyancePreference = .none,
         publicKeyCredentialParameters: [PublicKeyCredentialParameters] = .supported
     ) -> PublicKeyCredentialCreationOptions {
