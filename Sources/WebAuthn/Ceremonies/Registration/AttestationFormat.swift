@@ -12,7 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-public enum AttestationFormat: String, RawRepresentable, Equatable {
+public enum AttestationFormat: String, RawRepresentable, Equatable, Sendable {
     case packed
     case tpm
     case androidKey = "android-key"
