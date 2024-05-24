@@ -15,7 +15,7 @@
 /// Options to specify the Relying Party's preference regarding attestation conveyance during credential generation.
 ///
 /// Currently only supports `none`.
-public enum AttestationConveyancePreference: String, Encodable {
+public enum AttestationConveyancePreference: String, Encodable, Sendable {
     /// Indicates the Relying Party is not interested in authenticator attestation.
     case none
     // case indirect

@@ -18,7 +18,7 @@ import Crypto
 /// The unprocessed response received from `navigator.credentials.create()`.
 ///
 /// When decoding using `Decodable`, the `rawID` is decoded from base64url to bytes.
-public struct RegistrationCredential {
+public struct RegistrationCredential: Sendable {
     /// The credential ID of the newly created credential.
     public let id: URLEncodedBase64
 
