@@ -51,14 +51,14 @@ public struct WebAuthnManager: Sendable {
     /// - Parameters:
     ///   - user: The user to register.
     ///   - timeout: How long the browser should give the user to choose an authenticator. This value
-    ///     is a *hint* and may be ignored by the browser. Defaults to 60 seconds.
+    ///     is a *hint* and may be ignored by the browser. Defaults to 300000 milliseconds (5 minutes).
     ///   - attestation: The Relying Party's preference regarding attestation. Defaults to `.none`.
     ///   - publicKeyCredentialParameters: A list of public key algorithms the Relying Party chooses to restrict
     ///     support to. Defaults to all supported algorithms.
     /// - Returns: Registration options ready for the browser.
     public func beginRegistration(
         user: PublicKeyCredentialUserEntity,
-        timeout: Duration? = .seconds(3600),
+        timeout: Duration? = .seconds(5*60),
         attestation: AttestationConveyancePreference = .none,
         publicKeyCredentialParameters: [PublicKeyCredentialParameters] = .supported
     ) -> PublicKeyCredentialCreationOptions {
