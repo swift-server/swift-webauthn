@@ -16,7 +16,7 @@ import Foundation
 
 /// After a successful registration ceremony we pass this data back to the relying party. It contains all needed
 /// information about a WebAuthn credential for storage in e.g. a database.
-public struct Credential {
+public struct Credential: Sendable {
     /// Value will always be ``CredentialType/publicKey`` (for now)
     public let type: CredentialType
 
