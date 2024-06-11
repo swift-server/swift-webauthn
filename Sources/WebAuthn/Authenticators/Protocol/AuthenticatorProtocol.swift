@@ -17,7 +17,34 @@ import SwiftCBOR
 
 public typealias CredentialStore<A: AuthenticatorProtocol> = [A.CredentialSource.ID : A.CredentialSource]
 
-public protocol AuthenticatorProtocol<CredentialSource> {
+
+public protocol AuthenticatorRegistrationConsumer: Sendable {
+    associatedtype CredentialOutput: Sendable
+    
+    /// Generate an attestation object for registration and submit it.
+    ///
+    /// Authenticators should call this to submit a successful registration and cancel any other pending authenticators.
+    ///
+    /// - SeeAlso: https://w3c.github.io/webauthn/#sctn-generating-an-attestation-object
+    func makeCredentials(with registration: AttestationRegistrationRequest) async throws -> (AttestationObject, CredentialOutput)
+}
+
+public protocol AuthenticatorAssertionConsumer: Sendable {
+    associatedtype CredentialInput: Sendable
+    associatedtype CredentialOutput: Sendable
+    
+    /// Submit the results of asserting a user's authentication request.
+    ///
+    /// Authenticators should call this to submit a successful authentication and cancel any other pending authenticators.
+    ///
+    /// - SeeAlso: https://w3c.github.io/webauthn/#sctn-generating-an-attestation-object
+    func assertCredentials(
+        authenticationRequest: AssertionAuthenticationRequest,
+        credentials: CredentialInput
+    ) async throws -> (AssertionAuthenticationRequest.Results, CredentialOutput)
+}
+
+public protocol AuthenticatorProtocol<CredentialSource>: AuthenticatorRegistrationConsumer, AuthenticatorAssertionConsumer {
     associatedtype CredentialSource: AuthenticatorCredentialSourceProtocol
     
     var attestationGloballyUniqueID: AAGUID { get }
@@ -62,10 +89,10 @@ public protocol AuthenticatorProtocol<CredentialSource> {
     
     /// Make credentials for the specified registration request, returning the credential source that the caller should store for subsequent authentication.
     ///
-    /// - Important: Depending on the authenticator being used, the credential source may contain private keys, and must be stored sequirely, such as in the user's Keychain, or in a Hardware Security Module appropriate with the level of security you wish to secure your user's account with.
+    /// - Important: Depending on the authenticator being used, the credential source may contain private keys, and must be stored securely, such as in the user's Keychain, or in a Hardware Security Module appropriate with the level of security you wish to secure your user's account with.
     /// - SeeAlso: [WebAuthn Level 3 Editor's Draft §5.1.3. Create a New Credential - PublicKeyCredential’s Create(origin, options, sameOriginWithAncestors) Method, Step 25.]( https://w3c.github.io/webauthn/#CreateCred-async-loop)
     /// - SeeAlso: [WebAuthn Level 3 Editor's Draft §6.3.2. The authenticatorMakeCredential Operation](https://w3c.github.io/webauthn/#sctn-op-make-cred)
-    func makeCredentials(with registration: AttestationRegistrationRequest) async throws -> CredentialSource
+    func makeCredentials(with registration: AttestationRegistrationRequest) async throws -> (AttestationObject, CredentialSource)
     
     /// Filter the provided credential descriptors to determine which, if any, should be handled by this authenticator.
     /// 
@@ -106,7 +133,7 @@ public protocol AuthenticatorProtocol<CredentialSource> {
     func assertCredentials(
         authenticationRequest: AssertionAuthenticationRequest,
         credentials: CredentialStore<Self>
-    ) async throws -> CredentialSource
+    ) async throws -> (AssertionAuthenticationRequest.Results, CredentialSource)
 }
 
 // MARK: - Default Implementations
@@ -142,7 +169,7 @@ extension AuthenticatorProtocol {
 extension AuthenticatorProtocol {
     public func makeCredentials(
         with registration: AttestationRegistrationRequest
-    ) async throws -> CredentialSource {
+    ) async throws -> (AttestationObject, CredentialSource) {
         /// See [WebAuthn Level 3 Editor's Draft §5.1.3. Create a New Credential - PublicKeyCredential’s Create(origin, options, sameOriginWithAncestors) Method, Step 25.]( https://w3c.github.io/webauthn/#CreateCred-async-loop)
         /// Step 1. This authenticator is now the candidate authenticator.
         /// Step 2. If pkOptions.authenticatorSelection is present:
@@ -328,13 +355,13 @@ extension AuthenticatorProtocol {
         )
         
         /// On successful completion of this operation, the authenticator returns the attestation object to the client.
-        try await registration.attemptRegistration.submitAttestationObject(
-            attestationFormat: attestationFormat,
+        let attestationObject = AttestationObject(
             authenticatorData: authenticatorData,
+            format: attestationFormat,
             attestationStatement: attestationStatement
         )
         
-        return credentialSource
+        return (attestationObject, credentialSource)
     }
 }
 
@@ -344,7 +371,7 @@ extension AuthenticatorProtocol {
     public func assertCredentials(
         authenticationRequest: AssertionAuthenticationRequest,
         credentials: CredentialStore<Self>
-    ) async throws -> CredentialSource {
+    ) async throws -> (AssertionAuthenticationRequest.Results, CredentialSource) {
         /// [WebAuthn Level 3 Editor's Draft §5.1.4.2. Issuing a Credential Request to an Authenticator](https://w3c.github.io/webauthn/#sctn-issuing-cred-request-to-authenticator)
         /// Step 1. If pkOptions.userVerification is set to required and the authenticator is not capable of performing user verification, return false.
         if authenticationRequest.options.userVerification == .required && !canPerformUserVerification {
@@ -473,7 +500,7 @@ extension AuthenticatorProtocol {
         ///     signature
         ///     selectedCredential.userHandle
         ///         NOTE: In cases where allowCredentialDescriptorList was supplied the returned userHandle value may be null, see: userHandleResult.
-        try await authenticationRequest.attemptAuthentication.submitAssertionResults(
+        let assertionResults = AssertionAuthenticationRequest.Results(
             credentialID: selectedCredential.id.bytes,
             authenticatorData: authenticatorData,
             signature: signature,
@@ -484,6 +511,6 @@ extension AuthenticatorProtocol {
         /// If the authenticator cannot find any credential corresponding to the specified Relying Party that matches the specified criteria, it terminates the operation and returns an error.
         // Already done.
         
-        return selectedCredential
+        return (assertionResults, selectedCredential)
     }
 }

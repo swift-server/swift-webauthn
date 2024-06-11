@@ -70,6 +70,7 @@ public struct WebAuthnError: Error, Hashable, Sendable {
         // MARK: WebAuthnClient
         case noSupportedCredentialParameters
         case missingCredentialSourceDespiteSuccess
+        case timeoutError
 
         // MARK: Authenticator
         case unsupportedCredentialPublicKeyType
@@ -139,6 +140,7 @@ public struct WebAuthnError: Error, Hashable, Sendable {
     // MARK: WebAuthnClient
     public static let noSupportedCredentialParameters = Self(reason: .noSupportedCredentialParameters)
     public static let missingCredentialSourceDespiteSuccess = Self(reason: .missingCredentialSourceDespiteSuccess)
+    public static let timeoutError = Self(reason: .timeoutError)
 
     // MARK: Authenticator
     public static let unsupportedCredentialPublicKeyType = Self(reason: .unsupportedCredentialPublicKeyType)

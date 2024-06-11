@@ -17,53 +17,36 @@
 public struct AssertionAuthenticationRequest: Sendable {
     public var options: PublicKeyCredentialRequestOptions
     public var clientDataHash: SHA256Digest
-    public var attemptAuthentication: Callback
     
     init(
         options: PublicKeyCredentialRequestOptions,
-        clientDataHash: SHA256Digest,
-        attemptAuthentication: @Sendable @escaping (_ assertionResults: Results) async throws -> ()
+        clientDataHash: SHA256Digest
     ) {
         self.options = options
         self.clientDataHash = clientDataHash
-        self.attemptAuthentication = Callback(callback: attemptAuthentication)
     }
 }
 
 extension AssertionAuthenticationRequest {
-    public struct Callback: Sendable {
-        /// The internal callback the attestation should call.
-        var callback: @Sendable (_ assertionResults: Results) async throws -> ()
+    public struct Results: Sendable {
+        public var credentialID: [UInt8]
+        public var authenticatorData: [UInt8]
+        public var signature: [UInt8]
+        public var userHandle: [UInt8]?
+        public var authenticatorAttachment: AuthenticatorAttachment
         
-        /// Submit the results of asserting a user's authentication request.
-        ///
-        /// Authenticators should call this to submit a successful authentication and cancel any other pending authenticators.
-        ///
-        /// - SeeAlso: https://w3c.github.io/webauthn/#sctn-generating-an-attestation-object
-        public func submitAssertionResults(
+        public init(
             credentialID: [UInt8],
             authenticatorData: [UInt8],
             signature: [UInt8],
-            userHandle: [UInt8]?,
+            userHandle: [UInt8]? = nil,
             authenticatorAttachment: AuthenticatorAttachment
-        ) async throws {
-            try await callback(Results(
-                credentialID: credentialID,
-                authenticatorData: authenticatorData,
-                signature: signature,
-                userHandle: userHandle,
-                authenticatorAttachment: authenticatorAttachment
-            ))
+        ) {
+            self.credentialID = credentialID
+            self.authenticatorData = authenticatorData
+            self.signature = signature
+            self.userHandle = userHandle
+            self.authenticatorAttachment = authenticatorAttachment
         }
-    }
-}
-
-extension AssertionAuthenticationRequest {
-    struct Results {
-        var credentialID: [UInt8]
-        var authenticatorData: [UInt8]
-        var signature: [UInt8]
-        var userHandle: [UInt8]?
-        var authenticatorAttachment: AuthenticatorAttachment
     }
 }

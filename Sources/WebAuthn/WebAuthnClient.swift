@@ -13,7 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 import Foundation
-import Crypto
+@preconcurrency import Crypto
 
 /// A client implementation capable of interfacing between an ``AuthenticatorProtocol`` authenticator and the Web Authentication API.
 ///
@@ -25,15 +25,18 @@ import Crypto
 public struct WebAuthnClient {
     public init() {}
     
-    public func createRegistrationCredential(
+    public func createRegistrationCredential<Authenticator: AuthenticatorRegistrationConsumer>(
         options: PublicKeyCredentialCreationOptions,
         /// Recommended Range: https://w3c.github.io/webauthn/#recommended-range-and-default-for-a-webauthn-ceremony-timeout
         minTimeout: Duration = .seconds(300),
         maxTimeout: Duration = .seconds(600),
         origin: String,
         supportedPublicKeyCredentialParameters: Set<PublicKeyCredentialParameters> = .supported,
-        attestRegistration: (_ registration: AttestationRegistrationRequest) async throws -> ()
-    ) async throws -> RegistrationCredential {
+        authenticator: Authenticator
+    ) async throws -> (
+        registrationCredential: RegistrationCredential,
+        credentialSource: Authenticator.CredentialOutput
+    ) {
         /// Steps: https://w3c.github.io/webauthn/#sctn-createCredential
         
         /// Step 1. Assert: options.publicKey is present.
@@ -154,13 +157,17 @@ public struct WebAuthnClient {
         /// Step 25. While lifetimeTimer has not expired, perform the following actions depending upon lifetimeTimer, and the state and response for each authenticator in authenticators:
         do {
             /// Let the caller do what it needs to do to coordinate with authenticators, so long as at least one of them calls the attestation callback.
-            var attestationObjectResult: AttestationObject = try await withCancellableFirstSuccessfulContinuation { [attestRegistration, publicKeyCredentialParameters] continuation in
+            var (attestationObjectResult, credentialOutput) = try await withThrowingTaskGroup(of: (AttestationObject, Authenticator.CredentialOutput).self) { [publicKeyCredentialParameters, clientDataHash] group in
                 /// → If lifetimeTimer expires,
                 ///     For each authenticator in issuedRequests invoke the authenticatorCancel operation on authenticator and remove authenticator from issuedRequests.
-                Task {
+                group.addTask(priority: .high) {
                     /// Let the timer run in the background to cancel the continuation if it runs over.
-                    await timeoutTask.value
-                    continuation.cancel() // TODO: Should be a timeout error
+                    await withTaskCancellationHandler {
+                        await timeoutTask.value
+                    } onCancel: {
+                        timeoutTask.cancel()
+                    }
+                    throw WebAuthnError.timeoutError
                 }
                 
                 /// → If the user exercises a user agent user-interface option to cancel the process,
@@ -192,13 +199,21 @@ public struct WebAuthnClient {
                 ///         NOTE: This case does not imply user consent for the operation, so details about the error are hidden from the Relying Party in order to prevent leak of potentially identifying information. See § 14.5.1 Registration Ceremony Privacy for details.
                 
                 /// Kick off the attestation process, waiting for one to succeed before the timeout.
-                try await attestRegistration(AttestationRegistrationRequest(
+                let registrationRequest = AttestationRegistrationRequest(
                     options: options,
                     publicKeyCredentialParameters: publicKeyCredentialParameters,
                     clientDataHash: clientDataHash
-                ) { attestationObject in
-                    continuation.resume(returning: attestationObject)
-                })
+                )
+                group.addTask {
+                    try await authenticator.makeCredentials(with: registrationRequest)
+                }
+                
+                /// The first results will always have the attestation object and credential output ready, or will throw on error, cancellation, or timeout.
+                /// If a timeout occurs, the actual work will be cancelled, though progress cannot move forwards until it actually wraps up its work.
+                guard let results = try await group.next()
+                else { throw WebAuthnError.missingCredentialSourceDespiteSuccess }
+                group.cancelAll()
+                return results
             }
             
             ///     → If any authenticator indicates success,
@@ -274,7 +289,7 @@ public struct WebAuthnClient {
             // Already performed.
             
             ///     5. Return constructCredentialAlg and terminate this algorithm.
-            return publicKeyCredential
+            return (publicKeyCredential, credentialOutput)
         } catch {
             /// Step 35. Throw a "NotAllowedError" DOMException. In order to prevent information leak that could identify the user without consent, this step MUST NOT be executed before lifetimeTimer has expired. See § 14.5.1 Registration Ceremony Privacy for details.
             /// During the above process, the user agent SHOULD show some UI to the user to guide them in the process of selecting and authorizing an authenticator.
@@ -290,15 +305,19 @@ public struct WebAuthnClient {
         }
     }
     
-    public func assertAuthenticationCredential(
+    public func assertAuthenticationCredential<Authenticator: AuthenticatorAssertionConsumer>(
         options: PublicKeyCredentialRequestOptions,
         /// Recommended Range: https://w3c.github.io/webauthn/#recommended-range-and-default-for-a-webauthn-ceremony-timeout
         minTimeout: Duration = .seconds(300),
         maxTimeout: Duration = .seconds(600),
         origin: String,
 //        mediation: ,
-        assertAuthentication: (_ authentication: AssertionAuthenticationRequest) async throws -> ()
-    ) async throws -> AuthenticationCredential {
+        authenticator: Authenticator,
+        credentialStore: Authenticator.CredentialInput
+    ) async throws -> (
+        authenticationCredential: AuthenticationCredential,
+        updatedCredentialSource: Authenticator.CredentialOutput
+    ) {
         /// See https://w3c.github.io/webauthn/#sctn-discover-from-external-source
         /// Step 1. Assert: options.publicKey is present.
         // Skip, already is.
@@ -399,13 +418,17 @@ public struct WebAuthnClient {
         /// Step 20. While lifetimeTimer has not expired, perform the following actions depending upon lifetimeTimer, and the state and response for each authenticator in authenticators:
         do {
             /// Let the caller do what it needs to do to coordinate with authenticators, so long as at least one of them calls the assertion callback.
-            let assertionResults: AssertionAuthenticationRequest.Results = try await withCancellableFirstSuccessfulContinuation { [assertAuthentication] continuation in
+            let (assertionResults, credentialOutput) = try await withThrowingTaskGroup(of: (AssertionAuthenticationRequest.Results, Authenticator.CredentialOutput).self) { group in
                 /// → If lifetimeTimer expires,
                 ///     For each authenticator in issuedRequests invoke the authenticatorCancel operation on authenticator and remove authenticator from issuedRequests.
-                Task {
+                group.addTask(priority: .high) {
                     /// Let the timer run in the background to cancel the continuation if it runs over.
-                    await timeoutTask.value
-                    continuation.cancel() // TODO: Should be a timeout error
+                    await withTaskCancellationHandler {
+                        await timeoutTask.value
+                    } onCancel: {
+                        timeoutTask.cancel()
+                    }
+                    throw WebAuthnError.timeoutError
                 }
                 
                 /// → If the user exercises a user agent user-interface option to cancel the process,
@@ -451,13 +474,21 @@ public struct WebAuthnClient {
                 ///             If this returns false, continue.
                 ///             NOTE: This branch is taken if options.mediation is conditional and the authenticator does not support the silentCredentialDiscovery operation to allow use of such authenticators during a conditional user mediation request.
                 ///         2. Append authenticator to issuedRequests.
-                try await assertAuthentication(AssertionAuthenticationRequest(
+                
+                let authenticationRequest = AssertionAuthenticationRequest(
                     options: options,
-                    clientDataHash: clientDataHash,
-                    attemptAuthentication: { assertionResults in
-                        continuation.resume(returning: assertionResults)
-                    }
-                ))
+                    clientDataHash: clientDataHash
+                )
+                group.addTask {
+                    try await authenticator.assertCredentials(authenticationRequest: authenticationRequest, credentials: credentialStore)
+                }
+                
+                /// The first results will always have the assertion results and credential output ready, or will throw on error, cancellation, or timeout.
+                /// If a timeout occurs, the actual work will be cancelled, though progress cannot move forwards until it actually wraps up its work.
+                guard let results = try await group.next()
+                else { throw WebAuthnError.missingCredentialSourceDespiteSuccess }
+                group.cancelAll()
+                return results
             }
             
             /// → If an authenticator ceases to be available on this client device,
@@ -534,7 +565,7 @@ public struct WebAuthnClient {
             // Already performed.
             
             ///     7. Return constructAssertionAlg and terminate this algorithm.
-            return publicKeyCredential
+            return (publicKeyCredential, credentialOutput)
         } catch {
             /// Step 31. Throw a "NotAllowedError" DOMException. In order to prevent information leak that could identify the user without consent, this step MUST NOT be executed before lifetimeTimer has expired. See § 14.5.2 Authentication Ceremony Privacy for details.
             await withTaskCancellationHandler {
@@ -550,38 +581,86 @@ public struct WebAuthnClient {
     }
 }
 
-// MARK: Convenience Registration and Authentication
+/*
+// MARK: Registration and Authentication With Multiple Authenticators
 
-extension WebAuthnClient {
-    @inlinable
-    public func createRegistrationCredential<Authenticator: AuthenticatorProtocol & Sendable>(
-        options: PublicKeyCredentialCreationOptions,
-        /// Recommended Range: https://w3c.github.io/webauthn/#recommended-range-and-default-for-a-webauthn-ceremony-timeout
-        minTimeout: Duration = .seconds(300),
-        maxTimeout: Duration = .seconds(600),
-        origin: String,
-        supportedPublicKeyCredentialParameters: Set<PublicKeyCredentialParameters> = .supported,
-        authenticator: Authenticator
-    ) async throws -> (registrationCredential: RegistrationCredential, credentialSource: Authenticator.CredentialSource) {
-        var credentialSource: Authenticator.CredentialSource?
-        let registrationCredential = try await createRegistrationCredential(
-            options: options,
-            minTimeout: minTimeout,
-            maxTimeout: maxTimeout,
-            origin: origin,
-            supportedPublicKeyCredentialParameters: supportedPublicKeyCredentialParameters
-        ) { registration in
-            credentialSource = try await authenticator.makeCredentials(with: registration)
-        }
-        
-        guard let credentialSource
-        else { throw WebAuthnError.missingCredentialSourceDespiteSuccess }
-        
-        return (registrationCredential, credentialSource)
+/// Internal type to represent a group of authenticators as a single authenticator.
+@available(macOS 14.0.0, *)
+@usableFromInline
+struct AuthenticatorRegistrationGroup<each Authenticator: AuthenticatorRegistrationConsumer>: AuthenticatorRegistrationConsumer {
+    let authenticators: (repeat each Authenticator)
+    
+    @usableFromInline
+    init(authenticators: repeat each Authenticator) {
+        self.authenticators = (repeat each authenticators)
     }
     
+    @usableFromInline
+    func makeCredentials(with registration: AttestationRegistrationRequest) async throws -> (AttestationObject, (repeat Result<(each Authenticator).CredentialOutput, Error>)) {
+        var parentTask: Task<(AttestationObject, (repeat Result<(each Authenticator).CredentialOutput, Error>)), Error>!
+        parentTask = Task {
+            let tasks = (repeat makeCredentials(
+                authenticator: each authenticators,
+                registration: registration,
+                parentTask: parentTask
+            ))
+            
+            return try await withTaskCancellationHandler {
+                var sharedAttestationObject: AttestationObject? = nil
+                let results = (repeat await (each tasks).result)
+                let credentials = (repeat groupResult(result: each results, sharedAttestationObject: &sharedAttestationObject))
+                
+                guard let sharedAttestationObject
+                else { throw WebAuthnError.missingCredentialSourceDespiteSuccess }
+                
+                return (sharedAttestationObject, (repeat each credentials))
+            } onCancel: {
+                repeat (each tasks).cancel()
+            }
+        }
+        return try await withTaskCancellationHandler {
+            try await parentTask.value
+        } onCancel: { [parentTask] in
+            parentTask!.cancel()
+        }
+    }
+    
+    /// Wrapper function since `repeat` doesn't currently support complex expressions
+    func makeCredentials<LocalAuthenticator: AuthenticatorRegistrationConsumer>(
+        authenticator: LocalAuthenticator,
+        registration: AttestationRegistrationRequest,
+        parentTask: Task<(AttestationObject, (repeat Result<(each Authenticator).CredentialOutput, Error>)), Error>
+    ) -> Task<(attestationObject: AttestationObject, credentialOutput: LocalAuthenticator.CredentialOutput), Error> {
+        Task {
+            let result = try await authenticator.makeCredentials(with: registration)
+            parentTask.cancel()
+            return result
+        }
+    }
+    
+    /// Wrapper function since `repeat` doesn't currently support complex expressions
+    func groupResult<T>(
+        result: Result<(attestationObject: AttestationObject, credentialOutput: T), Error>,
+        sharedAttestationObject: inout AttestationObject?
+    ) -> Result<T, Error> {
+        switch result {
+        case .success(let success):
+            if sharedAttestationObject == nil {
+                sharedAttestationObject = success.attestationObject
+                return .success(success.credentialOutput)
+            } else {
+                return .failure(CancellationError())
+            }
+        case .failure(let failure):
+            return .failure(failure)
+        }
+    }
+}
+
+extension WebAuthnClient {
+    @available(macOS 14.0.0, *)
     @inlinable
-    public func createRegistrationCredential<each Authenticator: AuthenticatorProtocol & Sendable>(
+    public func createRegistrationCredential<each Authenticator: AuthenticatorRegistrationConsumer>(
         options: PublicKeyCredentialCreationOptions,
         /// Recommended Range: https://w3c.github.io/webauthn/#recommended-range-and-default-for-a-webauthn-ceremony-timeout
         minTimeout: Duration = .seconds(300),
@@ -591,77 +670,22 @@ extension WebAuthnClient {
         authenticators: repeat each Authenticator
     ) async throws -> (
         registrationCredential: RegistrationCredential,
-        credentialSources: (repeat Result<(each Authenticator).CredentialSource, Error>)
+        credentialSources: (repeat Result<(each Authenticator).CredentialOutput, Error>)
     ) {
-        /// Wrapper function since `repeat` doesn't currently support complex expressions
-        @Sendable func register<LocalAuthenticator: AuthenticatorProtocol & Sendable>(
-            authenticator: LocalAuthenticator,
-            registration: AttestationRegistrationRequest
-        ) -> Task<LocalAuthenticator.CredentialSource, Error> {
-            Task { try await authenticator.makeCredentials(with: registration) }
-        }
-        
-        var credentialSources: (repeat Result<(each Authenticator).CredentialSource, Error>)?
-        let registrationCredential = try await createRegistrationCredential(
+        let result = try await createRegistrationCredential(
             options: options,
             minTimeout: minTimeout,
             maxTimeout: maxTimeout,
             origin: origin,
-            supportedPublicKeyCredentialParameters: supportedPublicKeyCredentialParameters
-        ) { registration in
-            /// Run each authenticator in parallel as child tasks, so we can automatically propagate cancellation to each of them should it occur.
-            let tasks = (repeat register(
-                authenticator: each authenticators,
-                registration: registration
-            ))
-            await withTaskCancellationHandler {
-                credentialSources = (repeat await (each tasks).result)
-            } onCancel: {
-                repeat (each tasks).cancel()
-            }
-        }
-        
-        guard let credentialSources
-        else { throw WebAuthnError.missingCredentialSourceDespiteSuccess }
-        
-        return (registrationCredential, credentialSources)
+            supportedPublicKeyCredentialParameters: supportedPublicKeyCredentialParameters,
+            authenticator: AuthenticatorRegistrationGroup(authenticators: repeat each authenticators)
+        )
+        /// Need to rebuild the return value due to: `Cannot convert return expression of type '(registrationCredential: RegistrationCredential, credentialSource: AuthenticatorGroup<repeat each Authenticator>.CredentialOutput)' to return type '(registrationCredential: RegistrationCredential, credentialSources: (repeat Result<(each Authenticator).CredentialOutput, any Error>))'`
+        return (result.registrationCredential, result.credentialSource)
     }
     
     @inlinable
-    public func assertAuthenticationCredential<Authenticator: AuthenticatorProtocol>(
-        options: PublicKeyCredentialRequestOptions,
-        /// Recommended Range: https://w3c.github.io/webauthn/#recommended-range-and-default-for-a-webauthn-ceremony-timeout
-        minTimeout: Duration = .seconds(300),
-        maxTimeout: Duration = .seconds(600),
-        origin: String,
-//        mediation: ,
-        authenticator: Authenticator,
-        credentialStore: CredentialStore<Authenticator>
-    ) async throws -> (
-        authenticationCredential: AuthenticationCredential,
-        updatedCredentialSource: Authenticator.CredentialSource
-    ) {
-        var credentialSource: Authenticator.CredentialSource?
-        let authenticationCredential = try await assertAuthenticationCredential(
-            options: options,
-            minTimeout: minTimeout,
-            maxTimeout: maxTimeout,
-            origin: origin
-        ) { authentication in
-            credentialSource = try await authenticator.assertCredentials(
-                authenticationRequest: authentication,
-                credentials: credentialStore
-            )
-        }
-        
-        guard let credentialSource
-        else { throw WebAuthnError.missingCredentialSourceDespiteSuccess }
-        
-        return (authenticationCredential, credentialSource)
-    }
-    
-    @inlinable
-    public func assertAuthenticationCredential<each Authenticator: AuthenticatorProtocol & Sendable>(
+    public func assertAuthenticationCredential<each Authenticator: AuthenticatorAssertionConsumer>(
         options: PublicKeyCredentialRequestOptions,
         /// Recommended Range: https://w3c.github.io/webauthn/#recommended-range-and-default-for-a-webauthn-ceremony-timeout
         minTimeout: Duration = .seconds(300),
@@ -714,3 +738,4 @@ extension WebAuthnClient {
         return (authenticationCredential, credentialSources)
     }
 }
+*/

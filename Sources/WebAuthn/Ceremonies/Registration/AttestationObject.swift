@@ -35,7 +35,7 @@ public struct AttestationObject: Sendable {
         self.attestationStatement = attestationStatement
     }
     
-    init(
+    public init(
         authenticatorData: AuthenticatorData,
         format: AttestationFormat,
         attestationStatement: CBOR
