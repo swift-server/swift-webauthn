@@ -38,7 +38,7 @@ public struct PublicKeyCredentialCreationOptions: Encodable, Sendable {
         self.user = user
         self.relyingParty = relyingParty
         self.publicKeyCredentialParameters = publicKeyCredentialParameters
-        self.timeoutInMilliseconds = timeout
+        self.timeout = timeout
         self.attestation = attestation
         self.hints = hints
         self.extensions = extensions
@@ -62,9 +62,9 @@ public struct PublicKeyCredentialCreationOptions: Encodable, Sendable {
     /// preferred.
     public let publicKeyCredentialParameters: [PublicKeyCredentialParameters]
 
-    /// A time, in milliseconds, that the caller is willing to wait for the call to complete. This is treated as a
+    /// A time, in seconds, that the caller is willing to wait for the call to complete. This is treated as a
     /// hint, and may be overridden by the client.
-    public let timeoutInMilliseconds: Int64?
+    public let timeout: Int64?
 
     /// Sets the Relying Party's preference for attestation conveyance. At the time of writing only `none` is
     /// supported.
@@ -77,7 +77,7 @@ public struct PublicKeyCredentialCreationOptions: Encodable, Sendable {
         try container.encode(user, forKey: .user)
         try container.encode(relyingParty, forKey: .relyingParty)
         try container.encode(publicKeyCredentialParameters, forKey: .publicKeyCredentialParameters)
-        try container.encodeIfPresent(timeoutInMilliseconds, forKey: .timeoutInMilliseconds)
+        try container.encodeIfPresent(timeout, forKey: .timeoutInMilliseconds)
         try container.encode(attestation, forKey: .attestation)
         try container.encode(authenticatorSelection, forKey: .authenticatorSelection)
         try container.encode(hints, forKey: .hints)
