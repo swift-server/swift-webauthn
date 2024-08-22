@@ -69,7 +69,7 @@ public struct WebAuthnManager: Sendable {
             user: user,
             relyingParty: .init(id: configuration.relyingPartyID, name: configuration.relyingPartyName),
             publicKeyCredentialParameters: publicKeyCredentialParameters,
-            timeout: (timeout?.milliseconds ?? 0) / 1000,
+            timeout: timeout,
             attestation: attestation
         )
     }

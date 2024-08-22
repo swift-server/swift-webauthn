@@ -26,7 +26,7 @@ public struct PublicKeyCredentialCreationOptions: Encodable, Sendable {
          user: PublicKeyCredentialUserEntity,
          relyingParty: PublicKeyCredentialRelyingPartyEntity,
          publicKeyCredentialParameters: [PublicKeyCredentialParameters],
-         timeout: Int64?,
+         timeout: Duration?,
          attestation: AttestationConveyancePreference,
          hints: [Hint] = [],
          extensions: Extensions = .init(credProps: true),
@@ -64,7 +64,7 @@ public struct PublicKeyCredentialCreationOptions: Encodable, Sendable {
 
     /// A time, in seconds, that the caller is willing to wait for the call to complete. This is treated as a
     /// hint, and may be overridden by the client.
-    public let timeout: Int64?
+    public let timeout: Duration?
 
     /// Sets the Relying Party's preference for attestation conveyance. At the time of writing only `none` is
     /// supported.
@@ -77,7 +77,7 @@ public struct PublicKeyCredentialCreationOptions: Encodable, Sendable {
         try container.encode(user, forKey: .user)
         try container.encode(relyingParty, forKey: .relyingParty)
         try container.encode(publicKeyCredentialParameters, forKey: .publicKeyCredentialParameters)
-        try container.encodeIfPresent(timeout, forKey: .timeoutInMilliseconds)
+        try container.encodeIfPresent(timeout?.milliseconds, forKey: .timeout)
         try container.encode(attestation, forKey: .attestation)
         try container.encode(authenticatorSelection, forKey: .authenticatorSelection)
         try container.encode(hints, forKey: .hints)
@@ -152,7 +152,7 @@ public struct PublicKeyCredentialCreationOptions: Encodable, Sendable {
         case user
         case relyingParty = "rp"
         case publicKeyCredentialParameters = "pubKeyCredParams"
-        case timeoutInMilliseconds = "timeout"
+        case timeout
         case attestation
         case authenticatorSelection
         case hints
