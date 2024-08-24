@@ -46,6 +46,22 @@ public struct PublicKeyCredentialCreationOptions: Encodable, Sendable {
     /// Sets the Relying Party's preference for attestation conveyance. At the time of writing only `none` is
     /// supported.
     public let attestation: AttestationConveyancePreference
+    
+    /// Use this enumeration to communicate hints to the user-agent about how a request may be best completed. These hints are not requirements, and do not bind the user-agent, but may guide it in providing the best experience by using contextual information that the Relying Party has about the request.
+    /// https://www.w3.org/TR/webauthn-3/#enum-hints
+    let hints: [Hint]
+    
+    /// This client registration extension facilitates reporting certain credential properties known by the client to the requesting WebAuthn Relying Party upon creation of a public key credential source as a result of a registration ceremony.
+    /// https://www.w3.org/TR/webauthn-2/#sctn-extensions-inputs-outputs
+    let extensions: Extensions
+    
+    /// This member is intended for use by Relying Parties that wish to limit the creation of multiple credentials for the same account on a single authenticator
+    /// https://www.w3.org/TR/webauthn-2/#dom-publickeycredentialcreationoptions-excludecredentials
+    let excludeCredentials: [PublicKeyCredentialDescriptor]
+    
+    /// This member is intended for use by Relying Parties that wish to select the appropriate authenticators to participate in the create() operation.
+    /// https://www.w3.org/TR/webauthn-3/#dom-publickeycredentialcreationoptions-authenticatorselection
+    let authenticatorSelection:  AuthenticatorSelectionCriteria
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
@@ -60,68 +76,6 @@ public struct PublicKeyCredentialCreationOptions: Encodable, Sendable {
         try container.encode(hints, forKey: .hints)
         try container.encode(extensions, forKey: .extensions)
         try container.encode(excludeCredentials, forKey: .excludeCredentials)
-    }
-    
-    let hints: [Hint]
-    enum Hint: String, Encodable
-    {
-        /// Hint to get the user to register their platform authenticator
-        case clientDevice = "client-device"
-        
-        /// Hint to the user should be guided to register a security key. Iconography and text should emphasize the use of security keys
-        case securityKey = "security-key"
-        
-        /// Hint to the user to to register a passkey using their mobile device by scanning a QR code that’s displayed on a computer
-        case hybrid = "hybrid"
-    }
-    
-    let extensions: Extensions
-    
-    struct Extensions: Encodable
-    {
-        let credProps: Bool
-    }
-    
-    let excludeCredentials: [Credentials]
-    struct Credentials: Encodable
-    {
-        let id: String
-        let type: [UInt8]
-        
-        private enum CodingKeys: String, CodingKey
-        {
-            case id
-            case type
-        }
-        
-        public func encode(to encoder: Encoder) throws
-        {
-            var container = encoder.container(keyedBy: CodingKeys.self)
-
-            try container.encode(type.base64URLEncodedString(), forKey: .id)
-            try container.encode(id, forKey: .id)
-        }
-    }
-    
-    let authenticatorSelection: AuthenticatorSelection
-    struct AuthenticatorSelection: Encodable
-    {
-        enum ResidentKey: String, Encodable
-        {
-            case required = "required"
-            case preferred = "preferred"
-            case discouraged = "discouraged"
-        }
-        
-        enum UserVerification: String, Encodable
-        {
-            case required = "required"
-            case preferred = "preferred"
-            case discouraged = "discouraged"
-        }
-        let residentKey: ResidentKey
-        let requireResidentKey: Bool
-        let userVerification: UserVerification
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -225,4 +179,61 @@ public struct PublicKeyCredentialUserEntity: Encodable, Sendable {
         case name
         case displayName
     }
+}
+
+public struct Hint: UnreferencedStringEnumeration, Sendable {
+    public var rawValue: String
+    public init(_ rawValue: String) {
+        self.rawValue = rawValue
+    }
+    
+    /// Indicates that the Relying Party believes that users will satisfy this request with a platform authenticator attached to the client device.
+    public static let clientDevice: Self = "client-device"
+    
+    /// Indicates that the Relying Party believes that users will satisfy this request with a physical security key
+    public static let securityKey: Self = "security-key"
+    
+    /// Indicates that the Relying Party believes that users will satisfy this request with general-purpose authenticators such as smartphones.
+    public static let hybrid: Self = "hybrid"
+}
+
+
+struct Extensions: Encodable {
+    /// Indicate that this extension is requested by the Relying Party.
+    /// https://www.w3.org/TR/webauthn-3/#sctn-authenticator-credential-properties-extension
+    let credProps: Bool
+}
+
+struct  AuthenticatorSelectionCriteria: Encodable {
+    /// Specifies the extent to which the Relying Party desires to create a client-side discoverable credential.
+    /// https://www.w3.org/TR/webauthn-3/#dom-authenticatorselectioncriteria-residentkey
+    let residentKey: ResidentKeyRequirement
+    
+    /// Relying Parties SHOULD set this to true if, and only if, `residentKey` is set to `required`.
+    /// https://www.w3.org/TR/webauthn-3/#dom-authenticatorselectioncriteria-requireresidentkey
+    let requireResidentKey: Bool
+    
+    /// This member specifies the Relying Party's requirements regarding user verification for the create() operation.
+    /// https://www.w3.org/TR/webauthn-3/#dom-authenticatorselectioncriteria-userverification
+    let userVerification: UserVerificationRequirement
+}
+
+
+public struct ResidentKeyRequirement: UnreferencedStringEnumeration, Sendable {
+    public var rawValue: String
+    public init(_ rawValue: String) {
+        self.rawValue = rawValue
+    }
+    
+    /// The Relying Party requires a client-side discoverable credential.
+    /// https://www.w3.org/TR/webauthn-3/#dom-residentkeyrequirement-required
+    public static let required: Self = "required"
+    
+    /// The Relying Party strongly prefers creating a client-side discoverable credential, but will accept a server-side credential.
+    /// https://www.w3.org/TR/webauthn-3/#dom-residentkeyrequirement-preferred
+    public static let preferred: Self = "preferred"
+    
+    /// The Relying Party prefers creating a server-side credential, but will accept a client-side discoverable credential.
+    /// https://www.w3.org/TR/webauthn-3/#dom-residentkeyrequirement-discouraged
+    public static let discouraged: Self = "discouraged"
 }
