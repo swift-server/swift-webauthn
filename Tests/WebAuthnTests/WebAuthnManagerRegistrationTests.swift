@@ -301,7 +301,6 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
                     TestAuthDataBuilder()
                         .validMock()
                         .attestedCredData(
-                            aaguid: Array(repeating: 0, count: 16),
                             credentialIDLength: [0b000_00011, 0b1111_1111],
                             credentialID: Array(repeating: 0, count: 1023),
                             credentialPublicKey: TestCredentialPublicKeyBuilder().validMock().buildAsByteArray()
@@ -320,7 +319,6 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
                         TestAuthDataBuilder()
                             .validMock()
                             .attestedCredData(
-                                aaguid: Array(repeating: 0, count: 16),
                                 credentialIDLength: [0b000_00100, 0b0000_0000],
                                 credentialID: Array(repeating: 0, count: 1024),
                                 credentialPublicKey: TestCredentialPublicKeyBuilder().validMock().buildAsByteArray()
