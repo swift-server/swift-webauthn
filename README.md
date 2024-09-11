@@ -1,7 +1,7 @@
-# webauthn-swift
+# swift-webauthn
 
 This package provides a Swift implementation of the [WebAuthn API](https://w3c.github.io/webauthn) focused on making it
-easy to leverage the power of WebAuthn.
+easy to leverage the power of WebAuthn to support Passkeys and security keys.
 
 ## Getting Started
 
@@ -10,13 +10,13 @@ easy to leverage the power of WebAuthn.
 Add the following entry in your `Package.swift` to start using `WebAuthn`:
 
 ```swift
-.package(url: "https://github.com/swift-server/webauthn-swift.git", from: "1.0.0-alpha")
+.package(url: "https://github.com/swift-server/swift-webauthn.git", from: "1.0.0-alpha.2")
 ```
 
 and `WebAuthn` dependency to your target:
 
 ```swift
-.target(name: "MyApp", dependencies: [.product(name: "WebAuthn", package: "webauthn-swift")])
+.target(name: "MyApp", dependencies: [.product(name: "WebAuthn", package: "swift-webauthn")])
 ```
 
 ### Setup

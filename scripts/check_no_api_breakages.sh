@@ -36,8 +36,8 @@ function usage() {
     echo >&2
     echo >&2 "Examples:"
     echo >&2
-    echo >&2 "Check between main and tag 1.0.0 of webauthn-swift:"
-    echo >&2 "  $0 https://github.com/swift-server/webauthn-swift main 1.0.0"
+    echo >&2 "Check between main and tag 1.0.0 of swift-webauthn:"
+    echo >&2 "  $0 https://github.com/swift-server/swift-webauthn main 1.0.0"
     echo >&2
     echo >&2 "Check between HEAD and commit 681eb6f using the provided toolchain:"
     echo >&2 "  xcrun --toolchain org.swift.5120190702a $0 ../some-local-repo HEAD 681eb6f"
