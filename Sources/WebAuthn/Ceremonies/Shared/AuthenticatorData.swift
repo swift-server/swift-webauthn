@@ -43,7 +43,7 @@ extension AuthenticatorData {
         var attestedCredentialData: AttestedCredentialData?
         // For attestation signatures, the authenticator MUST set the AT flag and include the attestedCredentialData.
         if flags.attestedCredentialData {
-            let minAttestedAuthLength = 55
+            let minAttestedAuthLength = 37 + AAGUID.size + 2
             guard bytes.count > minAttestedAuthLength else {
                 throw WebAuthnError.attestedCredentialDataMissing
             }
@@ -84,8 +84,8 @@ extension AuthenticatorData {
     /// - SeeAlso: [WebAuthn Level 3 Editor's Draft §6.5.1. Attested Credential Data]( https://w3c.github.io/webauthn/#sctn-attested-credential-data)
     private static func parseAttestedData(_ data: [UInt8]) throws -> (AttestedCredentialData, Int) {
         /// **aaguid** (16): The AAGUID of the authenticator.
-        let aaguidLength = 16
-        let aaguid = data[37..<(37 + aaguidLength)]  // To byte at index 52
+        guard let aaguid = AAGUID(bytes: data[37..<(37 + AAGUID.size)])  // Bytes [37-52]
+        else { throw WebAuthnError.attestedCredentialDataMissing }
 
         /// **credentialIdLength** (2): Byte length L of credentialId, 16-bit unsigned big-endian integer. Value MUST be ≤ 1023.
         let idLengthBytes = data[53..<55]  // Length is 2 bytes
@@ -110,13 +110,13 @@ extension AuthenticatorData {
         let publicKeyBytes = data[credentialIDEndIndex..<(data.count - inputStream.remainingBytes)]
 
         let data = AttestedCredentialData(
-            aaguid: Array(aaguid),
+            authenticatorAttestationGUID: aaguid,
             credentialID: Array(credentialID),
             publicKey: Array(publicKeyBytes)
         )
 
         /// `2` is the size of **credentialIdLength**
-        let length = data.aaguid.count + 2 + data.credentialID.count + data.publicKey.count
+        let length = AAGUID.size + 2 + data.credentialID.count + data.publicKey.count
 
         return (data, length)
     }
