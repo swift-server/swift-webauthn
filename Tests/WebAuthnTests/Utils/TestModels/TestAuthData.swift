@@ -87,7 +87,7 @@ struct TestAuthDataBuilder {
     }
 
     func relyingPartyIDHash(fromRelyingPartyID relyingPartyID: String) -> Self {
-        let relyingPartyIDData = relyingPartyID.data(using: .utf8)!
+        let relyingPartyIDData = Data(relyingPartyID.utf8)
         let relyingPartyIDHash = SHA256.hash(data: relyingPartyIDData)
         var temp = self
         temp.wrapped.relyingPartyIDHash = [UInt8](relyingPartyIDHash)
