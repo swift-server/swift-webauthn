@@ -9,7 +9,7 @@ jobs:
     name: Soundness
     uses: apple/swift-nio/.github/workflows/soundness.yml@main
     with:
-      license_header_check_project_name: "WebAuthn Swift"
+      license_header_check_project_name: "Swift WebAuthn"
       shell_check_enabled: false
       format_check_enabled: false
       license_header_check_enabled: false
