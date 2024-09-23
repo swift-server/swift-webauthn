@@ -30,7 +30,7 @@ public struct AttestationObject: Sendable {
         supportedPublicKeyAlgorithms: [PublicKeyCredentialParameters],
         pemRootCertificatesByFormat: [AttestationFormat: [Data]] = [:]
     ) async throws -> AttestedCredentialData {
-        let relyingPartyIDHash = SHA256.hash(data: relyingPartyID.data(using: .utf8)!)
+        let relyingPartyIDHash = SHA256.hash(data: Data(relyingPartyID.utf8))
 
         guard relyingPartyIDHash == authenticatorData.relyingPartyIDHash else {
             throw WebAuthnError.relyingPartyIDHashDoesNotMatch

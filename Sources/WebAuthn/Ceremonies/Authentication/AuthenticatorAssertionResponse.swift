@@ -102,9 +102,7 @@ struct ParsedAuthenticatorAssertionResponse: Sendable {
             relyingPartyOrigin: relyingPartyOrigin
         )
 
-        guard let expectedRelyingPartyIDData = relyingPartyID.data(using: .utf8) else {
-            throw WebAuthnError.invalidRelyingPartyID
-        }
+        let expectedRelyingPartyIDData = Data(relyingPartyID.utf8)
         let expectedRelyingPartyIDHash = SHA256.hash(data: expectedRelyingPartyIDData)
         guard expectedRelyingPartyIDHash == authenticatorData.relyingPartyIDHash else {
             throw WebAuthnError.relyingPartyIDHashDoesNotMatch

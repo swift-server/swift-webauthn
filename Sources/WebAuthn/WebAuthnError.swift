@@ -30,7 +30,6 @@ public struct WebAuthnError: Error, Hashable, Sendable {
         case invalidUserID
         case unsupportedCredentialPublicKeyAlgorithm
         case credentialIDAlreadyExists
-        case invalidRelyingPartyID
         case userVerifiedFlagNotSet
         case potentialReplayAttack
         case invalidAssertionCredentialType
@@ -90,7 +89,6 @@ public struct WebAuthnError: Error, Hashable, Sendable {
     public static let invalidUserID = Self(reason: .invalidUserID)
     public static let unsupportedCredentialPublicKeyAlgorithm = Self(reason: .unsupportedCredentialPublicKeyAlgorithm)
     public static let credentialIDAlreadyExists = Self(reason: .credentialIDAlreadyExists)
-    public static let invalidRelyingPartyID = Self(reason: .invalidRelyingPartyID)
     public static let userVerifiedFlagNotSet = Self(reason: .userVerifiedFlagNotSet)
     public static let potentialReplayAttack = Self(reason: .potentialReplayAttack)
     public static let invalidAssertionCredentialType = Self(reason: .invalidAssertionCredentialType)
