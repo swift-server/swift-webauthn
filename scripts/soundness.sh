@@ -7,7 +7,6 @@
 ## Licensed under Apache License v2.0
 ##
 ## See LICENSE.txt for license information
-## See CONTRIBUTORS.txt for the list of Swift WebAuthn project authors
 ##
 ## SPDX-License-Identifier: Apache-2.0
 ##
@@ -61,7 +60,6 @@ for language in swift bash; do
 // Licensed under Apache License v2.0
 //
 // See LICENSE.txt for license information
-// See CONTRIBUTORS.txt for the list of Swift WebAuthn project authors
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -80,7 +78,6 @@ EOF
 ## Licensed under Apache License v2.0
 ##
 ## See LICENSE.txt for license information
-## See CONTRIBUTORS.txt for the list of Swift WebAuthn project authors
 ##
 ## SPDX-License-Identifier: Apache-2.0
 ##
