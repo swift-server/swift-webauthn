@@ -30,12 +30,19 @@ public struct AuthenticatorAttestationResponse: Sendable {
     public let attestationObject: [UInt8]
 }
 
-extension AuthenticatorAttestationResponse: Decodable {
+extension AuthenticatorAttestationResponse: Codable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
         clientDataJSON = try container.decodeBytesFromURLEncodedBase64(forKey: .clientDataJSON)
         attestationObject = try container.decodeBytesFromURLEncodedBase64(forKey: .attestationObject)
+    }
+    
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        
+        try container.encode(clientDataJSON.base64URLEncodedString(), forKey: .clientDataJSON)
+        try container.encode(attestationObject.base64URLEncodedString(), forKey: .attestationObject)
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -55,30 +62,6 @@ struct ParsedAuthenticatorAttestationResponse {
         self.clientData = clientData
 
         // Step 11. (assembling attestationObject)
-        let attestationObjectData = Data(rawResponse.attestationObject)
-        guard let decodedAttestationObject = try? CBOR.decode([UInt8](attestationObjectData), options: CBOROptions(maximumDepth: 16)) else {
-            throw WebAuthnError.invalidAttestationObject
-        }
-
-        guard let authData = decodedAttestationObject["authData"],
-            case let .byteString(authDataBytes) = authData else {
-            throw WebAuthnError.invalidAuthData
-        }
-        guard let formatCBOR = decodedAttestationObject["fmt"],
-            case let .utf8String(format) = formatCBOR,
-            let attestationFormat = AttestationFormat(rawValue: format) else {
-            throw WebAuthnError.invalidFmt
-        }
-
-        guard let attestationStatement = decodedAttestationObject["attStmt"] else {
-            throw WebAuthnError.missingAttStmt
-        }
-
-        attestationObject = AttestationObject(
-            authenticatorData: try AuthenticatorData(bytes: authDataBytes),
-            rawAuthenticatorData: authDataBytes,
-            format: attestationFormat,
-            attestationStatement: attestationStatement
-        )
+        attestationObject = try AttestationObject(bytes: rawResponse.attestationObject)
     }
 }

@@ -12,47 +12,27 @@
 //
 //===----------------------------------------------------------------------===//
 
-import SwiftCBOR
-
-enum COSEKey: Sendable {
+struct COSEKey: RawRepresentable, Sendable {
+    var rawValue: Int
+    
+    init(rawValue: Int) {
+        self.rawValue = rawValue
+    }
+    
     // swiftlint:disable identifier_name
-    case kty
-    case alg
+    static let kty = COSEKey(rawValue: 1)
+    static let alg = COSEKey(rawValue: 3)
 
     // EC2, OKP
-    case crv
-    case x
+    static let crv = COSEKey(rawValue: -1)
+    static let x = COSEKey(rawValue: -2)
 
     // EC2
-    case y
+    static let y = COSEKey(rawValue: -3)
 
     // RSA
-    case n
-    case e
+    static let n = COSEKey(rawValue: -1)
+    static let e = COSEKey(rawValue: -2)
     // swiftlint:enable identifier_name
-
-    var cbor: CBOR {
-        var value: Int
-        switch self {
-        case .kty:
-            value = 1
-        case .alg:
-            value = 3
-        case .crv:
-            value = -1
-        case .x:
-            value = -2
-        case .y:
-            value = -3
-        case .n:
-            value = -1
-        case .e:
-            value = -2
-        }
-        if value < 0 {
-            return .negativeInt(UInt64(abs(-1 - value)))
-        } else {
-            return .unsignedInt(UInt64(value))
-        }
-    }
 }
+

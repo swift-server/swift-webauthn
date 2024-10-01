@@ -375,9 +375,8 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
         try await webAuthnManager.finishRegistration(
             challenge: challenge,
             credentialCreationData: RegistrationCredential(
-                id: rawID.base64URLEncodedString(),
                 type: type,
-                rawID: rawID,
+                id: rawID,
                 attestationResponse: AuthenticatorAttestationResponse(
                     clientDataJSON: clientDataJSON,
                     attestationObject: attestationObject

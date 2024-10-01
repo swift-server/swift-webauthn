@@ -17,10 +17,12 @@ import _CryptoExtras
 import Foundation
 import SwiftCBOR
 
-protocol PublicKey: Sendable {
+public protocol PublicKey: Sendable {
     var algorithm: COSEAlgorithmIdentifier { get }
     /// Verify a signature was signed with the private key corresponding to the public key.
     func verify(signature: some DataProtocol, data: some DataProtocol) throws
+    
+    var bytes: [UInt8] { get }
 }
 
 enum CredentialPublicKey: Sendable {
@@ -56,21 +58,14 @@ enum CredentialPublicKey: Sendable {
             return
         }
 
-        guard let keyTypeRaw = publicKeyObject[COSEKey.kty.cbor],
-            case let .unsignedInt(keyTypeInt) = keyTypeRaw,
-            let keyType = COSEKeyType(rawValue: keyTypeInt) else {
-            throw WebAuthnError.invalidKeyType
-        }
+        guard let keyType = publicKeyObject[COSEKey.kty].flatMap(UInt64.init).flatMap(COSEKeyType.init(rawValue:))
+        else { throw WebAuthnError.invalidKeyType }
 
-        guard let algorithmRaw = publicKeyObject[COSEKey.alg.cbor],
-            case let .negativeInt(algorithmNegative) = algorithmRaw else {
-            throw WebAuthnError.invalidAlgorithm
-        }
-        // https://github.com/unrelentingtech/SwiftCBOR#swiftcbor
-        // Negative integers are decoded as NegativeInt(UInt), where the actual number is -1 - i
-        guard let algorithm = COSEAlgorithmIdentifier(rawValue: -1 - Int(algorithmNegative)) else {
-            throw WebAuthnError.unsupportedCOSEAlgorithm
-        }
+        guard let algorithmRaw = publicKeyObject[COSEKey.alg].flatMap(Int.init)
+        else { throw WebAuthnError.invalidAlgorithm }
+        
+        guard let algorithm = COSEAlgorithmIdentifier(rawValue: algorithmRaw)
+        else { throw WebAuthnError.unsupportedCOSEAlgorithm }
 
         // Currently we only support elliptic curve algorithms
         switch keyType {
@@ -88,6 +83,14 @@ enum CredentialPublicKey: Sendable {
     /// Verify a signature was signed with the private key corresponding to the provided public key.
     func verify(signature: some DataProtocol, data: some DataProtocol) throws {
         try key.verify(signature: signature, data: data)
+    }
+    
+    var bytes: [UInt8] {
+        switch self {
+        case .okp(let oKPPublicKey): oKPPublicKey.bytes
+        case .ec2(let eC2PublicKey): eC2PublicKey.bytes
+        case .rsa(let rSAPublicKeyData): rSAPublicKeyData.bytes
+        }
     }
 }
 
@@ -108,6 +111,39 @@ struct EC2PublicKey: PublicKey, Sendable {
         self.xCoordinate = xCoordinate
         self.yCoordinate = yCoordinate
     }
+    
+    init(_ publicKey: P256.Signing.PublicKey) {
+        self.algorithm = .algES256
+        self.curve = .p256
+        
+        /// Split the key like SwiftCrypto does internally: https://github.com/apple/swift-crypto/blob/606608da0875e3dee07cb37da3b38585420db111/Sources/Crypto/Signatures/ECDSA.swift.gyb#L79
+        let rawRepresentation = publicKey.rawRepresentation
+        let half = rawRepresentation.count/2
+        self.xCoordinate = Array(rawRepresentation.prefix(half))
+        self.yCoordinate = Array(rawRepresentation.suffix(half))
+    }
+    
+    init(_ publicKey: P384.Signing.PublicKey) {
+        self.algorithm = .algES384
+        self.curve = .p384
+        
+        /// Split the key like SwiftCrypto does internally: https://github.com/apple/swift-crypto/blob/606608da0875e3dee07cb37da3b38585420db111/Sources/Crypto/Signatures/ECDSA.swift.gyb#L79
+        let rawRepresentation = publicKey.rawRepresentation
+        let half = rawRepresentation.count/2
+        self.xCoordinate = Array(rawRepresentation.prefix(half))
+        self.yCoordinate = Array(rawRepresentation.suffix(half))
+    }
+    
+    init(_ publicKey: P521.Signing.PublicKey) {
+        self.algorithm = .algES512
+        self.curve = .p521
+        
+        /// Split the key like SwiftCrypto does internally: https://github.com/apple/swift-crypto/blob/606608da0875e3dee07cb37da3b38585420db111/Sources/Crypto/Signatures/ECDSA.swift.gyb#L79
+        let rawRepresentation = publicKey.rawRepresentation
+        let half = rawRepresentation.count/2
+        self.xCoordinate = Array(rawRepresentation.prefix(half))
+        self.yCoordinate = Array(rawRepresentation.suffix(half))
+    }
 
     init(publicKeyObject: CBOR, algorithm: COSEAlgorithmIdentifier) throws {
         self.algorithm = algorithm
@@ -115,23 +151,31 @@ struct EC2PublicKey: PublicKey, Sendable {
         // Curve is key -1 - or -0 for SwiftCBOR
         // X Coordinate is key -2, or NegativeInt 1 for SwiftCBOR
         // Y Coordinate is key -3, or NegativeInt 2 for SwiftCBOR
-        guard let curveRaw = publicKeyObject[COSEKey.crv.cbor],
-            case let .unsignedInt(curve) = curveRaw,
-            let coseCurve = COSECurve(rawValue: curve) else {
-            throw WebAuthnError.invalidCurve
-        }
+        guard let coseCurve = publicKeyObject[COSEKey.crv].flatMap(UInt64.init).flatMap(COSECurve.init(rawValue:))
+        else { throw WebAuthnError.invalidCurve }
         self.curve = coseCurve
 
-        guard let xCoordRaw = publicKeyObject[COSEKey.x.cbor],
-              case let .byteString(xCoordinateBytes) = xCoordRaw else {
-            throw WebAuthnError.invalidXCoordinate
-        }
+        guard 
+            let xCoordRaw = publicKeyObject[COSEKey.x],
+            case let .byteString(xCoordinateBytes) = xCoordRaw
+        else { throw WebAuthnError.invalidXCoordinate }
         xCoordinate = xCoordinateBytes
-        guard let yCoordRaw = publicKeyObject[COSEKey.y.cbor],
-              case let .byteString(yCoordinateBytes) = yCoordRaw else {
-            throw WebAuthnError.invalidYCoordinate
-        }
+        
+        guard 
+            let yCoordRaw = publicKeyObject[COSEKey.y],
+            case let .byteString(yCoordinateBytes) = yCoordRaw
+        else { throw WebAuthnError.invalidYCoordinate }
         yCoordinate = yCoordinateBytes
+    }
+    
+    var bytes: [UInt8] {
+        CBOR.encodeSortedPairs([
+            (COSEKey.kty, .signedInt(COSEKeyType.ellipticKey)),
+            (COSEKey.alg, .signedInt(algorithm)),
+            (COSEKey.crv, .signedInt(curve)),
+            (COSEKey.x, .byteString(Array(xCoordinate))),
+            (COSEKey.y, .byteString(Array(yCoordinate))),
+        ])
     }
 
     func verify(signature: some DataProtocol, data: some DataProtocol) throws {
@@ -171,17 +215,26 @@ struct RSAPublicKeyData: PublicKey, Sendable {
     init(publicKeyObject: CBOR, algorithm: COSEAlgorithmIdentifier) throws {
         self.algorithm = algorithm
 
-        guard let nRaw = publicKeyObject[COSEKey.n.cbor],
-              case let .byteString(nBytes) = nRaw else {
-            throw WebAuthnError.invalidModulus
-        }
+        guard 
+            let nRaw = publicKeyObject[COSEKey.n],
+            case let .byteString(nBytes) = nRaw
+        else { throw WebAuthnError.invalidModulus }
         n = nBytes
 
-        guard let eRaw = publicKeyObject[COSEKey.e.cbor],
-              case let .byteString(eBytes) = eRaw else {
-            throw WebAuthnError.invalidExponent
-        }
+        guard 
+            let eRaw = publicKeyObject[COSEKey.e],
+            case let .byteString(eBytes) = eRaw
+        else { throw WebAuthnError.invalidExponent }
         e = eBytes
+    }
+    
+    var bytes: [UInt8] {
+        CBOR.encodeSortedPairs([
+            (COSEKey.kty, .signedInt(COSEKeyType.rsaKey)),
+            (COSEKey.alg, .signedInt(algorithm)),
+            (COSEKey.n, .byteString(Array(n))),
+            (COSEKey.e, .byteString(Array(e))),
+        ])
     }
 
     func verify(signature: some DataProtocol, data: some DataProtocol) throws {
@@ -227,6 +280,15 @@ struct OKPPublicKey: PublicKey, Sendable {
             throw WebAuthnError.invalidXCoordinate
         }
         xCoordinate = xCoordinateBytes
+    }
+    
+    var bytes: [UInt8] {
+        CBOR.encodeSortedPairs([
+            (COSEKey.kty, .signedInt(COSEKeyType.octetKey)),
+            (COSEKey.alg, .signedInt(algorithm)),
+            (COSEKey.crv, .unsignedInt(curve)),
+            (COSEKey.x, .byteString(xCoordinate)),
+        ])
     }
 
     func verify(signature: some DataProtocol, data: some DataProtocol) throws {

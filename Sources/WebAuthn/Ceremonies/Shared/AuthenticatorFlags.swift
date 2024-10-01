@@ -12,7 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-struct AuthenticatorFlags: Equatable, Sendable {
+public struct AuthenticatorFlags: Equatable, Sendable {
 
     /**
      Taken from https://w3c.github.io/webauthn/#sctn-authenticator-data
@@ -33,12 +33,12 @@ struct AuthenticatorFlags: Equatable, Sendable {
         case extensionDataIncluded = 7
     }
 
-    let userPresent: Bool
-    let userVerified: Bool
-    let isBackupEligible: Bool
-    let isCurrentlyBackedUp: Bool
-    let attestedCredentialData: Bool
-    let extensionDataIncluded: Bool
+    var userPresent: Bool = false
+    var userVerified: Bool = false
+    var isBackupEligible: Bool = false
+    var isCurrentlyBackedUp: Bool = false
+    var attestedCredentialData: Bool = false
+    var extensionDataIncluded: Bool = false
 
     var deviceType: VerifiedAuthentication.CredentialDeviceType {
         isBackupEligible ? .multiDevice : .singleDevice
@@ -57,5 +57,16 @@ extension AuthenticatorFlags {
         isCurrentlyBackedUp = Self.isFlagSet(on: byte, at: .backupState)
         attestedCredentialData = Self.isFlagSet(on: byte, at: .attestedCredentialDataIncluded)
         extensionDataIncluded = Self.isFlagSet(on: byte, at: .extensionDataIncluded)
+    }
+    
+    public var bytes: [UInt8] {
+        var byte: UInt8 = 0
+        byte |= userPresent ? 1 << Bit.userPresent.rawValue : 0
+        byte |= userVerified ? 1 << Bit.userVerified.rawValue : 0
+        byte |= isBackupEligible ? 1 << Bit.backupEligible.rawValue : 0
+        byte |= isCurrentlyBackedUp ? 1 << Bit.backupState.rawValue : 0
+        byte |= attestedCredentialData ? 1 << Bit.attestedCredentialDataIncluded.rawValue : 0
+        byte |= extensionDataIncluded ? 1 << Bit.extensionDataIncluded.rawValue : 0
+        return [byte]
     }
 }
