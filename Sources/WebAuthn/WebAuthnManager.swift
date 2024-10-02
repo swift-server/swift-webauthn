@@ -70,7 +70,13 @@ public struct WebAuthnManager: Sendable {
             relyingParty: .init(id: configuration.relyingPartyID, name: configuration.relyingPartyName),
             publicKeyCredentialParameters: publicKeyCredentialParameters,
             timeout: timeout,
-            attestation: attestation
+            attestation: attestation,
+            hints: [],
+            extensions: .init(credProps: true),
+            excludeCredentials: [],
+            authenticatorSelection: .init(residentKey: .preferred,
+                                          requireResidentKey: false,
+                                          userVerification: .preferred)
         )
     }
 
