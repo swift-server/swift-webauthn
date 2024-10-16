@@ -17,13 +17,30 @@ import SwiftCBOR
 
 /// Data created and/ or used by the authenticator during authentication/ registration.
 /// The data contains, for example, whether a user was present or verified.
-struct AuthenticatorData: Equatable, Sendable {
-    let relyingPartyIDHash: [UInt8]
-    let flags: AuthenticatorFlags
-    let counter: UInt32
+public struct AuthenticatorData: Equatable, Sendable {
+    var relyingPartyIDHash: [UInt8]
+    var flags: AuthenticatorFlags
+    var counter: UInt32
     /// For attestation signatures this value will be set. For assertion signatures not.
-    let attestedData: AttestedCredentialData?
-    let extData: [UInt8]?
+    var attestedData: AttestedCredentialData?
+    var extData: [UInt8]?
+
+    init(
+        relyingPartyIDHash: SHA256Digest,
+        flags: AuthenticatorFlags,
+        counter: UInt32,
+        attestedData: AttestedCredentialData? = nil,
+        extData: [UInt8]? = nil
+    ) {
+        self.relyingPartyIDHash = Array(relyingPartyIDHash)
+        var flags = flags
+        flags.attestedCredentialData = attestedData != nil
+        flags.extensionDataIncluded = extData != nil
+        self.flags = flags
+        self.counter = counter
+        self.attestedData = attestedData
+        self.extData = extData
+    }
 }
 
 extension AuthenticatorData {
@@ -118,6 +135,29 @@ extension AuthenticatorData {
         let length = AAGUID.size + 2 + data.credentialID.count + data.publicKey.count
 
         return (data, length)
+    }
+    
+    public var bytes: [UInt8] {
+        assert(relyingPartyIDHash.count == 32, "AuthenticatorData contains relyingPartyIDHash of length \(relyingPartyIDHash.count), which will likely not be decodable.")
+        var bytes: [UInt8] = []
+        
+        bytes += relyingPartyIDHash
+        bytes += flags.bytes
+        bytes += withUnsafeBytes(of: UInt32(counter).bigEndian) { Array($0) }
+        
+        assert((!flags.attestedCredentialData && attestedData == nil) || (flags.attestedCredentialData && attestedData != nil), "AuthenticatorData contains mismatch between attestedCredentialData flag and attestedData, which will likely not be decodable.")
+        if flags.attestedCredentialData, let attestedData {
+            bytes += attestedData.authenticatorAttestationGUID.bytes
+            bytes += withUnsafeBytes(of: UInt16(attestedData.credentialID.count).bigEndian) { Array($0) }
+            bytes += attestedData.credentialID
+            bytes += attestedData.publicKey
+        }
+        
+        assert((!flags.extensionDataIncluded && extData == nil) || (flags.extensionDataIncluded && extData != nil), "AuthenticatorData contains mismatch between extensionDataIncluded flag and extData, which will likely not be decodable.")
+        if flags.extensionDataIncluded, let extData {
+            bytes += extData
+        }
+        return bytes
     }
 }
 
