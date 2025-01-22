@@ -153,6 +153,8 @@ struct EC2PublicKey: PublicKey, Sendable {
                 .isValidSignature(ecdsaSignature, for: data) else {
                 throw WebAuthnError.invalidSignature
             }
+        default:
+            throw WebAuthnError.unsupportedCredentialPublicKeyAlgorithm
         }
     }
 }
@@ -184,26 +186,26 @@ struct RSAPublicKeyData: PublicKey, Sendable {
     }
 
     func verify(signature: some DataProtocol, data: some DataProtocol) throws {
-        throw WebAuthnError.unsupported
-        // let rsaSignature = _RSA.Signing.RSASignature(derRepresentation: signature)
+        //throw WebAuthnError.unsupported
+        let rsaSignature = _RSA.Signing.RSASignature(rawRepresentation: signature)
 
-        // var rsaPadding: _RSA.Signing.Padding
-        // switch algorithm {
-        // case .algRS1, .algRS256, .algRS384, .algRS512:
-        //     rsaPadding = .insecurePKCS1v1_5
-        // case .algPS256, .algPS384, .algPS512:
-        //     rsaPadding = .PSS
-        // default:
-        //     throw WebAuthnError.unsupportedCOSEAlgorithmForRSAPublicKey
-        // }
+        var rsaPadding: _RSA.Signing.Padding
+        switch algorithm {
+        case .algRS1, .algRS256, .algRS384, .algRS512:
+            rsaPadding = .insecurePKCS1v1_5
+        case .algPS256, .algPS384, .algPS512:
+            rsaPadding = .PSS
+        default:
+            throw WebAuthnError.unsupportedCOSEAlgorithmForRSAPublicKey
+        }
 
-        // guard try _RSA.Signing.PublicKey(rawRepresentation: rawRepresentation).isValidSignature(
-        //     rsaSignature,
-        //     for: data,
-        //     padding: rsaPadding
-        // ) else {
-        //     throw WebAuthnError.invalidSignature
-        // }
+        guard try _RSA.Signing.PublicKey(derRepresentation: rawRepresentation).isValidSignature(
+            rsaSignature,
+            for: data,
+            padding: rsaPadding
+        ) else {
+            throw WebAuthnError.invalidSignature
+        }
     }
 }
 

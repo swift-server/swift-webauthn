@@ -11,10 +11,14 @@
 //
 //===----------------------------------------------------------------------===//
 
-package struct ChallengeGenerator: Sendable {
-    var generate: @Sendable () -> [UInt8]
+public protocol ChallengeGenerator : Sendable {
+    func generate() -> [UInt8]
+}
 
-    package static var live: Self {
-        .init(generate: { [UInt8].random(count: 32) })
+public struct DefaultChallengeGenerator: Sendable, ChallengeGenerator {
+    public func generate() -> [UInt8] {
+        return [UInt8].random(count: 32)
     }
+    
+    public static let live = DefaultChallengeGenerator()
 }

@@ -22,26 +22,26 @@ public struct PublicKeyCredentialRequestOptions: Encodable, Sendable {
     /// A challenge that the authenticator signs, along with other data, when producing an authentication assertion
     ///
     /// When encoding using `Encodable` this is encoded as base64url.
-    public let challenge: [UInt8]
+    public var challenge: [UInt8]
 
     /// A time, in seconds, that the caller is willing to wait for the call to complete. This is treated as a
     /// hint, and may be overridden by the client.
     ///
     /// - Note: When encoded, this value is represented in milleseconds as a ``UInt32``.
     /// See https://www.w3.org/TR/webauthn-2/#dictionary-assertion-options
-    public let timeout: Duration?
+    public var timeout: Duration?
 
     /// The ID of the Relying Party making the request.
     ///
     /// This is configured on ``WebAuthnManager`` before its ``WebAuthnManager/beginAuthentication(timeout:allowCredentials:userVerification:)`` method is called.
     /// - Note: When encoded, this field appears as `rpId` to match the expectations of `navigator.credentials.get()`.
-    public let relyingPartyID: String
+    public var relyingPartyID: String
 
     /// Optionally used by the client to find authenticators eligible for this authentication ceremony.
-    public let allowCredentials: [PublicKeyCredentialDescriptor]?
+    public var allowCredentials: [PublicKeyCredentialDescriptor]?
 
     /// Specifies whether the user should be verified during the authentication ceremony.
-    public let userVerification: UserVerificationRequirement?
+    public var userVerification: UserVerificationRequirement?
 
     // let extensions: [String: Any]
 
@@ -53,6 +53,35 @@ public struct PublicKeyCredentialRequestOptions: Encodable, Sendable {
         try container.encode(relyingPartyID, forKey: .rpID)
         try container.encodeIfPresent(allowCredentials, forKey: .allowCredentials)
         try container.encodeIfPresent(userVerification, forKey: .userVerification)
+    }
+    
+    public init(challenge: [UInt8], timeout: Duration?, relyingPartyID: String, allowCredentials: [PublicKeyCredentialDescriptor]?, userVerification: UserVerificationRequirement?) {
+        self.challenge = challenge
+        self.timeout = timeout
+        self.relyingPartyID = relyingPartyID
+        self.allowCredentials = allowCredentials
+        self.userVerification = userVerification
+    }
+
+    public init(_ src : PublicKeyCredentialRequestOptions) {
+        self.challenge=src.challenge
+        self.timeout=src.timeout
+        self.relyingPartyID=src.relyingPartyID
+        self.allowCredentials=src.allowCredentials
+        self.userVerification = src.userVerification
+    }
+    
+    public init(from decoder: any Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+
+        self.challenge = try values.decodeBytesFromURLEncodedBase64(forKey: .challenge)
+
+        if let timeout = try values.decodeIfPresent(UInt32.self, forKey:.timeout) {
+            self.timeout=Duration.milliseconds(timeout)
+        }
+        self.relyingPartyID=try values.decode(String.self, forKey:.rpID)
+        self.allowCredentials=try values.decodeIfPresent([PublicKeyCredentialDescriptor].self,forKey: .allowCredentials)
+        self.userVerification=try values.decodeIfPresent(UserVerificationRequirement.self,forKey: .userVerification)
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -67,10 +96,10 @@ public struct PublicKeyCredentialRequestOptions: Encodable, Sendable {
 /// Information about a generated credential.
 ///
 /// When encoding using `Encodable`, `id` is encoded as base64url.
-public struct PublicKeyCredentialDescriptor: Equatable, Encodable, Sendable {
+public struct PublicKeyCredentialDescriptor: Equatable, Codable, Sendable {
     /// Defines hints as to how clients might communicate with a particular authenticator in order to obtain an
     /// assertion for a specific credential
-    public enum AuthenticatorTransport: String, Equatable, Encodable, Sendable {
+    public enum AuthenticatorTransport: String, Equatable, Codable, Sendable {
         /// Indicates the respective authenticator can be contacted over removable USB.
         case usb
         /// Indicates the respective authenticator can be contacted over Near Field Communication (NFC).
@@ -114,6 +143,14 @@ public struct PublicKeyCredentialDescriptor: Equatable, Encodable, Sendable {
         try container.encode(id.base64URLEncodedString(), forKey: .id)
         try container.encodeIfPresent(transports, forKey: .transports)
     }
+    
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let type = try container.decode(CredentialType.self,forKey: .type)
+        let id = try container.decodeBytesFromURLEncodedBase64( forKey: .id)
+        let transports = try container.decodeIfPresent([AuthenticatorTransport].self,forKey:.transports) ?? []
+        self.init(type: type, id:id, transports: transports)
+    }
 
     private enum CodingKeys: String, CodingKey {
         case type
@@ -124,7 +161,7 @@ public struct PublicKeyCredentialDescriptor: Equatable, Encodable, Sendable {
 
 /// The Relying Party may require user verification for some of its operations but not for others, and may use this
 /// type to express its needs.
-public enum UserVerificationRequirement: String, Encodable, Sendable {
+public enum UserVerificationRequirement: String, Codable, Sendable {
     /// The Relying Party requires user verification for the operation and will fail the overall ceremony if the
     /// user wasn't verified.
     case required
