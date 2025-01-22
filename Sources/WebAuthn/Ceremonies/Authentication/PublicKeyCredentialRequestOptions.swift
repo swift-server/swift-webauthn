@@ -20,7 +20,7 @@ import SwiftOpenAPI
 ///
 /// - SeeAlso: https://www.w3.org/TR/webauthn-2/#dictionary-assertion-options
 @OpenAPIDescriptable
-public struct PublicKeyCredentialRequestOptions: Encodable, Sendable {
+public struct PublicKeyCredentialRequestOptions: Codable, Sendable {
     /// A challenge that the authenticator signs, along with other data, when producing an authentication assertion
     ///
     /// When encoding using `Encodable` this is encoded as base64url.
