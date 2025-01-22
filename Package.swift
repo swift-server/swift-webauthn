@@ -26,8 +26,9 @@ let package = Package(
         .package(url: "https://github.com/unrelentingtech/SwiftCBOR.git", from: "0.4.7"),
         .package(url: "https://github.com/apple/swift-crypto.git", "2.0.0" ..< "4.0.0"),
         .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
-        .package(url: "https://github.com/swiftlang/swift-docc-plugin.git", from: "1.1.0")
-    ],
+        .package(url: "https://github.com/swiftlang/swift-docc-plugin.git", from: "1.1.0"),
+        .package(url: "https://github.com/dankinsoid/VaporToOpenAPI.git", from: "4.5.0"),
+  ],
     targets: [
         .target(
             name: "WebAuthn",
@@ -36,7 +37,8 @@ let package = Package(
                 .product(name: "Crypto", package: "swift-crypto"),
                 .product(name: "_CryptoExtras", package: "swift-crypto"),
                 .product(name: "Logging", package: "swift-log"),
-            ],
+                .product(name:"VaporToOpenAPI",package:"VaporToOpenAPI"),
+   ],
             swiftSettings: [.enableExperimentalFeature("StrictConcurrency=complete")]
         ),
         .testTarget(

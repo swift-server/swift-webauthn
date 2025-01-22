@@ -12,12 +12,14 @@
 //===----------------------------------------------------------------------===//
 
 import Foundation
+import SwiftOpenAPI
 
 /// The `PublicKeyCredentialRequestOptions` gets passed to the WebAuthn API (`navigator.credentials.get()`)
 ///
 /// When encoding using `Encodable`, the byte arrays are encoded as base64url.
 ///
 /// - SeeAlso: https://www.w3.org/TR/webauthn-2/#dictionary-assertion-options
+@OpenAPIDescriptable
 public struct PublicKeyCredentialRequestOptions: Encodable, Sendable {
     /// A challenge that the authenticator signs, along with other data, when producing an authentication assertion
     ///
@@ -50,7 +52,7 @@ public struct PublicKeyCredentialRequestOptions: Encodable, Sendable {
 
         try container.encode(challenge.base64URLEncodedString(), forKey: .challenge)
         try container.encodeIfPresent(timeout?.milliseconds, forKey: .timeout)
-        try container.encode(relyingPartyID, forKey: .rpID)
+        try container.encode(relyingPartyID, forKey: .relyingPartyID)
         try container.encodeIfPresent(allowCredentials, forKey: .allowCredentials)
         try container.encodeIfPresent(userVerification, forKey: .userVerification)
     }
@@ -79,7 +81,7 @@ public struct PublicKeyCredentialRequestOptions: Encodable, Sendable {
         if let timeout = try values.decodeIfPresent(UInt32.self, forKey:.timeout) {
             self.timeout=Duration.milliseconds(timeout)
         }
-        self.relyingPartyID=try values.decode(String.self, forKey:.rpID)
+        self.relyingPartyID=try values.decode(String.self, forKey:.relyingPartyID)
         self.allowCredentials=try values.decodeIfPresent([PublicKeyCredentialDescriptor].self,forKey: .allowCredentials)
         self.userVerification=try values.decodeIfPresent(UserVerificationRequirement.self,forKey: .userVerification)
     }
@@ -87,7 +89,7 @@ public struct PublicKeyCredentialRequestOptions: Encodable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case challenge
         case timeout
-        case rpID = "rpId"
+        case relyingPartyID = "rpId"
         case allowCredentials
         case userVerification
     }
