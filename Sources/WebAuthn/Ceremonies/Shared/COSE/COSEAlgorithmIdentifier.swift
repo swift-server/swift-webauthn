@@ -25,8 +25,6 @@ public enum COSEAlgorithmIdentifier: Int, RawRepresentable, CaseIterable, Codabl
 	/// AlgES512 ECDSA with SHA-512
 	case algES512 = -36
 
-	// We don't support RSA yet
-
 	/// AlgRS1 RSASSA-PKCS1-v1_5 with SHA-1
 	case algRS1 = -65535
 	/// AlgRS256 RSASSA-PKCS1-v1_5 with SHA-256
