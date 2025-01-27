@@ -13,8 +13,16 @@
 
 @testable import WebAuthn
 
+public struct MockChallengeGenerator : ChallengeGenerator {
+    
+    let challenge : [UInt8]
+    public func generate() -> [UInt8] {
+        return challenge
+    }
+    
+}
 extension ChallengeGenerator {
-    static func mock(generate: [UInt8]) -> Self {
-        ChallengeGenerator(generate: { generate })
+    static func mock(generate: [UInt8]) -> ChallengeGenerator {
+        MockChallengeGenerator(challenge: generate)
     }
 }

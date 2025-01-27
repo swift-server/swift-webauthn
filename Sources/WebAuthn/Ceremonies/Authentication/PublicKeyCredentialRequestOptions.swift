@@ -57,7 +57,12 @@ public struct PublicKeyCredentialRequestOptions: Codable, Sendable {
         try container.encodeIfPresent(userVerification, forKey: .userVerification)
     }
     
-    public init(challenge: [UInt8], timeout: Duration?, relyingPartyID: String, allowCredentials: [PublicKeyCredentialDescriptor]?, userVerification: UserVerificationRequirement?) {
+    public init(
+        challenge: [UInt8],
+        timeout: Duration?,
+        relyingPartyID: String,
+        allowCredentials: [PublicKeyCredentialDescriptor]?,
+        userVerification: UserVerificationRequirement?) {
         self.challenge = challenge
         self.timeout = timeout
         self.relyingPartyID = relyingPartyID
@@ -65,14 +70,6 @@ public struct PublicKeyCredentialRequestOptions: Codable, Sendable {
         self.userVerification = userVerification
     }
 
-    public init(_ src : PublicKeyCredentialRequestOptions) {
-        self.challenge=src.challenge
-        self.timeout=src.timeout
-        self.relyingPartyID=src.relyingPartyID
-        self.allowCredentials=src.allowCredentials
-        self.userVerification = src.userVerification
-    }
-    
     public init(from decoder: any Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
 

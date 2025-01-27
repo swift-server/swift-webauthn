@@ -44,11 +44,19 @@ struct TestAttestationObjectBuilder {
         self.wrapped = wrapped
     }
 
-    func validMock() -> Self {
+    func validMockECDSA() -> Self {
         var temp = self
         temp.wrapped.fmt = .utf8String("none")
         temp.wrapped.attStmt = .map([:])
-        temp.wrapped.authData = .byteString(TestAuthDataBuilder().validMock().build().byteArrayRepresentation)
+        temp.wrapped.authData = .byteString(TestAuthDataBuilder().validMockECDSA().build().byteArrayRepresentation)
+        return temp
+    }
+    
+    func validMockRSA() -> Self {
+        var temp = self
+        temp.wrapped.fmt = .utf8String("none")
+        temp.wrapped.attStmt = .map([:])
+        temp.wrapped.authData = .byteString(TestAuthDataBuilder().validMockRSA().build().byteArrayRepresentation)
         return temp
     }
 

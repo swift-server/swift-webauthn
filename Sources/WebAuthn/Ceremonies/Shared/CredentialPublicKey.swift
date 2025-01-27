@@ -76,8 +76,7 @@ enum CredentialPublicKey: Sendable {
         case .ellipticKey:
             self = try .ec2(EC2PublicKey(publicKeyObject: publicKeyObject, algorithm: algorithm))
         case .rsaKey:
-            throw WebAuthnError.unsupported
-            // self = try .rsa(RSAPublicKeyData(publicKeyObject: publicKeyObject, algorithm: algorithm))
+            self = try .rsa(RSAPublicKeyData(publicKeyObject: publicKeyObject, algorithm: algorithm))
         case .octetKey:
             throw WebAuthnError.unsupported
             // self = try .okp(OKPPublicKey(publicKeyObject: publicKeyObject, algorithm: algorithm))
@@ -199,11 +198,11 @@ struct RSAPublicKeyData: PublicKey, Sendable {
             throw WebAuthnError.unsupportedCOSEAlgorithmForRSAPublicKey
         }
 
-        guard try _RSA.Signing.PublicKey(derRepresentation: rawRepresentation).isValidSignature(
+        guard try _RSA.Signing.PublicKey(n:n, e:e).isValidSignature(
             rsaSignature,
             for: data,
-            padding: rsaPadding
-        ) else {
+            padding: rsaPadding)
+        else {
             throw WebAuthnError.invalidSignature
         }
     }
