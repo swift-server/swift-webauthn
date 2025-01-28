@@ -16,7 +16,7 @@ import XCTest
 import SwiftCBOR
 import Crypto
 
-final class WebAuthnManagerAuthenticationTests: XCTestCase {
+final class WebAuthnManagerAuthenticationRSATests: XCTestCase {
     var webAuthnManager: WebAuthnManager!
 
     let challenge: [UInt8] = [1, 0, 1]
@@ -142,7 +142,7 @@ final class WebAuthnManagerAuthenticationTests: XCTestCase {
         let clientData = TestClientDataJSON(type: "webauthn.get").jsonBytes
         let clientDataHash = SHA256.hash(data: clientData)
         let signatureBase = Data(authenticatorData) + clientDataHash
-        let signature = try TestECCKeyPair.signature(data: signatureBase).derRepresentation
+        let signature = try TestRSAKeyPair.signature(data: signatureBase).rawRepresentation
 
         let verifiedAuthentication = try finishAuthentication(
             credentialID: credentialID,
@@ -161,13 +161,13 @@ final class WebAuthnManagerAuthenticationTests: XCTestCase {
         credentialID: [UInt8] = TestConstants.mockCredentialID,
         clientDataJSON: [UInt8] = TestClientDataJSON(type: "webauthn.get").jsonBytes,
         authenticatorData: [UInt8] = TestAuthDataBuilder().validAuthenticationMock().build().byteArrayRepresentation,
-        signature: [UInt8] = TestECCKeyPair.signature,
+        signature: [UInt8] = TestRSAKeyPair.signature,
         userHandle: [UInt8]? = "36323638424436452d303831452d344331312d413743332d334444304146333345433134".hexadecimal!,
         attestationObject: [UInt8]? = nil,
         authenticatorAttachment: AuthenticatorAttachment? = .platform,
         type: CredentialType = .publicKey,
         expectedChallenge: [UInt8] = TestConstants.mockChallenge,
-        credentialPublicKey: [UInt8] = TestCredentialPublicKeyBuilder().validMock().buildAsByteArray(),
+        credentialPublicKey: [UInt8] = TestCredentialPublicKeyBuilder().validMockRSA().buildAsByteArray(),
         credentialCurrentSignCount: UInt32 = 0,
         requireUserVerification: Bool = false
     ) throws -> VerifiedAuthentication {

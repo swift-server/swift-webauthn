@@ -16,7 +16,7 @@ import XCTest
 import SwiftCBOR
 
 // swiftlint:disable:next type_body_length
-final class WebAuthnManagerRegistrationTests: XCTestCase {
+final class WebAuthnManagerRegistrationRSATests: XCTestCase {
     var webAuthnManager: WebAuthnManager!
 
     let challenge: [UInt8] = [1, 0, 1]
@@ -109,7 +109,7 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
         try await assertThrowsError(
             await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
-                    .validMock()
+                    .validMockRSA()
                     .invalidAuthData()
                     .build()
                     .cborEncoded
@@ -122,7 +122,7 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
         try await assertThrowsError(
             await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
-                    .validMock()
+                    .validMockRSA()
                     .invalidFmt()
                     .build()
                     .cborEncoded
@@ -135,7 +135,7 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
         try await assertThrowsError(
             await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
-                    .validMock()
+                    .validMockRSA()
                     .missingAttStmt()
                     .build()
                     .cborEncoded
@@ -148,7 +148,7 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
         try await assertThrowsError(
             await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
-                    .validMock()
+                    .validMockRSA()
                     .zeroAuthData(byteCount: 36)
                     .build()
                     .cborEncoded
@@ -161,10 +161,10 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
         try await assertThrowsError(
             await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
-                    .validMock()
+                    .validMockRSA()
                     .authData(
                         TestAuthDataBuilder()
-                            .validMock()
+                            .validMockRSA()
                             .flags(0b01000001)
                             .noAttestedCredentialData()
                             .noExtensionData()
@@ -180,10 +180,10 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
         try await assertThrowsError(
             await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
-                    .validMock()
+                    .validMockRSA()
                     .authData(
                         TestAuthDataBuilder()
-                            .validMock()
+                            .validMockRSA()
                             .flags(0b00000001)
                             .attestedCredData(credentialPublicKey: [])
                     )
@@ -198,8 +198,8 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
         try await assertThrowsError(
             await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
-                    .validMock()
-                    .authData(TestAuthDataBuilder().validMock().noExtensionData().flags(0b11000001))
+                    .validMockRSA()
+                    .authData(TestAuthDataBuilder().validMockRSA().noExtensionData().flags(0b11000001))
                     .build()
                     .cborEncoded
             ),
@@ -211,10 +211,10 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
         try await assertThrowsError(
             await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
-                    .validMock()
+                    .validMockRSA()
                     .authData(
                         TestAuthDataBuilder()
-                            .validMock()
+                            .validMockRSA()
                             .attestedCredData(
                                 credentialIDLength: [0b00000000, 0b00000010], // we expect length = 2
                                 credentialID: [255], // but only get length = 1
@@ -233,8 +233,8 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
         try await assertThrowsError(
             await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
-                    .validMock()
-                    .authData(TestAuthDataBuilder().validMock().relyingPartyIDHash(fromRelyingPartyID: "invalid-id.com"))
+                    .validMockRSA()
+                    .authData(TestAuthDataBuilder().validMockRSA().relyingPartyIDHash(fromRelyingPartyID: "invalid-id.com"))
                     .build()
                     .cborEncoded
             ),
@@ -246,8 +246,8 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
         try await assertThrowsError(
             await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
-                    .validMock()
-                    .authData(TestAuthDataBuilder().validMock().flags(0b11000000))
+                    .validMockRSA()
+                    .authData(TestAuthDataBuilder().validMockRSA().flags(0b11000000))
                     .build()
                     .cborEncoded
             ),
@@ -259,8 +259,8 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
         try await assertThrowsError(
             await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
-                    .validMock()
-                    .authData(TestAuthDataBuilder().validMock().flags(0b11000001))
+                    .validMockRSA()
+                    .authData(TestAuthDataBuilder().validMockRSA().flags(0b11000001))
                     .build()
                     .cborEncoded,
                 requireUserVerification: true
@@ -273,7 +273,7 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
         try await assertThrowsError(
             await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
-                    .validMock()
+                    .validMockRSA()
                     .fmt("none")
                     .attStmt(.double(123))
                     .build()
@@ -295,14 +295,14 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
         /// This should succeed as it's on the border of being acceptable
         _ = try await finishRegistration(
             attestationObject: TestAttestationObjectBuilder()
-                .validMock()
+                .validMockRSA()
                 .authData(
                     TestAuthDataBuilder()
-                        .validMock()
+                        .validMockRSA()
                         .attestedCredData(
                             credentialIDLength: [0b000_00011, 0b1111_1111],
                             credentialID: Array(repeating: 0, count: 1023),
-                            credentialPublicKey: TestCredentialPublicKeyBuilder().validMock().buildAsByteArray()
+                            credentialPublicKey: TestCredentialPublicKeyBuilder().validMockRSA().buildAsByteArray()
                         )
                 )
                 .build()
@@ -313,14 +313,14 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
         try await assertThrowsError(
             await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
-                    .validMock()
+                    .validMockRSA()
                     .authData(
                         TestAuthDataBuilder()
-                            .validMock()
+                            .validMockRSA()
                             .attestedCredData(
                                 credentialIDLength: [0b000_00100, 0b0000_0000],
                                 credentialID: Array(repeating: 0, count: 1024),
-                                credentialPublicKey: TestCredentialPublicKeyBuilder().validMock().buildAsByteArray()
+                                credentialPublicKey: TestCredentialPublicKeyBuilder().validMockRSA().buildAsByteArray()
                             )
                     )
                     .build()
@@ -332,13 +332,13 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
 
     func testFinishRegistrationSucceeds() async throws {
         let credentialID: [UInt8] = [0, 1, 0, 1, 0, 1]
-        let credentialPublicKey: [UInt8] = TestCredentialPublicKeyBuilder().validMock().buildAsByteArray()
+        let credentialPublicKey: [UInt8] = TestCredentialPublicKeyBuilder().validMockRSA().buildAsByteArray()
         let authData = TestAuthDataBuilder()
-            .validMock()
+            .validMockRSA()
             .attestedCredData(credentialPublicKey: credentialPublicKey)
             .noExtensionData()
         let attestationObject = TestAttestationObjectBuilder()
-            .validMock()
+            .validMockRSA()
             .authData(authData)
             .build()
             .cborEncoded
@@ -367,7 +367,7 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
         type: CredentialType = .publicKey,
         rawID: [UInt8] = "e0fac9350509f71748d83782ccaf6b4c1462c615c70e255da1344e40887c8fcd".hexadecimal!,
         clientDataJSON: [UInt8] = TestClientDataJSON().jsonBytes,
-        attestationObject: [UInt8] = TestAttestationObjectBuilder().validMock().build().cborEncoded,
+        attestationObject: [UInt8] = TestAttestationObjectBuilder().validMockRSA().build().cborEncoded,
         requireUserVerification: Bool = false,
         confirmCredentialIDNotRegisteredYet: (String) async throws -> Bool = { _ in true }
     ) async throws -> Credential {

@@ -58,7 +58,7 @@ struct TestAuthDataBuilder {
         build().byteArrayRepresentation.base64URLEncodedString()
     }
 
-    func validMock() -> Self {
+    func validMockECDSA() -> Self {
         self
             .relyingPartyIDHash(fromRelyingPartyID: "example.com")
             .flags(0b11000101)
@@ -66,7 +66,20 @@ struct TestAuthDataBuilder {
             .attestedCredData(
                 credentialIDLength: [0b00000000, 0b00000001],
                 credentialID: [0b00000001],
-                credentialPublicKey: TestCredentialPublicKeyBuilder().validMock().buildAsByteArray()
+                credentialPublicKey: TestCredentialPublicKeyBuilder().validMockECDSA().buildAsByteArray()
+            )
+            .extensions([UInt8](repeating: 0, count: 20))
+    }
+    
+    func validMockRSA() -> Self {
+        self
+            .relyingPartyIDHash(fromRelyingPartyID: "example.com")
+            .flags(0b11000101)
+            .counter([0b00000000, 0b00000000, 0b00000000, 0b00000000])
+            .attestedCredData(
+                credentialIDLength: [0b00000000, 0b00000001],
+                credentialID: [0b00000001],
+                credentialPublicKey: TestCredentialPublicKeyBuilder().validMockRSA().buildAsByteArray()
             )
             .extensions([UInt8](repeating: 0, count: 20))
     }
