@@ -59,9 +59,10 @@ public struct WebAuthnManager: Sendable {
         user: PublicKeyCredentialUserEntity,
         timeout: Duration? = .seconds(5*60),
         attestation: AttestationConveyancePreference = .none,
-        publicKeyCredentialParameters: [PublicKeyCredentialParameters] = .supported
+        publicKeyCredentialParameters: [PublicKeyCredentialParameters] = .supported,
+        challenge : [UInt8]? = nil
     ) -> PublicKeyCredentialCreationOptions {
-        let challenge = challengeGenerator.generate()
+        let challenge =  challenge ?? challengeGenerator.generate()
 
         return PublicKeyCredentialCreationOptions(
             challenge: challenge,
@@ -138,9 +139,10 @@ public struct WebAuthnManager: Sendable {
     public func beginAuthentication(
         timeout: Duration? = .seconds(60),
         allowCredentials: [PublicKeyCredentialDescriptor]? = nil,
-        userVerification: UserVerificationRequirement = .preferred
+        userVerification: UserVerificationRequirement = .preferred,
+        challenge : [UInt8]? = nil
     ) throws -> PublicKeyCredentialRequestOptions {
-        let challenge = challengeGenerator.generate()
+        let challenge =  challenge ?? challengeGenerator.generate()
 
         return PublicKeyCredentialRequestOptions(
             challenge: challenge,

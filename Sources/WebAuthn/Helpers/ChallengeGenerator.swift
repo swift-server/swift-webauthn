@@ -11,10 +11,20 @@
 //
 //===----------------------------------------------------------------------===//
 
-package struct ChallengeGenerator: Sendable {
+import Foundation
+
+public struct ChallengeGenerator: Sendable {
     var generate: @Sendable () -> [UInt8]
 
-    package static var live: Self {
-        .init(generate: { [UInt8].random(count: 32) })
+    public static var live: Self {
+        .init(generate: {
+            // try to use secured random generator
+            var bytes = [UInt8](repeating: 0, count: 32)
+            let result = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
+            guard result == errSecSuccess else {
+                return [UInt8].random(count: 32)
+            }
+            return bytes
+        })
     }
 }
