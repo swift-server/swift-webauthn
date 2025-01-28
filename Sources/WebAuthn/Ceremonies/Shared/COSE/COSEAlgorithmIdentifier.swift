@@ -17,7 +17,7 @@ import Crypto
 /// COSEAlgorithmIdentifier From §5.10.5. A number identifying a cryptographic algorithm. The algorithm
 /// identifiers SHOULD be values registered in the IANA COSE Algorithms registry
 /// [https://www.w3.org/TR/webauthn/#biblio-iana-cose-algs-reg], for instance, -7 for "ES256" and -257 for "RS256".
-public enum COSEAlgorithmIdentifier: Int, RawRepresentable, CaseIterable, Encodable, Sendable {
+public enum COSEAlgorithmIdentifier: Int, RawRepresentable, CaseIterable, Codable, Sendable {
     /// AlgES256 ECDSA with SHA-256
 	case algES256 = -7
 	/// AlgES384 ECDSA with SHA-384

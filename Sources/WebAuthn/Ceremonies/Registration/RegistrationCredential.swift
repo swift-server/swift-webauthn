@@ -31,7 +31,7 @@ public struct RegistrationCredential: Sendable {
     public let attestationResponse: AuthenticatorAttestationResponse
 }
 
-extension RegistrationCredential: Decodable {
+extension RegistrationCredential: Codable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
@@ -47,6 +47,15 @@ extension RegistrationCredential: Decodable {
         self.rawID = rawID
         attestationResponse = try container.decode(AuthenticatorAttestationResponse.self, forKey: .attestationResponse)
     }
+    
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        try container.encode(id, forKey: .id)
+        try container.encode(rawID.base64URLEncodedString(), forKey: .rawID)
+        try container.encode(attestationResponse, forKey: .attestationResponse)
+    }
+
 
     private enum CodingKeys: String, CodingKey {
         case id
