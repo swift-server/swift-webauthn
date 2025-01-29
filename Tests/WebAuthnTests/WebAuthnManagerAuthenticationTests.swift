@@ -191,4 +191,5 @@ final class WebAuthnManagerAuthenticationTests: XCTestCase {
             requireUserVerification: requireUserVerification
         )
     }
+    
 }

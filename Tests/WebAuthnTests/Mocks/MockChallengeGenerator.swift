@@ -15,6 +15,6 @@
 
 extension ChallengeGenerator {
     static func mock(generate: [UInt8]) -> Self {
-        ChallengeGenerator(generate: { generate })
+        ChallengeGenerator(generate: { _ in generate })
     }
 }

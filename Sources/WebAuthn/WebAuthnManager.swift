@@ -43,6 +43,22 @@ public struct WebAuthnManager: Sendable {
         self.configuration = configuration
         self.challengeGenerator = challengeGenerator
     }
+    
+    /// Extract challenge custom data from challenge
+    ///
+    /// - Parameters:
+    ///   - challenge: The challenge to extract data from
+    ///
+    /// - Returns: The custom data part of the challenge
+    public func extractChallengeData(challenge : [UInt8]) -> [UInt8] {
+        if challenge.count <= ChallengeGenerator.challengeSize {
+            return []
+        }
+        
+        let arrayslice = challenge.suffix(from: ChallengeGenerator.challengeSize)
+        return Array(arrayslice)
+    }
+    
 
     /// Generate a new set of registration data to be sent to the client.
     ///
@@ -60,9 +76,9 @@ public struct WebAuthnManager: Sendable {
         timeout: Duration? = .seconds(5*60),
         attestation: AttestationConveyancePreference = .none,
         publicKeyCredentialParameters: [PublicKeyCredentialParameters] = .supported,
-        challenge : [UInt8]? = nil
+        challengeData : [UInt8] = []
     ) -> PublicKeyCredentialCreationOptions {
-        let challenge =  challenge ?? challengeGenerator.generate()
+        let challenge =  challengeGenerator.generate(challengeData)
 
         return PublicKeyCredentialCreationOptions(
             challenge: challenge,
@@ -140,9 +156,9 @@ public struct WebAuthnManager: Sendable {
         timeout: Duration? = .seconds(60),
         allowCredentials: [PublicKeyCredentialDescriptor]? = nil,
         userVerification: UserVerificationRequirement = .preferred,
-        challenge : [UInt8]? = nil
+        challengeData : [UInt8] = []
     ) throws -> PublicKeyCredentialRequestOptions {
-        let challenge =  challenge ?? challengeGenerator.generate()
+        let challenge =  challengeGenerator.generate(challengeData)
 
         return PublicKeyCredentialRequestOptions(
             challenge: challenge,

@@ -13,18 +13,16 @@
 
 import Foundation
 
-public struct ChallengeGenerator: Sendable {
-    var generate: @Sendable () -> [UInt8]
+package struct ChallengeGenerator: Sendable {
+    static let challengeSize: Int = 32
+    
+    var generate: @Sendable (_ : [UInt8]) -> [UInt8]
 
-    public static var live: Self {
-        .init(generate: {
-            // try to use secured random generator
-            var bytes = [UInt8](repeating: 0, count: 32)
-            let result = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
-            guard result == errSecSuccess else {
-                return [UInt8].random(count: 32)
-            }
-            return bytes
+    package static var live: Self {
+        .init(generate: { challengeData in
+            var randomData = [UInt8].random(count: challengeSize)
+            randomData.append(contentsOf: challengeData)
+            return randomData
         })
     }
 }
