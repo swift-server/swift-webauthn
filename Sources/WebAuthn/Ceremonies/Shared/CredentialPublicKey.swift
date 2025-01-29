@@ -199,7 +199,7 @@ struct RSAPublicKeyData: PublicKey, Sendable {
         }
 
         guard try _RSA.Signing.PublicKey(n:n, e:e).isValidSignature(
-            rsaSignature,
+        rsaSignature,
             for: data,
             padding: rsaPadding)
         else {

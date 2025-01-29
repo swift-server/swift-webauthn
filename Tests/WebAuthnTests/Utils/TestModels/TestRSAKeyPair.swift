@@ -63,19 +63,20 @@ struct TestRSAKeyPair {
     }
     
     static var signature: [UInt8] {
-        let authenticatorData = TestAuthDataBuilder()
-            .validAuthenticationMock()
-        // .counter([0, 0, 0, 1])
-            .buildAsBase64URLEncoded()
-        
-        // Create a signature. This part is usually performed by the authenticator
-        let clientData: Data = TestClientDataJSON(type: "webauthn.get").jsonData
-        let clientDataHash = SHA256.hash(data: clientData)
-        let rawAuthenticatorData = authenticatorData.urlDecoded.decoded!
-        let signatureBase = rawAuthenticatorData + clientDataHash
-        // swiftlint:disable:next force_try
-        let signature = try! TestRSAKeyPair.signature(data: signatureBase).rawRepresentation
-        
-        return [UInt8](signature)
+        get throws {
+            let authenticatorData = TestAuthDataBuilder()
+                .validAuthenticationMock()
+                .buildAsBase64URLEncoded()
+            
+            // Create a signature. This part is usually performed by the authenticator
+            let clientData: Data = TestClientDataJSON(type: "webauthn.get").jsonData
+            let clientDataHash = SHA256.hash(data: clientData)
+            let rawAuthenticatorData = authenticatorData.urlDecoded.decoded!
+            let signatureBase = rawAuthenticatorData + clientDataHash
+            // swiftlint:disable:next force_try
+            let signature = try TestRSAKeyPair.signature(data: signatureBase).rawRepresentation
+            
+            return [UInt8](signature)
+        }
     }
 }

@@ -161,7 +161,7 @@ final class WebAuthnManagerAuthenticationECSDATests: XCTestCase {
         credentialID: [UInt8] = TestConstants.mockCredentialID,
         clientDataJSON: [UInt8] = TestClientDataJSON(type: "webauthn.get").jsonBytes,
         authenticatorData: [UInt8] = TestAuthDataBuilder().validAuthenticationMock().build().byteArrayRepresentation,
-        signature: [UInt8] = TestECCKeyPair.signature,
+        signature: [UInt8] = (try? TestECCKeyPair.signature) ?? [],
         userHandle: [UInt8]? = "36323638424436452d303831452d344331312d413743332d334444304146333345433134".hexadecimal!,
         attestationObject: [UInt8]? = nil,
         authenticatorAttachment: AuthenticatorAttachment? = .platform,
