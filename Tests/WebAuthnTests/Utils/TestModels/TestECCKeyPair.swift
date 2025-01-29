@@ -23,7 +23,7 @@ struct TestECCKeyPair {
     xk1shW3jTkWmRWY3MSr+CumivsCLz0YR4OkIHm8SAxGomGYF1dO0skj4
     -----END PRIVATE KEY-----
     """
-    
+
     static let publicKeyPEM = """
     -----BEGIN PUBLIC KEY-----
     MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEliG0CSKktS9RPBtmebjUj4EBmXLH
@@ -32,7 +32,7 @@ struct TestECCKeyPair {
     """
     static let publicKeyXCoordinate = "9621b40922a4b52f513c1b6679b8d48f81019972c7f3c64d6c856de34e45a645".hexadecimal!
     static let publicKeyYCoordinate = "6637312afe0ae9a2bec08bcf4611e0e9081e6f120311a8986605d5d3b4b248f8".hexadecimal!
-    
+
     static func signature(data: Data) throws -> P256.Signing.ECDSASignature {
         let privateKey = try P256.Signing.PrivateKey(pemRepresentation: privateKeyPEM)
         return try privateKey.signature(for: data)

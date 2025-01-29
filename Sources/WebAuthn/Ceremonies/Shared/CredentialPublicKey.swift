@@ -185,7 +185,6 @@ struct RSAPublicKeyData: PublicKey, Sendable {
     }
 
     func verify(signature: some DataProtocol, data: some DataProtocol) throws {
-        //throw WebAuthnError.unsupported
         let rsaSignature = _RSA.Signing.RSASignature(rawRepresentation: signature)
 
         var rsaPadding: _RSA.Signing.Padding
