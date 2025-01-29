@@ -25,7 +25,7 @@ public struct PublicKeyCredentialCreationOptions: Codable, Sendable {
     ///
     /// The Relying Party should store the challenge temporarily until the registration flow is complete. When
     /// encoding using `Encodable`, the challenge is base64url encoded.
-    public var challenge: [UInt8]
+    public let challenge: [UInt8]
 
     /// Contains names and an identifier for the user account performing the registration
     public var user: PublicKeyCredentialUserEntity

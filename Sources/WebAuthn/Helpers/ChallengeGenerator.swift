@@ -11,7 +11,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-public struct ChallengeGenerator: Sendable {
+package struct ChallengeGenerator: Sendable {
     var generate: @Sendable () -> [UInt8]
 
     package static var live: Self {
