@@ -44,11 +44,11 @@ public enum COSEAlgorithmIdentifier: Int, RawRepresentable, CaseIterable, Encoda
     
     func hashAndCompare(data: Data, to compareHash: Data) -> Bool {
         switch self {
-        case .algES256,.algRS256,.algPS256:
+        case .algES256, .algRS256, .algPS256:
             return SHA256.hash(data: data) == compareHash
-        case .algES384,.algRS384,.algPS384:
+        case .algES384, .algRS384, .algPS384:
             return SHA384.hash(data: data) == compareHash
-        case .algES512,.algRS512,.algPS512:
+        case .algES512, .algRS512, .algPS512:
             return SHA512.hash(data: data) == compareHash
         case .algRS1:
             return Insecure.SHA1.hash(data: data) == compareHash
