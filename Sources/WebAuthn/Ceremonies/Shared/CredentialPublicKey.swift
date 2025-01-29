@@ -198,13 +198,9 @@ struct RSAPublicKeyData: PublicKey, Sendable {
             throw WebAuthnError.unsupportedCOSEAlgorithmForRSAPublicKey
         }
 
-        guard try _RSA.Signing.PublicKey(n:n, e:e).isValidSignature(
-        rsaSignature,
-            for: data,
-            padding: rsaPadding)
-        else {
-            throw WebAuthnError.invalidSignature
-        }
+        let publicKey = try _RSA.Signing.PublicKey(n: n, e: e)
+        guard publicKey.isValidSignature(rsaSignature, for: data, padding: rsaPadding)
+        else { throw WebAuthnError.invalidSignature }
     }
 }
 
