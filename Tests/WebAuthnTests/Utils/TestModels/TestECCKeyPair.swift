@@ -50,7 +50,7 @@ struct TestECCKeyPair {
             let rawAuthenticatorData = authenticatorData.urlDecoded.decoded!
             let signatureBase = rawAuthenticatorData + clientDataHash
             // swiftlint:disable:next force_try
-            let signature = try! TestECCKeyPair.signature(data: signatureBase).derRepresentation
+            let signature = try TestECCKeyPair.signature(data: signatureBase).derRepresentation
             
             return [UInt8](signature)
         }
