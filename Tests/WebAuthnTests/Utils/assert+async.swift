@@ -11,22 +11,21 @@
 //
 //===----------------------------------------------------------------------===//
 
-import XCTest
+import Testing
 import WebAuthn
 
 func assertThrowsError<T, E: Error>(
     _ expression: @autoclosure () async throws -> T,
     _ message: @autoclosure () -> String = "",
-    file: StaticString = #filePath,
-    line: UInt = #line,
+    sourceLocation: SourceLocation = #_sourceLocation,
     _ errorHandler: (_ error: E) -> Void = { _ in }
 ) async {
     do {
         _ = try await expression()
-        XCTFail(message(), file: file, line: line)
+        Issue.record("\(message())", sourceLocation: sourceLocation)
     } catch {
         guard let error = error as? E else {
-            XCTFail("""
+            Issue.record("""
             Error was thrown, but didn't match expected type '\(E.self)'.
             Got error of type '\(type(of: error))'.
             Error: \(error)
@@ -40,11 +39,10 @@ func assertThrowsError<T, E: Error>(
 func assertThrowsError<T, E: Error & Equatable>(
     _ expression: @autoclosure () async throws -> T,
     _ message: @autoclosure () -> String = "",
-    file: StaticString = #filePath,
-    line: UInt = #line,
+    sourceLocation: SourceLocation = #_sourceLocation,
     expect: E
 ) async {
-    try await assertThrowsError(await expression(), message(), file: file, line: line) { error in
-        XCTAssertEqual(error, expect, message(), file: file, line: line)
+    try await assertThrowsError(await expression(), sourceLocation: sourceLocation) { error in
+        #expect(error == expect, Comment("\(message())"), sourceLocation: sourceLocation)
     }
 }

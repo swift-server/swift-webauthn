@@ -12,11 +12,11 @@
 //===----------------------------------------------------------------------===//
 
 @testable import WebAuthn
-import XCTest
+import Testing
 import SwiftCBOR
 
 // swiftlint:disable:next type_body_length
-final class WebAuthnManagerRegistrationTests: XCTestCase {
+struct WebAuthnManagerRegistrationTests {
     var webAuthnManager: WebAuthnManager!
 
     let challenge: [UInt8] = [1, 0, 1]
@@ -24,7 +24,7 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
     let relyingPartyID = "example.com"
     let relyingPartyOrigin = "https://example.com"
 
-    override func setUp() {
+    init() {
         let configuration = WebAuthnManager.Configuration(
             relyingPartyID: relyingPartyID,
             relyingPartyName: relyingPartyDisplayName,
@@ -34,8 +34,8 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
     }
 
     // MARK: - beginRegistration()
-
-    func testBeginRegistrationReturns() throws {
+    @Test
+    func beginRegistrationReturns()  {
         let user = PublicKeyCredentialUserEntity.mock
         let publicKeyCredentialParameter = PublicKeyCredentialParameters(type: .publicKey, alg: .algES256)
         let options = webAuthnManager.beginRegistration(
@@ -43,18 +43,19 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
             publicKeyCredentialParameters: [publicKeyCredentialParameter]
         )
 
-        XCTAssertEqual(options.challenge, challenge)
-        XCTAssertEqual(options.relyingParty.id, relyingPartyID)
-        XCTAssertEqual(options.relyingParty.name, relyingPartyDisplayName)
-        XCTAssertEqual(options.user.id, user.id)
-        XCTAssertEqual(options.user.displayName, user.displayName)
-        XCTAssertEqual(options.user.name, user.name)
-        XCTAssertEqual(options.publicKeyCredentialParameters, [publicKeyCredentialParameter])
+        #expect(options.challenge == challenge)
+        #expect(options.relyingParty.id == relyingPartyID)
+        #expect(options.relyingParty.name == relyingPartyDisplayName)
+        #expect(options.user.id == user.id)
+        #expect(options.user.displayName == user.displayName)
+        #expect(options.user.name == user.name)
+        #expect(options.publicKeyCredentialParameters == [publicKeyCredentialParameter])
     }
 
     // MARK: - finishRegistration()
-
-    func testFinishRegistrationFailsIfCeremonyTypeDoesNotMatch() async throws {
+    
+    @Test
+    func finishRegistrationFailsIfCeremonyTypeDoesNotMatch() async throws {
         var clientDataJSON = TestClientDataJSON()
         clientDataJSON.type = "webauthn.get"
         try await assertThrowsError(
@@ -62,8 +63,9 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
             expect: CollectedClientData.CollectedClientDataVerifyError.ceremonyTypeDoesNotMatch
         )
     }
-
-    func testFinishRegistrationFailsIfChallengeDoesNotMatch() async throws {
+    
+    @Test
+    func finishRegistrationFailsIfChallengeDoesNotMatch() async throws {
         var clientDataJSON = TestClientDataJSON()
         clientDataJSON.challenge = [0, 2, 4].base64URLEncodedString()
         try await assertThrowsError(
@@ -74,8 +76,9 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
             expect: CollectedClientData.CollectedClientDataVerifyError.challengeDoesNotMatch
         )
     }
-
-    func testFinishRegistrationFailsIfOriginDoesNotMatch() async throws {
+    
+    @Test
+    func finishRegistrationFailsIfOriginDoesNotMatch() async throws {
         var clientDataJSON = TestClientDataJSON()
         clientDataJSON.origin = "https://random-origin.org"
         // `webAuthnManager` is configured with origin = https://example.com
@@ -84,28 +87,32 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
             expect: CollectedClientData.CollectedClientDataVerifyError.originDoesNotMatch
         )
     }
-
-    func testFinishRegistrationFailsWithInvalidCredentialCreationType() async throws {
+    
+    @Test
+    func finishRegistrationFailsWithInvalidCredentialCreationType() async throws {
         try await assertThrowsError(
             await finishRegistration(type: "foo"),
             expect: WebAuthnError.invalidCredentialCreationType
         )
     }
 
-    func testFinishRegistrationFailsIfClientDataJSONDecodingFails() async throws {
+    @Test
+    func finishRegistrationFailsIfClientDataJSONDecodingFails() async throws {
         try await assertThrowsError(await finishRegistration(clientDataJSON: [0])) { (_: DecodingError) in
             return
         }
     }
-
-    func testFinishRegistrationFailsIfAttestationObjectIsNotBase64() async throws {
+    
+    @Test
+    func finishRegistrationFailsIfAttestationObjectIsNotBase64() async throws {
         try await assertThrowsError(
             await finishRegistration(attestationObject: []),
             expect: WebAuthnError.invalidAttestationObject
         )
     }
 
-    func testFinishRegistrationFailsIfAuthDataIsInvalid() async throws {
+    @Test
+    func finishRegistrationFailsIfAuthDataIsInvalid() async throws {
         try await assertThrowsError(
             await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
@@ -118,7 +125,8 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
         )
     }
 
-    func testFinishRegistrationFailsIfFmtIsInvalid() async throws {
+    @Test
+    func finishRegistrationFailsIfFmtIsInvalid() async throws {
         try await assertThrowsError(
             await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
@@ -131,7 +139,8 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
         )
     }
 
-    func testFinishRegistrationFailsIfAttStmtIsMissing() async throws {
+    @Test
+    func finishRegistrationFailsIfAttStmtIsMissing() async throws {
         try await assertThrowsError(
             await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
@@ -144,7 +153,8 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
         )
     }
 
-    func testFinishRegistrationFailsIfAuthDataIsTooShort() async throws {
+    @Test
+    func finishRegistrationFailsIfAuthDataIsTooShort() async throws {
         try await assertThrowsError(
             await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
@@ -157,7 +167,8 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
         )
     }
 
-    func testFinishRegistrationFailsIfAttestedCredentialDataFlagIsSetButThereIsNoCredentialData() async throws {
+    @Test
+    func finishRegistrationFailsIfAttestedCredentialDataFlagIsSetButThereIsNoCredentialData() async throws {
         try await assertThrowsError(
             await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
@@ -176,7 +187,8 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
         )
     }
 
-    func testFinishRegistrationFailsIfAttestedCredentialDataFlagIsNotSetButThereIsCredentialData() async throws {
+    @Test
+    func finishRegistrationFailsIfAttestedCredentialDataFlagIsNotSetButThereIsCredentialData() async throws {
         try await assertThrowsError(
             await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
@@ -194,7 +206,8 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
         )
     }
 
-    func testFinishRegistrationFailsIfExtensionDataFlagIsSetButThereIsNoExtensionData() async throws {
+    @Test
+    func finishRegistrationFailsIfExtensionDataFlagIsSetButThereIsNoExtensionData() async throws {
         try await assertThrowsError(
             await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
@@ -207,7 +220,8 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
         )
     }
 
-    func testFinishRegistrationFailsIfCredentialIdIsTooShort() async throws {
+    @Test
+    func finishRegistrationFailsIfCredentialIdIsTooShort() async throws {
         try await assertThrowsError(
             await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
@@ -229,7 +243,8 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
         )
     }
 
-    func testFinishRegistrationFailsIfRelyingPartyIDHashDoesNotMatch() async throws {
+    @Test
+    func finishRegistrationFailsIfRelyingPartyIDHashDoesNotMatch() async throws {
         try await assertThrowsError(
             await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
@@ -242,7 +257,8 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
         )
     }
 
-    func testFinishRegistrationFailsIfUserPresentFlagIsNotSet() async throws {
+    @Test
+    func finishRegistrationFailsIfUserPresentFlagIsNotSet() async throws {
         try await assertThrowsError(
             await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
@@ -255,7 +271,8 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
         )
     }
 
-    func testFinishRegistrationFailsIfUserVerificationFlagIsNotSetButRequired() async throws {
+    @Test
+    func finishRegistrationFailsIfUserVerificationFlagIsNotSetButRequired() async throws {
         try await assertThrowsError(
             await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
@@ -269,7 +286,8 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
         )
     }
 
-    func testFinishRegistrationFailsIfAttFmtIsNoneButAttStmtIsIncluded() async throws {
+    @Test
+    func finishRegistrationFailsIfAttFmtIsNoneButAttStmtIsIncluded() async throws {
         try await assertThrowsError(
             await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
@@ -284,14 +302,16 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
         )
     }
 
-    func testFinishRegistrationFailsIfRawIDIsTooLong() async throws {
+    @Test
+    func finishRegistrationFailsIfRawIDIsTooLong() async throws {
         try await assertThrowsError(
             await finishRegistration(rawID: [UInt8](repeating: 0, count: 1024)),
             expect: WebAuthnError.credentialRawIDTooLong
         )
     }
     
-    func testFinishAuthenticationFailsIfCredentialIDTooLong() async throws {
+    @Test
+    func finishAuthenticationFailsIfCredentialIDTooLong() async throws {
         /// This should succeed as it's on the border of being acceptable
         _ = try await finishRegistration(
             attestationObject: TestAttestationObjectBuilder()
@@ -330,7 +350,8 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
         )
     }
 
-    func testFinishRegistrationSucceeds() async throws {
+    @Test
+    func finishRegistrationSucceeds() async throws {
         let credentialID: [UInt8] = [0, 1, 0, 1, 0, 1]
         let credentialPublicKey: [UInt8] = TestCredentialPublicKeyBuilder().validMock().buildAsByteArray()
         let authData = TestAuthDataBuilder()
@@ -347,18 +368,19 @@ final class WebAuthnManagerRegistrationTests: XCTestCase {
             rawID: credentialID,
             attestationObject: attestationObject
         )
-        XCTAssertNotNil(credential)
+        #expect(credential != nil)
 
-        XCTAssertEqual(credential.id, credentialID.base64EncodedString().asString())
-        XCTAssertEqual(credential.publicKey, credentialPublicKey)
+        #expect(credential.id == credentialID.base64EncodedString().asString())
+        #expect(credential.publicKey == credentialPublicKey)
     }
-
-    func testFinishRegistrationFuzzying() async throws {
+    
+    @Test
+    func finishRegistrationFuzzying() async throws {
         for _ in 1...50 {
             let length = Int.random(in: 1...10_000_000)
             let randomAttestationObject = Array(repeating: UInt8.random(), count: length)
             let shouldBeNil = try? await finishRegistration(attestationObject: randomAttestationObject)
-            XCTAssertNil(shouldBeNil)
+            #expect(shouldBeNil == nil)
         }
     }
 
