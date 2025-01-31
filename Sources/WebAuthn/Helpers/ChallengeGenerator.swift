@@ -11,10 +11,18 @@
 //
 //===----------------------------------------------------------------------===//
 
+import Foundation
+
 package struct ChallengeGenerator: Sendable {
-    var generate: @Sendable () -> [UInt8]
+    static let challengeSize: Int = 32
+    
+    var generate: @Sendable (_ : [UInt8]) -> [UInt8]
 
     package static var live: Self {
-        .init(generate: { [UInt8].random(count: 32) })
+        .init(generate: { challengeData in
+            var randomData = [UInt8].random(count: challengeSize)
+            randomData.append(contentsOf: challengeData)
+            return randomData
+        })
     }
 }

@@ -25,7 +25,7 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
         )
 
         let mockChallenge = [UInt8](repeating: 0, count: 5)
-        let challengeGenerator = ChallengeGenerator(generate: { mockChallenge })
+        let challengeGenerator = ChallengeGenerator.mock(generate: mockChallenge )
         let webAuthnManager = WebAuthnManager(configuration: configuration, challengeGenerator: challengeGenerator)
 
         // Step 1.: Begin Registration
@@ -83,12 +83,12 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
         )
 
         XCTAssertEqual(credential.id, mockCredentialID.base64EncodedString().asString())
-        XCTAssertEqual(credential.attestationClientDataJSON.type, .create)
+        XCTAssertEqual(credential.attestationClientDataJSON.type, CollectedClientData.CeremonyType.create)
         XCTAssertEqual(credential.attestationClientDataJSON.origin, mockClientDataJSON.origin)
         XCTAssertEqual(credential.attestationClientDataJSON.challenge, mockChallenge.base64URLEncodedString())
         XCTAssertEqual(credential.isBackedUp, false)
         XCTAssertEqual(credential.signCount, 0)
-        XCTAssertEqual(credential.type, .publicKey)
+        XCTAssertEqual(credential.type, CredentialType.publicKey)
         XCTAssertEqual(credential.publicKey, mockCredentialPublicKey)
 
         // Step 3.: Begin Authentication
@@ -158,7 +158,7 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
 
         XCTAssertEqual(successfullAuthentication.newSignCount, 1)
         XCTAssertEqual(successfullAuthentication.credentialBackedUp, false)
-        XCTAssertEqual(successfullAuthentication.credentialDeviceType, .singleDevice)
+        XCTAssertEqual(successfullAuthentication.credentialDeviceType, VerifiedAuthentication.CredentialDeviceType.singleDevice)
         XCTAssertEqual(successfullAuthentication.credentialID, mockCredentialID.base64URLEncodedString())
 
         // We did it!
