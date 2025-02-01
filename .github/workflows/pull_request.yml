@@ -14,7 +14,6 @@ jobs:
       format_check_enabled: false
       license_header_check_enabled: false
       docs_check_enabled: false
-      yamllint_check_enabled: false
 
   unit-tests:
     name: Unit tests
