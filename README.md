@@ -47,6 +47,13 @@ For an authentication ceremony use the following two methods:
 - `WebAuthnManager.beginAuthentication()`
 - `WebAuthnManager.finishAuthentication()`
 
+## Contributing
+
+If you add any new files, please run the following command at the root of the repo to identify any missing license headers:
+```bash
+% PROJECTNAME="Swift WebAuthn" /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/swiftlang/github-workflows/refs/heads/main/.github/workflows/scripts/check-license-header.sh)"
+```
+
 ## Credits
 
 Swift WebAuthn is heavily inspired by existing WebAuthn libraries like

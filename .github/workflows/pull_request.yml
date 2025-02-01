@@ -12,7 +12,6 @@ jobs:
       license_header_check_project_name: "Swift WebAuthn"
       shell_check_enabled: false
       format_check_enabled: false
-      license_header_check_enabled: false
       docs_check_enabled: false
 
   unit-tests:
