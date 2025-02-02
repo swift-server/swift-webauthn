@@ -99,7 +99,7 @@ final class WebAuthnManagerIntegrationTests: XCTestCase {
             id: [UInt8](URLEncodedBase64(credential.id).urlDecoded.decoded!)
         )]
 
-        let authenticationOptions = try webAuthnManager.beginAuthentication(
+        let authenticationOptions = webAuthnManager.beginAuthentication(
             timeout: authenticationTimeout,
             allowCredentials: rememberedCredentials,
             userVerification: userVerification

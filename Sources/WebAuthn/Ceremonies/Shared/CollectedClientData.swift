@@ -34,11 +34,11 @@ public struct CollectedClientData: Codable, Hashable, Sendable {
     public let challenge: URLEncodedBase64
     public let origin: String
 
-    func verify(storedChallenge: [UInt8], ceremonyType: CeremonyType, relyingPartyOrigin: String) throws {
-        guard type == ceremonyType else { throw CollectedClientDataVerifyError.ceremonyTypeDoesNotMatch }
+    func verify(storedChallenge: [UInt8], ceremonyType: CeremonyType, relyingPartyOrigin: String) throws(CollectedClientDataVerifyError) {
+        guard type == ceremonyType else { throw .ceremonyTypeDoesNotMatch }
         guard challenge == storedChallenge.base64URLEncodedString() else {
-            throw CollectedClientDataVerifyError.challengeDoesNotMatch
+            throw .challengeDoesNotMatch
         }
-        guard origin == relyingPartyOrigin else { throw CollectedClientDataVerifyError.originDoesNotMatch }
+        guard origin == relyingPartyOrigin else { throw .originDoesNotMatch }
     }
 }
