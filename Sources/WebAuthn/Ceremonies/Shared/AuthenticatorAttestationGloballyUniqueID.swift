@@ -64,12 +64,12 @@ public struct AuthenticatorAttestationGloballyUniqueID: Hashable, Sendable {
 public typealias AAGUID = AuthenticatorAttestationGloballyUniqueID
 
 extension AuthenticatorAttestationGloballyUniqueID: Codable {
-    public init(from decoder: Decoder) throws {
+    public init(from decoder: any Decoder) throws {
         let container = try decoder.singleValueContainer()
         id = try container.decode(UUID.self)
     }
     
-    public func encode(to encoder: Encoder) throws {
+    public func encode(to encoder: any Encoder) throws {
         var container = encoder.singleValueContainer()
         try container.encode(id)
     }

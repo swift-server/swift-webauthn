@@ -26,12 +26,12 @@ public struct EncodedBase64: ExpressibleByStringLiteral, Codable, Hashable, Equa
         self.init(value)
     }
 
-    public init(from decoder: Decoder) throws {
+    public init(from decoder: any Decoder) throws {
         let container = try decoder.singleValueContainer()
         self.base64 = try container.decode(String.self)
     }
 
-    public func encode(to encoder: Encoder) throws {
+    public func encode(to encoder: any Encoder) throws {
         var container = encoder.singleValueContainer()
         try container.encode(self.base64)
     }

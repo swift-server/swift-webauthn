@@ -35,7 +35,7 @@ public struct AuthenticationCredential: Sendable {
 }
 
 extension AuthenticationCredential: Decodable {
-    public init(from decoder: Decoder) throws {
+    public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
         id = try container.decode(URLEncodedBase64.self, forKey: .id)
