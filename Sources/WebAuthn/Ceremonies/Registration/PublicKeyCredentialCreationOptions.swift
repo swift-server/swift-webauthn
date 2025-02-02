@@ -47,7 +47,7 @@ public struct PublicKeyCredentialCreationOptions: Encodable, Sendable {
     /// supported.
     public let attestation: AttestationConveyancePreference
 
-    public func encode(to encoder: Encoder) throws {
+    public func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
 
         try container.encode(challenge.base64URLEncodedString(), forKey: .challenge)
@@ -142,7 +142,7 @@ public struct PublicKeyCredentialUserEntity: Encodable, Sendable {
         self.displayName = displayName
     }
 
-    public func encode(to encoder: Encoder) throws {
+    public func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
 
         try container.encode(id.base64URLEncodedString(), forKey: .id)

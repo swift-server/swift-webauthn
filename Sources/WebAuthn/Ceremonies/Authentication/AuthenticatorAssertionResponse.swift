@@ -49,7 +49,7 @@ public struct AuthenticatorAssertionResponse: Sendable {
 }
 
 extension AuthenticatorAssertionResponse: Decodable {
-    public init(from decoder: Decoder) throws {
+    public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
         clientDataJSON = try container.decodeBytesFromURLEncodedBase64(forKey: .clientDataJSON)
