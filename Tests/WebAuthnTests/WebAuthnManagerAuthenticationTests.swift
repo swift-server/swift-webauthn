@@ -52,16 +52,15 @@ struct WebAuthnManagerAuthenticationTests {
 
     @Test
     func finishAuthenticationFailsIfCredentialTypeIsInvalid() throws {
-        try assertThrowsError(
-            finishAuthentication(type: "invalid"),
-            expect: WebAuthnError.invalidAssertionCredentialType
-        )
+        #expect(throws: WebAuthnError.invalidAssertionCredentialType) {
+            try finishAuthentication(type: "invalid")
+        }
     }
 
     @Test
     func finishAuthenticationFailsIfClientDataJSONDecodingFails() throws {
-        try assertThrowsError(finishAuthentication(clientDataJSON: [0])) { (_: DecodingError) in
-            return
+        #expect(throws: DecodingError.self) {
+            try finishAuthentication(clientDataJSON: [0])
         }
     }
     
@@ -69,68 +68,63 @@ struct WebAuthnManagerAuthenticationTests {
     func finishAuthenticationFailsIfCeremonyTypeDoesNotMatch() throws {
         var clientDataJSON = TestClientDataJSON()
         clientDataJSON.type = "webauthn.create"
-        try assertThrowsError(
-            finishAuthentication(clientDataJSON: clientDataJSON.jsonBytes),
-            expect: CollectedClientData.CollectedClientDataVerifyError.ceremonyTypeDoesNotMatch
-        )
+        #expect(throws: CollectedClientData.CollectedClientDataVerifyError.ceremonyTypeDoesNotMatch) {
+            try finishAuthentication(clientDataJSON: clientDataJSON.jsonBytes)
+        }
     }
 
     @Test
     func finishAuthenticationFailsIfRelyingPartyIDHashDoesNotMatch() throws {
-        try assertThrowsError(
-            finishAuthentication(
+        #expect(throws: WebAuthnError.relyingPartyIDHashDoesNotMatch) {
+            try finishAuthentication(
                 authenticatorData: TestAuthDataBuilder()
                     .validAuthenticationMock()
                     .relyingPartyIDHash(fromRelyingPartyID: "wrong-id.org")
                     .build()
                     .byteArrayRepresentation
-            ),
-            expect: WebAuthnError.relyingPartyIDHashDoesNotMatch
-        )
+            )
+        }
     }
 
     @Test
     func finishAuthenticationFailsIfUserPresentFlagIsNotSet() throws {
-        try assertThrowsError(
-            finishAuthentication(
+        #expect(throws: WebAuthnError.userPresentFlagNotSet) {
+            try finishAuthentication(
                 authenticatorData: TestAuthDataBuilder()
                     .validAuthenticationMock()
                     .flags(0b10000000)
                     .build()
                     .byteArrayRepresentation
-            ),
-            expect: WebAuthnError.userPresentFlagNotSet
-        )
+            )
+        }
     }
 
     @Test
     func finishAuthenticationFailsIfUserIsNotVerified() throws {
-        try assertThrowsError(
-            finishAuthentication(
+        #expect(throws: WebAuthnError.userVerifiedFlagNotSet) {
+            try finishAuthentication(
                 authenticatorData: TestAuthDataBuilder()
                     .validAuthenticationMock()
                     .flags(0b10000001)
                     .build()
                     .byteArrayRepresentation,
                 requireUserVerification: true
-            ),
-            expect: WebAuthnError.userVerifiedFlagNotSet
-        )
+            )
+        }
     }
 
     @Test
     func finishAuthenticationFailsIfCredentialCounterIsNotUpToDate() throws {
-        try assertThrowsError(
-            finishAuthentication(
+        #expect(throws: WebAuthnError.potentialReplayAttack) {
+            try finishAuthentication(
                 authenticatorData: TestAuthDataBuilder()
                     .validAuthenticationMock()
                     .counter([0, 0, 0, 1]) // signCount = 1
                     .build()
                     .byteArrayRepresentation,
                 credentialCurrentSignCount: 2
-            ),
-            expect: WebAuthnError.potentialReplayAttack
-        )
+            )
+        }
     }
 
     @Test

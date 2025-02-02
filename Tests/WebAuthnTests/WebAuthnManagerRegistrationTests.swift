@@ -58,23 +58,21 @@ struct WebAuthnManagerRegistrationTests {
     func finishRegistrationFailsIfCeremonyTypeDoesNotMatch() async throws {
         var clientDataJSON = TestClientDataJSON()
         clientDataJSON.type = "webauthn.get"
-        try await assertThrowsError(
-            await finishRegistration(clientDataJSON: clientDataJSON.jsonBytes),
-            expect: CollectedClientData.CollectedClientDataVerifyError.ceremonyTypeDoesNotMatch
-        )
+        await #expect(throws: CollectedClientData.CollectedClientDataVerifyError.ceremonyTypeDoesNotMatch) {
+            try await finishRegistration(clientDataJSON: clientDataJSON.jsonBytes)
+        }
     }
     
     @Test
     func finishRegistrationFailsIfChallengeDoesNotMatch() async throws {
         var clientDataJSON = TestClientDataJSON()
         clientDataJSON.challenge = [0, 2, 4].base64URLEncodedString()
-        try await assertThrowsError(
-            await finishRegistration(
+        await #expect(throws: CollectedClientData.CollectedClientDataVerifyError.challengeDoesNotMatch) {
+            try await finishRegistration(
                 challenge: [UInt8]("definitely another challenge".utf8),
                 clientDataJSON: clientDataJSON.jsonBytes
-            ),
-            expect: CollectedClientData.CollectedClientDataVerifyError.challengeDoesNotMatch
-        )
+            )
+        }
     }
     
     @Test
@@ -82,95 +80,88 @@ struct WebAuthnManagerRegistrationTests {
         var clientDataJSON = TestClientDataJSON()
         clientDataJSON.origin = "https://random-origin.org"
         // `webAuthnManager` is configured with origin = https://example.com
-        try await assertThrowsError(
-            await finishRegistration(clientDataJSON: clientDataJSON.jsonBytes),
-            expect: CollectedClientData.CollectedClientDataVerifyError.originDoesNotMatch
-        )
+        await #expect(throws: CollectedClientData.CollectedClientDataVerifyError.originDoesNotMatch) {
+            try await finishRegistration(clientDataJSON: clientDataJSON.jsonBytes)
+        }
     }
     
     @Test
     func finishRegistrationFailsWithInvalidCredentialCreationType() async throws {
-        try await assertThrowsError(
-            await finishRegistration(type: "foo"),
-            expect: WebAuthnError.invalidCredentialCreationType
-        )
+        await #expect(throws: WebAuthnError.invalidCredentialCreationType) {
+            try await finishRegistration(type: "foo")
+        }
     }
 
     @Test
     func finishRegistrationFailsIfClientDataJSONDecodingFails() async throws {
-        try await assertThrowsError(await finishRegistration(clientDataJSON: [0])) { (_: DecodingError) in
-            return
+        await #expect(throws: DecodingError.self) {
+            try await finishRegistration(clientDataJSON: [0])
         }
     }
     
     @Test
     func finishRegistrationFailsIfAttestationObjectIsNotBase64() async throws {
-        try await assertThrowsError(
-            await finishRegistration(attestationObject: []),
-            expect: WebAuthnError.invalidAttestationObject
-        )
+        await #expect(throws: WebAuthnError.invalidAttestationObject) {
+            try await finishRegistration(attestationObject: [])
+        }
     }
 
     @Test
     func finishRegistrationFailsIfAuthDataIsInvalid() async throws {
-        try await assertThrowsError(
-            await finishRegistration(
+        await #expect(throws: WebAuthnError.invalidAuthData) {
+            try await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
                     .validMock()
                     .invalidAuthData()
                     .build()
                     .cborEncoded
-            ),
-            expect: WebAuthnError.invalidAuthData
-        )
+            )
+        }
     }
 
     @Test
     func finishRegistrationFailsIfFmtIsInvalid() async throws {
-        try await assertThrowsError(
-            await finishRegistration(
+        await #expect(throws: WebAuthnError.invalidFmt) {
+            try await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
                     .validMock()
                     .invalidFmt()
                     .build()
                     .cborEncoded
-            ),
-            expect: WebAuthnError.invalidFmt
-        )
+            )
+        }
     }
 
     @Test
     func finishRegistrationFailsIfAttStmtIsMissing() async throws {
-        try await assertThrowsError(
-            await finishRegistration(
+        await #expect(throws: WebAuthnError.missingAttStmt) {
+            try await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
                     .validMock()
                     .missingAttStmt()
                     .build()
                     .cborEncoded
-            ),
-            expect: WebAuthnError.missingAttStmt
-        )
+            )
+        }
     }
 
     @Test
     func finishRegistrationFailsIfAuthDataIsTooShort() async throws {
-        try await assertThrowsError(
-            await finishRegistration(
+        await #expect(throws: WebAuthnError.authDataTooShort) {
+            try await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
                     .validMock()
                     .zeroAuthData(byteCount: 36)
                     .build()
                     .cborEncoded
-            ),
-            expect: WebAuthnError.authDataTooShort
-        )
+            )
+        }
     }
 
     @Test
     func finishRegistrationFailsIfAttestedCredentialDataFlagIsSetButThereIsNoCredentialData() async throws {
-        try await assertThrowsError(
-            await finishRegistration(
+        await #expect(throws: WebAuthnError.attestedCredentialDataMissing) {
+            try await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
                     .validMock()
                     .authData(
@@ -182,15 +173,14 @@ struct WebAuthnManagerRegistrationTests {
                     )
                     .build()
                     .cborEncoded
-            ),
-            expect: WebAuthnError.attestedCredentialDataMissing
-        )
+            )
+        }
     }
 
     @Test
     func finishRegistrationFailsIfAttestedCredentialDataFlagIsNotSetButThereIsCredentialData() async throws {
-        try await assertThrowsError(
-            await finishRegistration(
+        await #expect(throws: WebAuthnError.attestedCredentialFlagNotSet) {
+            try await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
                     .validMock()
                     .authData(
@@ -201,29 +191,27 @@ struct WebAuthnManagerRegistrationTests {
                     )
                     .build()
                     .cborEncoded
-            ),
-            expect: WebAuthnError.attestedCredentialFlagNotSet
-        )
+            )
+        }
     }
 
     @Test
     func finishRegistrationFailsIfExtensionDataFlagIsSetButThereIsNoExtensionData() async throws {
-        try await assertThrowsError(
-            await finishRegistration(
+        await #expect(throws: WebAuthnError.extensionDataMissing) {
+            try await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
                     .validMock()
                     .authData(TestAuthDataBuilder().validMock().noExtensionData().flags(0b11000001))
                     .build()
                     .cborEncoded
-            ),
-            expect: WebAuthnError.extensionDataMissing
-        )
+            )
+        }
     }
 
     @Test
     func finishRegistrationFailsIfCredentialIdIsTooShort() async throws {
-        try await assertThrowsError(
-            await finishRegistration(
+        await #expect(throws: WebAuthnError.credentialIDTooShort) {
+            try await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
                     .validMock()
                     .authData(
@@ -238,58 +226,54 @@ struct WebAuthnManagerRegistrationTests {
                     )
                     .build()
                     .cborEncoded
-            ),
-            expect: WebAuthnError.credentialIDTooShort
-        )
+            )
+        }
     }
 
     @Test
     func finishRegistrationFailsIfRelyingPartyIDHashDoesNotMatch() async throws {
-        try await assertThrowsError(
-            await finishRegistration(
+        await #expect(throws: WebAuthnError.relyingPartyIDHashDoesNotMatch) {
+            try await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
                     .validMock()
                     .authData(TestAuthDataBuilder().validMock().relyingPartyIDHash(fromRelyingPartyID: "invalid-id.com"))
                     .build()
                     .cborEncoded
-            ),
-            expect: WebAuthnError.relyingPartyIDHashDoesNotMatch
-        )
+            )
+        }
     }
 
     @Test
     func finishRegistrationFailsIfUserPresentFlagIsNotSet() async throws {
-        try await assertThrowsError(
-            await finishRegistration(
+        await #expect(throws: WebAuthnError.userPresentFlagNotSet) {
+            try await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
                     .validMock()
                     .authData(TestAuthDataBuilder().validMock().flags(0b11000000))
                     .build()
                     .cborEncoded
-            ),
-            expect: WebAuthnError.userPresentFlagNotSet
-        )
+            )
+        }
     }
 
     @Test
     func finishRegistrationFailsIfUserVerificationFlagIsNotSetButRequired() async throws {
-        try await assertThrowsError(
-            await finishRegistration(
+        await #expect(throws: WebAuthnError.userVerificationRequiredButFlagNotSet) {
+            try await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
                     .validMock()
                     .authData(TestAuthDataBuilder().validMock().flags(0b11000001))
                     .build()
                     .cborEncoded,
                 requireUserVerification: true
-            ),
-            expect: WebAuthnError.userVerificationRequiredButFlagNotSet
-        )
+            )
+        }
     }
 
     @Test
     func finishRegistrationFailsIfAttFmtIsNoneButAttStmtIsIncluded() async throws {
-        try await assertThrowsError(
-            await finishRegistration(
+        await #expect(throws: WebAuthnError.attestationStatementMustBeEmpty) {
+            try await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
                     .validMock()
                     .fmt("none")
@@ -297,17 +281,15 @@ struct WebAuthnManagerRegistrationTests {
                     .build()
                     .cborEncoded,
                 requireUserVerification: true
-            ),
-            expect: WebAuthnError.attestationStatementMustBeEmpty
-        )
+            )
+        }
     }
 
     @Test
     func finishRegistrationFailsIfRawIDIsTooLong() async throws {
-        try await assertThrowsError(
-            await finishRegistration(rawID: [UInt8](repeating: 0, count: 1024)),
-            expect: WebAuthnError.credentialRawIDTooLong
-        )
+        await #expect(throws: WebAuthnError.credentialRawIDTooLong) {
+            try await finishRegistration(rawID: [UInt8](repeating: 0, count: 1024))
+        }
     }
     
     @Test
@@ -330,8 +312,8 @@ struct WebAuthnManagerRegistrationTests {
         )
         
         /// While this one should throw
-        try await assertThrowsError(
-            await finishRegistration(
+        await #expect(throws: WebAuthnError.credentialIDTooLong) {
+            try await finishRegistration(
                 attestationObject: TestAttestationObjectBuilder()
                     .validMock()
                     .authData(
@@ -345,9 +327,8 @@ struct WebAuthnManagerRegistrationTests {
                     )
                     .build()
                     .cborEncoded
-            ),
-            expect: WebAuthnError.credentialIDTooLong
-        )
+            )
+        }
     }
 
     @Test
