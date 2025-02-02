@@ -13,7 +13,7 @@
 
 import Foundation
 
-extension KeyedDecodingContainer {
+public extension KeyedDecodingContainer {
     func decodeBytesFromURLEncodedBase64(forKey key: KeyedDecodingContainer.Key) throws -> [UInt8] {
         guard let bytes = try decode(
             URLEncodedBase64.self,
