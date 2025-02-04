@@ -11,14 +11,15 @@
 //
 //===----------------------------------------------------------------------===//
 
-import XCTest
+import Testing
 @testable import WebAuthn
 
-final class DurationTests: XCTestCase {
-    func testMilliseconds() throws {
-        XCTAssertEqual(Duration.milliseconds(1234).milliseconds, 1234)
-        XCTAssertEqual(Duration.milliseconds(-1234).milliseconds, -1234)
-        XCTAssertEqual(Duration.microseconds(12345).milliseconds, 12)
-        XCTAssertEqual(Duration.microseconds(-12345).milliseconds, -12)
+struct DurationTests {
+    @Test
+    func milliseconds() {
+        #expect(Duration.milliseconds(1234).milliseconds == 1234)
+        #expect(Duration.milliseconds(-1234).milliseconds == -1234)
+        #expect(Duration.microseconds(12345).milliseconds == 12)
+        #expect(Duration.microseconds(-12345).milliseconds == -12)
     }
 }
