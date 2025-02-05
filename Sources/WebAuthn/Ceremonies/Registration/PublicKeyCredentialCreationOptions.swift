@@ -71,8 +71,8 @@ public struct PublicKeyCredentialCreationOptions: Codable, Sendable {
         self.attestation = try values.decode(AttestationConveyancePreference.self, forKey:.attestation)
     }
     
-    public init(challenge: [UInt8],user: PublicKeyCredentialUserEntity,relyingParty: PublicKeyCredentialRelyingPartyEntity,publicKeyCredentialParameters: [PublicKeyCredentialParameters],
-                timeout: Duration?,attestation: AttestationConveyancePreference) {
+    public init(challenge: [UInt8], user: PublicKeyCredentialUserEntity, relyingParty: PublicKeyCredentialRelyingPartyEntity, publicKeyCredentialParameters: [PublicKeyCredentialParameters],
+                timeout: Duration?, attestation: AttestationConveyancePreference) {
         self.challenge = challenge
         self.user = user
         self.relyingParty = relyingParty
@@ -116,11 +116,6 @@ public struct PublicKeyCredentialParameters: Equatable, Codable, Sendable {
         let type = try container.decode(CredentialType.self,forKey: .type)
         let alg = try container.decode(COSEAlgorithmIdentifier.self, forKey: .alg)
         self.init(type:type,alg:alg)
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case type
-        case alg
     }
 }
 
