@@ -37,7 +37,7 @@ struct TestECCKeyPair {
         let privateKey = try P256.Signing.PrivateKey(pemRepresentation: privateKeyPEM)
         return try privateKey.signature(for: data)
     }
-    
+
     static var signature: [UInt8] {
         get throws {
             let authenticatorData = TestAuthDataBuilder()

@@ -1,9 +1,15 @@
+//===----------------------------------------------------------------------===//
 //
-//  TestRSAKeyPair.swift
-//  swift-webauthn
+// This source file is part of the Swift WebAuthn open source project
 //
-//  Created by David Scrève on 27/01/2025.
+// Copyright (c) 2023 the Swift WebAuthn project authors
+// Licensed under Apache License v2.0
 //
+// See LICENSE.txt for license information
+//
+// SPDX-License-Identifier: Apache-2.0
+//
+//===----------------------------------------------------------------------===//
 
 import Foundation
 import Crypto
