@@ -33,13 +33,9 @@ struct TestECCKeyPair: TestSigner {
     static let publicKeyXCoordinate = "9621b40922a4b52f513c1b6679b8d48f81019972c7f3c64d6c856de34e45a645".hexadecimal!
     static let publicKeyYCoordinate = "6637312afe0ae9a2bec08bcf4611e0e9081e6f120311a8986605d5d3b4b248f8".hexadecimal!
 
-    static func signature(data: Data) throws -> P256.Signing.ECDSASignature {
-        let privateKey = try P256.Signing.PrivateKey(pemRepresentation: privateKeyPEM)
-        return try privateKey.signature(for: data)
-    }
-
     static func sign(data: Data) throws -> [UInt8] {
-        Array(try signature(data: data).derRepresentation)
+        let privateKey = try P256.Signing.PrivateKey(pemRepresentation: privateKeyPEM)
+        return Array(try privateKey.signature(for: data).derRepresentation)
     }
 
     static var signature: [UInt8] {
@@ -47,16 +43,23 @@ struct TestECCKeyPair: TestSigner {
             let authenticatorData = TestAuthDataBuilder()
                 .validAuthenticationMock()
                 .buildAsBase64URLEncoded()
-            
+
             // Create a signature. This part is usually performed by the authenticator
             let clientData: Data = TestClientDataJSON(type: "webauthn.get").jsonData
             let clientDataHash = SHA256.hash(data: clientData)
             let rawAuthenticatorData = authenticatorData.urlDecoded.decoded!
             let signatureBase = rawAuthenticatorData + clientDataHash
-            // swiftlint:disable:next force_try
-            let signature = try TestECCKeyPair.signature(data: signatureBase).derRepresentation
-            
-            return [UInt8](signature)
+
+            return try sign(data: signatureBase)
         }
     }
+}
+
+extension TestKeyConfiguration {
+    static let ecdsa = TestKeyConfiguration(
+        signer: TestECCKeyPair.self,
+        credentialPublicKeyBuilder: TestCredentialPublicKeyBuilder().validMockECDSA(),
+        authDataBuilder: TestAuthDataBuilder().validMockECDSA(),
+        attestationObjectBuilder: TestAttestationObjectBuilder().validMockECDSA()
+    )
 }

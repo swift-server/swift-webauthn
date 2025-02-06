@@ -54,74 +54,74 @@ struct WebAuthnManagerRegistrationTests {
     // MARK: - finishRegistration()
     
     @Test(arguments: [
-        TestAttestationObjectBuilder().validMockECDSA().build().cborEncoded,
-        TestAttestationObjectBuilder().validMockRSA().build().cborEncoded
+        TestKeyConfiguration.ecdsa,
+        TestKeyConfiguration.rsa,
     ])
-    func finishRegistrationFailsIfCeremonyTypeDoesNotMatch(attestationObject: [UInt8]) async throws {
+    func finishRegistrationFailsIfCeremonyTypeDoesNotMatch(keyConfiguration: TestKeyConfiguration) async throws {
         var clientDataJSON = TestClientDataJSON()
         clientDataJSON.type = "webauthn.get"
         await #expect(throws: CollectedClientData.CollectedClientDataVerifyError.ceremonyTypeDoesNotMatch) {
             try await finishRegistration(
                 clientDataJSON: clientDataJSON.jsonBytes,
-                attestationObject: attestationObject
+                attestationObject: keyConfiguration.attestationObject
             )
         }
     }
     
     @Test(arguments: [
-        TestAttestationObjectBuilder().validMockECDSA().build().cborEncoded,
-        TestAttestationObjectBuilder().validMockRSA().build().cborEncoded
+        TestKeyConfiguration.ecdsa,
+        TestKeyConfiguration.rsa,
     ])
-    func finishRegistrationFailsIfChallengeDoesNotMatch(attestationObject: [UInt8]) async throws {
+    func finishRegistrationFailsIfChallengeDoesNotMatch(keyConfiguration: TestKeyConfiguration) async throws {
         var clientDataJSON = TestClientDataJSON()
         clientDataJSON.challenge = [0, 2, 4].base64URLEncodedString()
         await #expect(throws: CollectedClientData.CollectedClientDataVerifyError.challengeDoesNotMatch) {
             try await finishRegistration(
                 challenge: [UInt8]("definitely another challenge".utf8),
                 clientDataJSON: clientDataJSON.jsonBytes,
-                attestationObject: attestationObject
+                attestationObject: keyConfiguration.attestationObject
             )
         }
     }
     
     @Test(arguments: [
-        TestAttestationObjectBuilder().validMockECDSA().build().cborEncoded,
-        TestAttestationObjectBuilder().validMockRSA().build().cborEncoded
+        TestKeyConfiguration.ecdsa,
+        TestKeyConfiguration.rsa,
     ])
-    func finishRegistrationFailsIfOriginDoesNotMatch(attestationObject: [UInt8]) async throws {
+    func finishRegistrationFailsIfOriginDoesNotMatch(keyConfiguration: TestKeyConfiguration) async throws {
         var clientDataJSON = TestClientDataJSON()
         clientDataJSON.origin = "https://random-origin.org"
         // `webAuthnManager` is configured with origin = https://example.com
         await #expect(throws: CollectedClientData.CollectedClientDataVerifyError.originDoesNotMatch) {
             try await finishRegistration(
                 clientDataJSON: clientDataJSON.jsonBytes,
-                attestationObject: attestationObject
+                attestationObject: keyConfiguration.attestationObject
             )
         }
     }
     
     @Test(arguments: [
-        TestAttestationObjectBuilder().validMockECDSA().build().cborEncoded,
-        TestAttestationObjectBuilder().validMockRSA().build().cborEncoded
+        TestKeyConfiguration.ecdsa,
+        TestKeyConfiguration.rsa,
     ])
-    func finishRegistrationFailsWithInvalidCredentialCreationType(attestationObject: [UInt8]) async throws {
+    func finishRegistrationFailsWithInvalidCredentialCreationType(keyConfiguration: TestKeyConfiguration) async throws {
         await #expect(throws: WebAuthnError.invalidCredentialCreationType) {
             try await finishRegistration(
                 type: "foo",
-                attestationObject: attestationObject
+                attestationObject: keyConfiguration.attestationObject
             )
         }
     }
 
     @Test(arguments: [
-        TestAttestationObjectBuilder().validMockECDSA().build().cborEncoded,
-        TestAttestationObjectBuilder().validMockRSA().build().cborEncoded
+        TestKeyConfiguration.ecdsa,
+        TestKeyConfiguration.rsa,
     ])
-    func finishRegistrationFailsIfClientDataJSONDecodingFails(attestationObject: [UInt8]) async throws {
+    func finishRegistrationFailsIfClientDataJSONDecodingFails(keyConfiguration: TestKeyConfiguration) async throws {
         await #expect(throws: DecodingError.self) {
             try await finishRegistration(
                 clientDataJSON: [0],
-                attestationObject: attestationObject
+                attestationObject: keyConfiguration.attestationObject
             )
         }
     }
@@ -134,13 +134,13 @@ struct WebAuthnManagerRegistrationTests {
     }
 
     @Test(arguments: [
-        TestAttestationObjectBuilder().validMockECDSA(),
-        TestAttestationObjectBuilder().validMockRSA()
+        TestKeyConfiguration.ecdsa,
+        TestKeyConfiguration.rsa,
     ])
-    func finishRegistrationFailsIfAuthDataIsInvalid(attestationObjectBuilder: TestAttestationObjectBuilder) async throws {
+    func finishRegistrationFailsIfAuthDataIsInvalid(keyConfiguration: TestKeyConfiguration) async throws {
         await #expect(throws: WebAuthnError.invalidAuthData) {
             try await finishRegistration(
-                attestationObject: attestationObjectBuilder
+                attestationObject: keyConfiguration.attestationObjectBuilder
                     .invalidAuthData()
                     .build()
                     .cborEncoded
@@ -149,13 +149,13 @@ struct WebAuthnManagerRegistrationTests {
     }
 
     @Test(arguments: [
-        TestAttestationObjectBuilder().validMockECDSA(),
-        TestAttestationObjectBuilder().validMockRSA()
+        TestKeyConfiguration.ecdsa,
+        TestKeyConfiguration.rsa,
     ])
-    func finishRegistrationFailsIfFmtIsInvalid(attestationObjectBuilder: TestAttestationObjectBuilder) async throws {
+    func finishRegistrationFailsIfFmtIsInvalid(keyConfiguration: TestKeyConfiguration) async throws {
         await #expect(throws: WebAuthnError.invalidFmt) {
             try await finishRegistration(
-                attestationObject: attestationObjectBuilder
+                attestationObject: keyConfiguration.attestationObjectBuilder
                     .invalidFmt()
                     .build()
                     .cborEncoded
@@ -164,13 +164,13 @@ struct WebAuthnManagerRegistrationTests {
     }
 
     @Test(arguments: [
-        TestAttestationObjectBuilder().validMockECDSA(),
-        TestAttestationObjectBuilder().validMockRSA()
+        TestKeyConfiguration.ecdsa,
+        TestKeyConfiguration.rsa,
     ])
-    func finishRegistrationFailsIfAttStmtIsMissing(attestationObjectBuilder: TestAttestationObjectBuilder) async throws {
+    func finishRegistrationFailsIfAttStmtIsMissing(keyConfiguration: TestKeyConfiguration) async throws {
         await #expect(throws: WebAuthnError.missingAttStmt) {
             try await finishRegistration(
-                attestationObject: attestationObjectBuilder
+                attestationObject: keyConfiguration.attestationObjectBuilder
                     .missingAttStmt()
                     .build()
                     .cborEncoded
@@ -179,13 +179,13 @@ struct WebAuthnManagerRegistrationTests {
     }
 
     @Test(arguments: [
-        TestAttestationObjectBuilder().validMockECDSA(),
-        TestAttestationObjectBuilder().validMockRSA()
+        TestKeyConfiguration.ecdsa,
+        TestKeyConfiguration.rsa,
     ])
-    func finishRegistrationFailsIfAuthDataIsTooShort(attestationObjectBuilder: TestAttestationObjectBuilder) async throws {
+    func finishRegistrationFailsIfAuthDataIsTooShort(keyConfiguration: TestKeyConfiguration) async throws {
         await #expect(throws: WebAuthnError.authDataTooShort) {
             try await finishRegistration(
-                attestationObject: attestationObjectBuilder
+                attestationObject: keyConfiguration.attestationObjectBuilder
                     .zeroAuthData(byteCount: 36)
                     .build()
                     .cborEncoded
@@ -194,22 +194,18 @@ struct WebAuthnManagerRegistrationTests {
     }
 
     @Test(arguments: [
-        (TestAttestationObjectBuilder().validMockECDSA(), TestAuthDataBuilder().validMockECDSA()),
-        (TestAttestationObjectBuilder().validMockRSA(), TestAuthDataBuilder().validMockRSA())
+        TestKeyConfiguration.ecdsa,
+        TestKeyConfiguration.rsa,
     ])
-    func finishRegistrationFailsIfAttestedCredentialDataFlagIsSetButThereIsNoCredentialData(
-        attestationObjectBuilder: TestAttestationObjectBuilder,
-        authDataBuilder: TestAuthDataBuilder
-    ) async throws {
+    func finishRegistrationFailsIfAttestedCredentialDataFlagIsSetButThereIsNoCredentialData(keyConfiguration: TestKeyConfiguration) async throws {
         await #expect(throws: WebAuthnError.attestedCredentialDataMissing) {
             try await finishRegistration(
-                attestationObject: attestationObjectBuilder
-                    .authData(
-                        authDataBuilder
-                            .flags(0b01000001)
-                            .noAttestedCredentialData()
-                            .noExtensionData()
-                    )
+                attestationObject: keyConfiguration.attestationObjectBuilder
+                    .authData { $0
+                        .flags(0b01000001)
+                        .noAttestedCredentialData()
+                        .noExtensionData()
+                    }
                     .build()
                     .cborEncoded
             )
@@ -217,21 +213,17 @@ struct WebAuthnManagerRegistrationTests {
     }
 
     @Test(arguments: [
-        (TestAttestationObjectBuilder().validMockECDSA(), TestAuthDataBuilder().validMockECDSA()),
-        (TestAttestationObjectBuilder().validMockRSA(), TestAuthDataBuilder().validMockRSA())
+        TestKeyConfiguration.ecdsa,
+        TestKeyConfiguration.rsa,
     ])
-    func finishRegistrationFailsIfAttestedCredentialDataFlagIsNotSetButThereIsCredentialData(
-        attestationObjectBuilder: TestAttestationObjectBuilder,
-        authDataBuilder: TestAuthDataBuilder
-    ) async throws {
+    func finishRegistrationFailsIfAttestedCredentialDataFlagIsNotSetButThereIsCredentialData(keyConfiguration: TestKeyConfiguration) async throws {
         await #expect(throws: WebAuthnError.attestedCredentialFlagNotSet) {
             try await finishRegistration(
-                attestationObject: attestationObjectBuilder
-                    .authData(
-                        authDataBuilder
-                            .flags(0b00000001)
-                            .attestedCredData(credentialPublicKey: [])
-                    )
+                attestationObject: keyConfiguration.attestationObjectBuilder
+                    .authData { $0
+                        .flags(0b00000001)
+                        .attestedCredData(credentialPublicKey: [])
+                    }
                     .build()
                     .cborEncoded
             )
@@ -239,17 +231,14 @@ struct WebAuthnManagerRegistrationTests {
     }
 
     @Test(arguments: [
-        (TestAttestationObjectBuilder().validMockECDSA(), TestAuthDataBuilder().validMockECDSA()),
-        (TestAttestationObjectBuilder().validMockRSA(), TestAuthDataBuilder().validMockRSA())
+        TestKeyConfiguration.ecdsa,
+        TestKeyConfiguration.rsa,
     ])
-    func finishRegistrationFailsIfExtensionDataFlagIsSetButThereIsNoExtensionData(
-        attestationObjectBuilder: TestAttestationObjectBuilder,
-        authDataBuilder: TestAuthDataBuilder
-    ) async throws {
+    func finishRegistrationFailsIfExtensionDataFlagIsSetButThereIsNoExtensionData(keyConfiguration: TestKeyConfiguration) async throws {
         await #expect(throws: WebAuthnError.extensionDataMissing) {
             try await finishRegistration(
-                attestationObject: attestationObjectBuilder
-                    .authData(authDataBuilder.noExtensionData().flags(0b11000001))
+                attestationObject: keyConfiguration.attestationObjectBuilder
+                    .authData { $0.noExtensionData().flags(0b11000001) }
                     .build()
                     .cborEncoded
             )
@@ -257,25 +246,21 @@ struct WebAuthnManagerRegistrationTests {
     }
 
     @Test(arguments: [
-        (TestAttestationObjectBuilder().validMockECDSA(), TestAuthDataBuilder().validMockECDSA()),
-        (TestAttestationObjectBuilder().validMockRSA(), TestAuthDataBuilder().validMockRSA())
+        TestKeyConfiguration.ecdsa,
+        TestKeyConfiguration.rsa,
     ])
-    func finishRegistrationFailsIfCredentialIdIsTooShort(
-        attestationObjectBuilder: TestAttestationObjectBuilder,
-        authDataBuilder: TestAuthDataBuilder
-    ) async throws {
+    func finishRegistrationFailsIfCredentialIdIsTooShort(keyConfiguration: TestKeyConfiguration) async throws {
         await #expect(throws: WebAuthnError.credentialIDTooShort) {
             try await finishRegistration(
-                attestationObject: attestationObjectBuilder
-                    .authData(
-                        authDataBuilder
-                            .attestedCredData(
-                                credentialIDLength: [0b00000000, 0b00000010], // we expect length = 2
-                                credentialID: [255], // but only get length = 1
-                                credentialPublicKey: []
-                            )
-                            .noExtensionData()
-                    )
+                attestationObject: keyConfiguration.attestationObjectBuilder
+                    .authData { $0
+                        .attestedCredData(
+                            credentialIDLength: [0b00000000, 0b00000010], // we expect length = 2
+                            credentialID: [255], // but only get length = 1
+                            credentialPublicKey: []
+                        )
+                        .noExtensionData()
+                    }
                     .build()
                     .cborEncoded
             )
@@ -283,17 +268,14 @@ struct WebAuthnManagerRegistrationTests {
     }
 
     @Test(arguments: [
-        (TestAttestationObjectBuilder().validMockECDSA(), TestAuthDataBuilder().validMockECDSA()),
-        (TestAttestationObjectBuilder().validMockRSA(), TestAuthDataBuilder().validMockRSA())
+        TestKeyConfiguration.ecdsa,
+        TestKeyConfiguration.rsa,
     ])
-    func finishRegistrationFailsIfRelyingPartyIDHashDoesNotMatch(
-        attestationObjectBuilder: TestAttestationObjectBuilder,
-        authDataBuilder: TestAuthDataBuilder
-    ) async throws {
+    func finishRegistrationFailsIfRelyingPartyIDHashDoesNotMatch(keyConfiguration: TestKeyConfiguration) async throws {
         await #expect(throws: WebAuthnError.relyingPartyIDHashDoesNotMatch) {
             try await finishRegistration(
-                attestationObject: attestationObjectBuilder
-                    .authData(authDataBuilder.relyingPartyIDHash(fromRelyingPartyID: "invalid-id.com"))
+                attestationObject: keyConfiguration.attestationObjectBuilder
+                    .authData { $0.relyingPartyIDHash(fromRelyingPartyID: "invalid-id.com") }
                     .build()
                     .cborEncoded
             )
@@ -301,17 +283,14 @@ struct WebAuthnManagerRegistrationTests {
     }
 
     @Test(arguments: [
-        (TestAttestationObjectBuilder().validMockECDSA(), TestAuthDataBuilder().validMockECDSA()),
-        (TestAttestationObjectBuilder().validMockRSA(), TestAuthDataBuilder().validMockRSA())
+        TestKeyConfiguration.ecdsa,
+        TestKeyConfiguration.rsa,
     ])
-    func finishRegistrationFailsIfUserPresentFlagIsNotSet(
-        attestationObjectBuilder: TestAttestationObjectBuilder,
-        authDataBuilder: TestAuthDataBuilder
-    ) async throws {
+    func finishRegistrationFailsIfUserPresentFlagIsNotSet(keyConfiguration: TestKeyConfiguration) async throws {
         await #expect(throws: WebAuthnError.userPresentFlagNotSet) {
             try await finishRegistration(
-                attestationObject: attestationObjectBuilder
-                    .authData(authDataBuilder.flags(0b11000000))
+                attestationObject: keyConfiguration.attestationObjectBuilder
+                    .authData { $0.flags(0b11000000) }
                     .build()
                     .cborEncoded
             )
@@ -319,17 +298,14 @@ struct WebAuthnManagerRegistrationTests {
     }
 
     @Test(arguments: [
-        (TestAttestationObjectBuilder().validMockECDSA(), TestAuthDataBuilder().validMockECDSA()),
-        (TestAttestationObjectBuilder().validMockRSA(), TestAuthDataBuilder().validMockRSA())
+        TestKeyConfiguration.ecdsa,
+        TestKeyConfiguration.rsa,
     ])
-    func finishRegistrationFailsIfUserVerificationFlagIsNotSetButRequired(
-        attestationObjectBuilder: TestAttestationObjectBuilder,
-        authDataBuilder: TestAuthDataBuilder
-    ) async throws {
+    func finishRegistrationFailsIfUserVerificationFlagIsNotSetButRequired(keyConfiguration: TestKeyConfiguration) async throws {
         await #expect(throws: WebAuthnError.userVerificationRequiredButFlagNotSet) {
             try await finishRegistration(
-                attestationObject: attestationObjectBuilder
-                    .authData(authDataBuilder.flags(0b11000001))
+                attestationObject: keyConfiguration.attestationObjectBuilder
+                    .authData { $0.flags(0b11000001) }
                     .build()
                     .cborEncoded,
                 requireUserVerification: true
@@ -338,13 +314,13 @@ struct WebAuthnManagerRegistrationTests {
     }
 
     @Test(arguments: [
-        TestAttestationObjectBuilder().validMockECDSA(),
-        TestAttestationObjectBuilder().validMockRSA()
+        TestKeyConfiguration.ecdsa,
+        TestKeyConfiguration.rsa,
     ])
-    func finishRegistrationFailsIfAttFmtIsNoneButAttStmtIsIncluded(attestationObjectBuilder: TestAttestationObjectBuilder) async throws {
+    func finishRegistrationFailsIfAttFmtIsNoneButAttStmtIsIncluded(keyConfiguration: TestKeyConfiguration) async throws {
         await #expect(throws: WebAuthnError.attestationStatementMustBeEmpty) {
             try await finishRegistration(
-                attestationObject: attestationObjectBuilder
+                attestationObject: keyConfiguration.attestationObjectBuilder
                     .fmt("none")
                     .attStmt(.double(123))
                     .build()
@@ -355,38 +331,33 @@ struct WebAuthnManagerRegistrationTests {
     }
 
     @Test(arguments: [
-        TestAttestationObjectBuilder().validMockECDSA().build().cborEncoded,
-        TestAttestationObjectBuilder().validMockRSA().build().cborEncoded
+        TestKeyConfiguration.ecdsa,
+        TestKeyConfiguration.rsa,
     ])
-    func finishRegistrationFailsIfRawIDIsTooLong(attestationObject: [UInt8]) async throws {
+    func finishRegistrationFailsIfRawIDIsTooLong(keyConfiguration: TestKeyConfiguration) async throws {
         await #expect(throws: WebAuthnError.credentialRawIDTooLong) {
             try await finishRegistration(
                 rawID: [UInt8](repeating: 0, count: 1024),
-                attestationObject: attestationObject
+                attestationObject: keyConfiguration.attestationObject
             )
         }
     }
     
     @Test(arguments: [
-        (TestAttestationObjectBuilder().validMockECDSA(), TestAuthDataBuilder().validMockECDSA(), TestCredentialPublicKeyBuilder().validMockECDSA()),
-        (TestAttestationObjectBuilder().validMockRSA(), TestAuthDataBuilder().validMockRSA(), TestCredentialPublicKeyBuilder().validMockRSA())
+        TestKeyConfiguration.ecdsa,
+        TestKeyConfiguration.rsa,
     ])
-    func finishAuthenticationFailsIfCredentialIDTooLong(
-        attestationObjectBuilder: TestAttestationObjectBuilder,
-        authDataBuilder: TestAuthDataBuilder,
-        credentialPublicKeyBuilder: TestCredentialPublicKeyBuilder
-    ) async throws {
+    func finishAuthenticationFailsIfCredentialIDTooLong(keyConfiguration: TestKeyConfiguration) async throws {
         /// This should succeed as it's on the border of being acceptable
         _ = try await finishRegistration(
-            attestationObject: attestationObjectBuilder
-                .authData(
-                    authDataBuilder
-                        .attestedCredData(
-                            credentialIDLength: [0b000_00011, 0b1111_1111],
-                            credentialID: Array(repeating: 0, count: 1023),
-                            credentialPublicKey: credentialPublicKeyBuilder.buildAsByteArray()
-                        )
-                )
+            attestationObject: keyConfiguration.attestationObjectBuilder
+                .authData { $0
+                    .attestedCredData(
+                        credentialIDLength: [0b000_00011, 0b1111_1111],
+                        credentialID: Array(repeating: 0, count: 1023),
+                        credentialPublicKey: keyConfiguration.credentialPublicKey
+                    )
+                }
                 .build()
                 .cborEncoded
         )
@@ -394,15 +365,14 @@ struct WebAuthnManagerRegistrationTests {
         /// While this one should throw
         await #expect(throws: WebAuthnError.credentialIDTooLong) {
             try await finishRegistration(
-                attestationObject: attestationObjectBuilder
-                    .authData(
-                        authDataBuilder
-                            .attestedCredData(
-                                credentialIDLength: [0b000_00100, 0b0000_0000],
-                                credentialID: Array(repeating: 0, count: 1024),
-                                credentialPublicKey: credentialPublicKeyBuilder.buildAsByteArray()
-                            )
-                    )
+                attestationObject: keyConfiguration.attestationObjectBuilder
+                    .authData { $0
+                        .attestedCredData(
+                            credentialIDLength: [0b000_00100, 0b0000_0000],
+                            credentialID: Array(repeating: 0, count: 1024),
+                            credentialPublicKey: keyConfiguration.credentialPublicKey
+                        )
+                    }
                     .build()
                     .cborEncoded
             )
@@ -410,20 +380,16 @@ struct WebAuthnManagerRegistrationTests {
     }
 
     @Test(arguments: [
-        (TestAttestationObjectBuilder().validMockECDSA(), TestAuthDataBuilder().validMockECDSA(), TestCredentialPublicKeyBuilder().validMockECDSA()),
-        (TestAttestationObjectBuilder().validMockRSA(), TestAuthDataBuilder().validMockRSA(), TestCredentialPublicKeyBuilder().validMockRSA())
+        TestKeyConfiguration.ecdsa,
+        TestKeyConfiguration.rsa,
     ])
-    func finishRegistrationSucceeds(
-        attestationObjectBuilder: TestAttestationObjectBuilder,
-        authDataBuilder: TestAuthDataBuilder,
-        credentialPublicKeyBuilder: TestCredentialPublicKeyBuilder
-    ) async throws {
+    func finishRegistrationSucceeds(keyConfiguration: TestKeyConfiguration) async throws {
         let credentialID: [UInt8] = [0, 1, 0, 1, 0, 1]
-        let credentialPublicKey: [UInt8] = credentialPublicKeyBuilder.buildAsByteArray()
-        let authData = authDataBuilder
+        let credentialPublicKey: [UInt8] = keyConfiguration.credentialPublicKey
+        let authData = keyConfiguration.authDataBuilder
             .attestedCredData(credentialPublicKey: credentialPublicKey)
             .noExtensionData()
-        let attestationObject = attestationObjectBuilder
+        let attestationObject = keyConfiguration.attestationObjectBuilder
             .authData(authData)
             .build()
             .cborEncoded

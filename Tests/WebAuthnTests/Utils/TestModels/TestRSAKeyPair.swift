@@ -46,7 +46,7 @@ struct TestRSAKeyPair: TestSigner {
     m0Eq9qinAmFyVbkuIzqCJMGeC1FxUYIf/DkpAMOb/ACTyig+YFgFjdU=
     -----END RSA PRIVATE KEY-----
     """
-    
+
     static let publicKeyPEM = """
     -----BEGIN PUBLIC KEY-----
     MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAngCfNRz1D1HvyvWxURSK
@@ -60,32 +60,34 @@ struct TestRSAKeyPair: TestSigner {
     """
     static let publicKeyNCoordinate = [UInt8](try! _RSA.Signing.PublicKey(pemRepresentation: publicKeyPEM).getKeyPrimitives().modulus)
     static let publicKeyECoordinate = [UInt8](try! _RSA.Signing.PublicKey(pemRepresentation: publicKeyPEM).getKeyPrimitives().publicExponent)
-    
-    static func signature(data: Data) throws -> _RSA.Signing.RSASignature {
-        let privateKey = try _RSA.Signing.PrivateKey(pemRepresentation: privateKeyPEM)
-        let rsaSignature =  try privateKey.signature(for: data,padding:_RSA.Signing.Padding.insecurePKCS1v1_5)
-        return rsaSignature
-    }
 
     static func sign(data: Data) throws -> [UInt8] {
-        Array(try signature(data: data).rawRepresentation)
+        let privateKey = try _RSA.Signing.PrivateKey(pemRepresentation: privateKeyPEM)
+        return Array(try privateKey.signature(for: data,padding:_RSA.Signing.Padding.insecurePKCS1v1_5).rawRepresentation)
     }
-    
+
     static var signature: [UInt8] {
         get throws {
             let authenticatorData = TestAuthDataBuilder()
                 .validAuthenticationMock()
                 .buildAsBase64URLEncoded()
-            
+
             // Create a signature. This part is usually performed by the authenticator
             let clientData: Data = TestClientDataJSON(type: "webauthn.get").jsonData
             let clientDataHash = SHA256.hash(data: clientData)
             let rawAuthenticatorData = authenticatorData.urlDecoded.decoded!
             let signatureBase = rawAuthenticatorData + clientDataHash
-            // swiftlint:disable:next force_try
-            let signature = try TestRSAKeyPair.signature(data: signatureBase).rawRepresentation
-            
-            return [UInt8](signature)
+
+            return try sign(data: signatureBase)
         }
     }
+}
+
+extension TestKeyConfiguration {
+    static let rsa = TestKeyConfiguration(
+        signer: TestRSAKeyPair.self,
+        credentialPublicKeyBuilder: TestCredentialPublicKeyBuilder().validMockRSA(),
+        authDataBuilder: TestAuthDataBuilder().validMockRSA(),
+        attestationObjectBuilder: TestAttestationObjectBuilder().validMockRSA()
+    )
 }

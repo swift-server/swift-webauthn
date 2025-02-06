@@ -15,4 +15,20 @@ import Foundation
 
 protocol TestSigner {
     static func sign(data: Data) throws -> [UInt8]
+    
+    static var signature: [UInt8] { get throws }
+}
+
+struct TestKeyConfiguration {
+    var signer: any TestSigner.Type
+    var credentialPublicKeyBuilder: TestCredentialPublicKeyBuilder
+    var authDataBuilder: TestAuthDataBuilder
+    var attestationObjectBuilder: TestAttestationObjectBuilder
+    
+    var credentialPublicKey: [UInt8] {
+        credentialPublicKeyBuilder.buildAsByteArray()
+    }
+    var attestationObject: [UInt8] {
+        attestationObjectBuilder.build().cborEncoded
+    }
 }

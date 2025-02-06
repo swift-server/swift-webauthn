@@ -17,50 +17,12 @@ import Testing
 import Crypto
 
 struct WebAuthnManagerIntegrationTests {
-    static func eccMockArguments() -> (
-        mockCredentialPublicKey: [UInt8],
-        mockAttestationObject: [UInt8],
-        signer: TestSigner.Type
-    ) {
-        let mockCredentialPublicKey = TestCredentialPublicKeyBuilder().validMockECDSA().buildAsByteArray()
-        let mockAttestationObject = TestAttestationObjectBuilder().validMockECDSA().authData(
-            TestAuthDataBuilder().validMockECDSA()
-                .attestedCredData(credentialPublicKey: mockCredentialPublicKey)
-                .noExtensionData()
-        ).build().cborEncoded
-        
-        return (mockCredentialPublicKey, mockAttestationObject, TestECCKeyPair.self)
-    }
-    
-    static func rsaMockArguments() -> (
-        mockCredentialPublicKey: [UInt8],
-        mockAttestationObject: [UInt8],
-        signer: TestSigner.Type
-    ) {
-        let mockCredentialPublicKey = TestCredentialPublicKeyBuilder().validMockRSA().buildAsByteArray()
-        let mockAttestationObject = TestAttestationObjectBuilder().validMockRSA().authData(
-            TestAuthDataBuilder().validMockRSA()
-                .attestedCredData(credentialPublicKey: mockCredentialPublicKey)
-                .noExtensionData()
-        ).build().cborEncoded
-        
-        return (
-            mockCredentialPublicKey,
-            mockAttestationObject,
-            TestRSAKeyPair.self
-        )
-    }
-    
     // swiftlint:disable:next function_body_length
     @Test(arguments: [
-        eccMockArguments(),
-        rsaMockArguments(),
+        TestKeyConfiguration.ecdsa,
+        TestKeyConfiguration.rsa,
     ])
-    func registrationAndAuthenticationSucceeds(
-        mockCredentialPublicKey: [UInt8],
-        mockAttestationObject: [UInt8],
-        signer: TestSigner.Type
-    ) async throws {
+    func registrationAndAuthenticationSucceeds(keyConfiguration: TestKeyConfiguration) async throws {
         let configuration = WebAuthnManager.Configuration(
             relyingPartyID: "example.com",
             relyingPartyName: "Example RP",
@@ -98,6 +60,12 @@ struct WebAuthnManagerIntegrationTests {
         // The following lines reflect what an authenticator normally produces
         let mockCredentialID = [UInt8](repeating: 1, count: 10)
         let mockClientDataJSON = TestClientDataJSON(challenge: mockChallenge.base64URLEncodedString())
+        let mockCredentialPublicKey = keyConfiguration.credentialPublicKey
+        let mockAttestationObject = keyConfiguration.attestationObjectBuilder
+            .authData { $0
+                .attestedCredData(credentialPublicKey: mockCredentialPublicKey)
+                .noExtensionData()
+            }.build().cborEncoded
 
         let registrationResponse = RegistrationCredential(
             id: mockCredentialID.base64URLEncodedString(),
@@ -167,7 +135,7 @@ struct WebAuthnManagerIntegrationTests {
         ).jsonBytes
         let clientDataHash = SHA256.hash(data: clientData)
         let signatureBase = Data(authenticatorData + clientDataHash)
-        let signature = try signer.sign(data: signatureBase)
+        let signature = try keyConfiguration.signer.sign(data: signatureBase)
 
         let authenticationCredential = AuthenticationCredential(
             id: mockCredentialID.base64URLEncodedString(),
@@ -188,7 +156,7 @@ struct WebAuthnManagerIntegrationTests {
         let successfullAuthentication = try webAuthnManager.finishAuthentication(
             credential: authenticationCredential,
             expectedChallenge: mockChallenge,
-            credentialPublicKey: mockCredentialPublicKey,
+            credentialPublicKey: keyConfiguration.credentialPublicKey,
             credentialCurrentSignCount: oldSignCount,
             requireUserVerification: false
         )

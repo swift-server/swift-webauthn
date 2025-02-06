@@ -13,13 +13,20 @@
 
 import WebAuthn
 @preconcurrency import SwiftCBOR
+import Testing
 
 // protocol AttestationObjectParameter: CBOR {}
 
 struct TestAttestationObject {
     var fmt: CBOR?
     var attStmt: CBOR?
-    var authData: CBOR?
+    var authData: AuthData = .none
+    
+    enum AuthData {
+        case structured(TestAuthData)
+        case cbor(CBOR)
+        case none
+    }
 
     var cborEncoded: [UInt8] {
         var attestationObject: [CBOR: CBOR] = [:]
@@ -29,8 +36,12 @@ struct TestAttestationObject {
         if let attStmt {
             attestationObject[.utf8String("attStmt")] = attStmt
         }
-        if let authData {
+        switch authData {
+        case .structured(let authData):
+            attestationObject[.utf8String("authData")] = .byteString(authData.byteArrayRepresentation)
+        case .cbor(let authData):
             attestationObject[.utf8String("authData")] = authData
+        case .none: break
         }
 
         return [UInt8](CBOR.map(attestationObject).encode())
@@ -53,13 +64,13 @@ struct TestAttestationObjectBuilder {
 
     func validMockECDSA() -> Self {
         var temp = self.keyAgnosticBase()
-        temp.wrapped.authData = .byteString(TestAuthDataBuilder().validMockECDSA().build().byteArrayRepresentation)
+        temp.wrapped.authData = .structured(TestAuthDataBuilder().validMockECDSA().build())
         return temp
     }
     
     func validMockRSA() -> Self {
         var temp = self.keyAgnosticBase()
-        temp.wrapped.authData = .byteString(TestAuthDataBuilder().validMockRSA().build().byteArrayRepresentation)
+        temp.wrapped.authData = .structured(TestAuthDataBuilder().validMockRSA().build())
         return temp
     }
 
@@ -115,25 +126,38 @@ struct TestAttestationObjectBuilder {
 
     func invalidAuthData() -> Self {
         var temp = self
-        temp.wrapped.authData = .double(1)
+        temp.wrapped.authData = .cbor(.double(1))
         return temp
     }
 
     func emptyAuthData() -> Self {
         var temp = self
-        temp.wrapped.authData = .byteString([])
+        temp.wrapped.authData = .cbor(.byteString([]))
         return temp
     }
 
     func zeroAuthData(byteCount: Int) -> Self {
         var temp = self
-        temp.wrapped.authData = .byteString([UInt8](repeating: 0, count: byteCount))
+        temp.wrapped.authData = .cbor(.byteString([UInt8](repeating: 0, count: byteCount)))
         return temp
     }
 
     func authData(_ builder: TestAuthDataBuilder) -> Self {
         var temp = self
-        temp.wrapped.authData = .byteString(builder.build().byteArrayRepresentation)
+        temp.wrapped.authData = .structured(builder.build())
+        return temp
+    }
+    
+    func authData(builder: (TestAuthDataBuilder) -> TestAuthDataBuilder) -> Self {
+        var temp = self
+        switch temp.wrapped.authData {
+        case .structured(let testAuthData):
+            temp.wrapped.authData = .structured(builder(.init(wrapped: testAuthData)).build())
+        case .cbor:
+            Issue.record("authData must be structured")
+        case .none:
+            temp.wrapped.authData = .structured(builder(.init()).build())
+        }
         return temp
     }
 
