@@ -158,7 +158,6 @@ struct EC2PublicKey: PublicKey, Sendable {
     }
 }
 
-/// Currently not in use
 struct RSAPublicKeyData: PublicKey, Sendable {
     let algorithm: COSEAlgorithmIdentifier
     // swiftlint:disable:next identifier_name
