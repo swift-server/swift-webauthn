@@ -15,7 +15,7 @@ import Foundation
 import Crypto
 import WebAuthn
 
-struct TestECCKeyPair {
+struct TestECCKeyPair: TestSigner {
     static let privateKeyPEM = """
     -----BEGIN PRIVATE KEY-----
     MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgUC6oOLmd9F3Ak32L
@@ -36,6 +36,10 @@ struct TestECCKeyPair {
     static func signature(data: Data) throws -> P256.Signing.ECDSASignature {
         let privateKey = try P256.Signing.PrivateKey(pemRepresentation: privateKeyPEM)
         return try privateKey.signature(for: data)
+    }
+
+    static func sign(data: Data) throws -> [UInt8] {
+        Array(try signature(data: data).derRepresentation)
     }
 
     static var signature: [UInt8] {

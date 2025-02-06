@@ -12,7 +12,7 @@
 //===----------------------------------------------------------------------===//
 
 import WebAuthn
-import SwiftCBOR
+@preconcurrency import SwiftCBOR
 
 // protocol AttestationObjectParameter: CBOR {}
 
@@ -44,18 +44,21 @@ struct TestAttestationObjectBuilder {
         self.wrapped = wrapped
     }
 
-    func validMockECDSA() -> Self {
+    func keyAgnosticBase() -> Self {
         var temp = self
         temp.wrapped.fmt = .utf8String("none")
         temp.wrapped.attStmt = .map([:])
+        return temp
+    }
+
+    func validMockECDSA() -> Self {
+        var temp = self.keyAgnosticBase()
         temp.wrapped.authData = .byteString(TestAuthDataBuilder().validMockECDSA().build().byteArrayRepresentation)
         return temp
     }
     
     func validMockRSA() -> Self {
-        var temp = self
-        temp.wrapped.fmt = .utf8String("none")
-        temp.wrapped.attStmt = .map([:])
+        var temp = self.keyAgnosticBase()
         temp.wrapped.authData = .byteString(TestAuthDataBuilder().validMockRSA().build().byteArrayRepresentation)
         return temp
     }

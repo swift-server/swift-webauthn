@@ -16,8 +16,7 @@ import Crypto
 import WebAuthn
 import _CryptoExtras
 
-
-struct TestRSAKeyPair {
+struct TestRSAKeyPair: TestSigner {
     static let privateKeyPEM = """
     -----BEGIN RSA PRIVATE KEY-----
     MIIEpQIBAAKCAQEAngCfNRz1D1HvyvWxURSKpGtymY/qUOW0JfQ77jc8S6p1D/78
@@ -66,6 +65,10 @@ struct TestRSAKeyPair {
         let privateKey = try _RSA.Signing.PrivateKey(pemRepresentation: privateKeyPEM)
         let rsaSignature =  try privateKey.signature(for: data,padding:_RSA.Signing.Padding.insecurePKCS1v1_5)
         return rsaSignature
+    }
+
+    static func sign(data: Data) throws -> [UInt8] {
+        Array(try signature(data: data).rawRepresentation)
     }
     
     static var signature: [UInt8] {
