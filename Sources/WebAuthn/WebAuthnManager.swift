@@ -139,7 +139,7 @@ public struct WebAuthnManager: Sendable {
         timeout: Duration? = .seconds(60),
         allowCredentials: [PublicKeyCredentialDescriptor]? = nil,
         userVerification: UserVerificationRequirement = .preferred
-    ) throws -> PublicKeyCredentialRequestOptions {
+    ) -> PublicKeyCredentialRequestOptions {
         let challenge = challengeGenerator.generate()
 
         return PublicKeyCredentialRequestOptions(

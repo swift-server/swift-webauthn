@@ -51,6 +51,7 @@ public struct WebAuthnError: Error, Hashable, Sendable {
         case leftOverBytesInAuthenticatorData
         case credentialIDTooLong
         case credentialIDTooShort
+        case invalidPublicKeyLength
 
         // MARK: CredentialPublicKey
         case badPublicKeyBytes
@@ -110,6 +111,7 @@ public struct WebAuthnError: Error, Hashable, Sendable {
     public static let leftOverBytesInAuthenticatorData = Self(reason: .leftOverBytesInAuthenticatorData)
     public static let credentialIDTooLong = Self(reason: .credentialIDTooLong)
     public static let credentialIDTooShort = Self(reason: .credentialIDTooShort)
+    public static let invalidPublicKeyLength = Self(reason: .invalidPublicKeyLength)
 
     // MARK: CredentialPublicKey
     public static let badPublicKeyBytes = Self(reason: .badPublicKeyBytes)

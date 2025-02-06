@@ -1,4 +1,4 @@
-// swift-tools-version:5.9
+// swift-tools-version: 6.0
 //===----------------------------------------------------------------------===//
 //
 // This source file is part of the Swift WebAuthn open source project
@@ -36,15 +36,13 @@ let package = Package(
                 .product(name: "Crypto", package: "swift-crypto"),
                 .product(name: "_CryptoExtras", package: "swift-crypto"),
                 .product(name: "Logging", package: "swift-log"),
-            ],
-            swiftSettings: [.enableExperimentalFeature("StrictConcurrency=complete")]
+            ]
         ),
         .testTarget(
             name: "WebAuthnTests",
             dependencies: [
                 .target(name: "WebAuthn")
-            ],
-            swiftSettings: [.enableExperimentalFeature("StrictConcurrency=complete")]
+            ]
         )
     ]
 )

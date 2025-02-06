@@ -27,10 +27,10 @@ struct AuthenticatorData: Equatable, Sendable {
 }
 
 extension AuthenticatorData {
-    init(bytes: [UInt8]) throws {
+    init(bytes: [UInt8]) throws(WebAuthnError) {
         let minAuthDataLength = 37
         guard bytes.count >= minAuthDataLength else {
-            throw WebAuthnError.authDataTooShort
+            throw .authDataTooShort
         }
 
         let relyingPartyIDHash = Array(bytes[..<32])
@@ -44,7 +44,7 @@ extension AuthenticatorData {
         if flags.attestedCredentialData {
             let minAttestedAuthLength = 37 + AAGUID.size + 2
             guard bytes.count > minAttestedAuthLength else {
-                throw WebAuthnError.attestedCredentialDataMissing
+                throw .attestedCredentialDataMissing
             }
             let (data, length) = try Self.parseAttestedData(bytes)
             attestedCredentialData = data
@@ -52,21 +52,21 @@ extension AuthenticatorData {
         // For assertion signatures, the AT flag MUST NOT be set and the attestedCredentialData MUST NOT be included.
         } else {
             if !flags.extensionDataIncluded && bytes.count != minAuthDataLength {
-                throw WebAuthnError.attestedCredentialFlagNotSet
+                throw .attestedCredentialFlagNotSet
             }
         }
 
         var extensionData: [UInt8]?
         if flags.extensionDataIncluded {
             guard remainingCount != 0 else {
-                throw WebAuthnError.extensionDataMissing
+                throw .extensionDataMissing
             }
             extensionData = Array(bytes[(bytes.count - remainingCount)...])
             remainingCount -= extensionData!.count
         }
 
         guard remainingCount == 0 else {
-            throw WebAuthnError.leftOverBytesInAuthenticatorData
+            throw .leftOverBytesInAuthenticatorData
         }
 
         self.relyingPartyIDHash = relyingPartyIDHash
@@ -81,10 +81,10 @@ extension AuthenticatorData {
     ///
     /// This is assumed to take place after the first 37 bytes of `data`, which is always of fixed size.
     /// - SeeAlso: [WebAuthn Level 3 Editor's Draft §6.5.1. Attested Credential Data]( https://w3c.github.io/webauthn/#sctn-attested-credential-data)
-    private static func parseAttestedData(_ data: [UInt8]) throws -> (AttestedCredentialData, Int) {
+    private static func parseAttestedData(_ data: [UInt8]) throws(WebAuthnError) -> (AttestedCredentialData, Int) {
         /// **aaguid** (16): The AAGUID of the authenticator.
         guard let aaguid = AAGUID(bytes: data[37..<(37 + AAGUID.size)])  // Bytes [37-52]
-        else { throw WebAuthnError.attestedCredentialDataMissing }
+        else { throw .attestedCredentialDataMissing }
 
         /// **credentialIdLength** (2): Byte length L of credentialId, 16-bit unsigned big-endian integer. Value MUST be ≤ 1023.
         let idLengthBytes = data[53..<55]  // Length is 2 bytes
@@ -92,20 +92,22 @@ extension AuthenticatorData {
         let idLength = UInt16(bigEndianBytes: idLengthData)
 
         guard idLength <= 1023
-        else { throw WebAuthnError.credentialIDTooLong }
+        else { throw .credentialIDTooLong }
 
         let credentialIDEndIndex = Int(idLength) + 55
         guard data.count >= credentialIDEndIndex 
-        else { throw WebAuthnError.credentialIDTooShort }
+        else { throw .credentialIDTooShort }
 
         /// **credentialId** (L): Credential ID
         let credentialID = data[55..<credentialIDEndIndex]
 
         /// **credentialPublicKey** (variable): The credential public key encoded in `COSE_Key` format, as defined in [Section 7](https://tools.ietf.org/html/rfc9052#section-7) of [RFC9052], using the CTAP2 canonical CBOR encoding form.
-        /// Assuming valid CBOR, verify the public key's length by decoding the next CBOR item.
+        /// Assuming valid CBOR, verify the public key's length by decoding the next CBOR item, and checking how much data is left on the stream.
         let inputStream = ByteInputStream(data[credentialIDEndIndex...])
-        let decoder = CBORDecoder(stream: inputStream, options: CBOROptions(maximumDepth: 16))
-        _ = try decoder.decodeItem()
+        do {
+            let decoder = CBORDecoder(stream: inputStream, options: CBOROptions(maximumDepth: 16))
+            _ = try decoder.decodeItem()
+        } catch { throw .invalidPublicKeyLength }
         let publicKeyBytes = data[credentialIDEndIndex..<(data.count - inputStream.remainingBytes)]
 
         let data = AttestedCredentialData(
@@ -132,13 +134,13 @@ class ByteInputStream: CBORInputStream {
     /// The remaining bytes in the original data buffer.
     var remainingBytes: Int { slice.count }
     
-    func popByte() throws -> UInt8 {
-        if slice.count < 1 { throw CBORError.unfinishedSequence }
+    func popByte() throws(CBORError) -> UInt8 {
+        if slice.count < 1 { throw .unfinishedSequence }
         return slice.removeFirst()
     }
     
-    func popBytes(_ n: Int) throws -> ArraySlice<UInt8> {
-        if slice.count < n { throw CBORError.unfinishedSequence }
+    func popBytes(_ n: Int) throws(CBORError) -> ArraySlice<UInt8> {
+        if slice.count < n { throw .unfinishedSequence }
         let result = slice.prefix(n)
         slice = slice.dropFirst(n)
         return result
