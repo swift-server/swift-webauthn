@@ -12,14 +12,21 @@
 //===----------------------------------------------------------------------===//
 
 @testable import WebAuthn
-import SwiftCBOR
+@preconcurrency import SwiftCBOR
 
 struct TestCredentialPublicKey {
     var kty: CBOR?
     var alg: CBOR?
+    // EC2, OKP
     var crv: CBOR?
     var xCoordinate: CBOR?
+    
+    //EC2
     var yCoordinate: CBOR?
+
+    // RSA
+    var nCoordinate: CBOR?
+    var eCoordinate: CBOR?
 
     var byteArrayRepresentation: [UInt8] {
         var value: [CBOR: CBOR] = [:]
@@ -38,6 +45,15 @@ struct TestCredentialPublicKey {
         if let yCoordinate {
             value[COSEKey.y.cbor] = yCoordinate
         }
+        
+        if let nCoordinate {
+            value[COSEKey.n.cbor] = nCoordinate
+        }
+
+        if let eCoordinate {
+            value[COSEKey.e.cbor] = eCoordinate
+        }
+
         return CBOR.map(value).encode()
     }
 }
@@ -53,7 +69,7 @@ struct TestCredentialPublicKeyBuilder {
         return wrapped.byteArrayRepresentation
     }
 
-    func validMock() -> Self {
+    func validMockECDSA() -> Self {
         return self
             .kty(.ellipticKey)
             .crv(.p256)
@@ -61,6 +77,15 @@ struct TestCredentialPublicKeyBuilder {
             .xCoordinate(TestECCKeyPair.publicKeyXCoordinate)
             .yCoordiante(TestECCKeyPair.publicKeyYCoordinate)
     }
+    
+    func validMockRSA() -> Self {
+        return self
+            .kty(.rsaKey)
+            .alg(.algRS256)
+            .nCoordinate(TestRSAKeyPair.publicKeyNCoordinate)
+            .eCoordiante(TestRSAKeyPair.publicKeyECoordinate)
+    }
+
 
     func kty(_ kty: COSEKeyType) -> Self {
         var temp = self
@@ -89,6 +114,18 @@ struct TestCredentialPublicKeyBuilder {
     func yCoordiante(_ yCoordinate: [UInt8]) -> Self {
         var temp = self
         temp.wrapped.yCoordinate = .byteString(yCoordinate)
+        return temp
+    }
+    
+    func nCoordinate(_ nCoordinate: [UInt8]) -> Self {
+        var temp = self
+        temp.wrapped.nCoordinate = .byteString(nCoordinate)
+        return temp
+    }
+
+    func eCoordiante(_ eCoordinate: [UInt8]) -> Self {
+        var temp = self
+        temp.wrapped.eCoordinate = .byteString(eCoordinate)
         return temp
     }
 }

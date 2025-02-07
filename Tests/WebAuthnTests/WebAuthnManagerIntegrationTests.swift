@@ -18,8 +18,11 @@ import Crypto
 
 struct WebAuthnManagerIntegrationTests {
     // swiftlint:disable:next function_body_length
-    @Test
-    func registrationAndAuthenticationSucceeds() async throws {
+    @Test(arguments: [
+        TestKeyConfiguration.ecdsa,
+        TestKeyConfiguration.rsa,
+    ])
+    func registrationAndAuthenticationSucceeds(keyConfiguration: TestKeyConfiguration) async throws {
         let configuration = WebAuthnManager.Configuration(
             relyingPartyID: "example.com",
             relyingPartyName: "Example RP",
@@ -57,12 +60,12 @@ struct WebAuthnManagerIntegrationTests {
         // The following lines reflect what an authenticator normally produces
         let mockCredentialID = [UInt8](repeating: 1, count: 10)
         let mockClientDataJSON = TestClientDataJSON(challenge: mockChallenge.base64URLEncodedString())
-        let mockCredentialPublicKey = TestCredentialPublicKeyBuilder().validMock().buildAsByteArray()
-        let mockAttestationObject = TestAttestationObjectBuilder().validMock().authData(
-            TestAuthDataBuilder().validMock()
+        let mockCredentialPublicKey = keyConfiguration.credentialPublicKey
+        let mockAttestationObject = keyConfiguration.attestationObjectBuilder
+            .authData { $0
                 .attestedCredData(credentialPublicKey: mockCredentialPublicKey)
                 .noExtensionData()
-        ).build().cborEncoded
+            }.build().cborEncoded
 
         let registrationResponse = RegistrationCredential(
             id: mockCredentialID.base64URLEncodedString(),
@@ -132,7 +135,7 @@ struct WebAuthnManagerIntegrationTests {
         ).jsonBytes
         let clientDataHash = SHA256.hash(data: clientData)
         let signatureBase = Data(authenticatorData + clientDataHash)
-        let signature = try TestECCKeyPair.signature(data: signatureBase).derRepresentation
+        let signature = try keyConfiguration.signer.sign(data: signatureBase)
 
         let authenticationCredential = AuthenticationCredential(
             id: mockCredentialID.base64URLEncodedString(),
@@ -153,7 +156,7 @@ struct WebAuthnManagerIntegrationTests {
         let successfullAuthentication = try webAuthnManager.finishAuthentication(
             credential: authenticationCredential,
             expectedChallenge: mockChallenge,
-            credentialPublicKey: mockCredentialPublicKey,
+            credentialPublicKey: keyConfiguration.credentialPublicKey,
             credentialCurrentSignCount: oldSignCount,
             requireUserVerification: false
         )
