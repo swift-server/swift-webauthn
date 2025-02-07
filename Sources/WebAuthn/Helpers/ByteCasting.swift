@@ -1,12 +1,11 @@
 //===----------------------------------------------------------------------===//
 //
-// This source file is part of the WebAuthn Swift open source project
+// This source file is part of the Swift WebAuthn open source project
 //
-// Copyright (c) 2024 the WebAuthn Swift project authors
+// Copyright (c) 2024 the Swift WebAuthn project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE.txt for license information
-// See CONTRIBUTORS.txt for the list of WebAuthn Swift project authors
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -29,5 +28,21 @@ extension BidirectionalCollection where Element == UInt8 {
         }
         
         return result
+    }
+}
+
+extension FixedWidthInteger {
+    /// Initialize a fixed width integer from a contiguous sequence of Bytes representing a big endian type.
+    /// - Parameter bigEndianBytes: The Bytes to interpret as a big endian integer.
+    @inlinable
+    init(bigEndianBytes: some BidirectionalCollection<UInt8>) {
+        self.init(bigEndian: bigEndianBytes.casting())
+    }
+
+    /// Initialize a fixed width integer from a contiguous sequence of Bytes representing a little endian type.
+    /// - Parameter bigEndianBytes: The Bytes to interpret as a little endian integer.
+    @inlinable
+    init(littleEndianBytes: some BidirectionalCollection<UInt8>) {
+        self.init(littleEndian: littleEndianBytes.casting())
     }
 }

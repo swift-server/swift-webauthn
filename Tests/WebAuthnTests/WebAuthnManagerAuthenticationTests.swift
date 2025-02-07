@@ -1,23 +1,23 @@
 //===----------------------------------------------------------------------===//
 //
-// This source file is part of the WebAuthn Swift open source project
+// This source file is part of the Swift WebAuthn open source project
 //
-// Copyright (c) 2022 the WebAuthn Swift project authors
+// Copyright (c) 2022 the Swift WebAuthn project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE.txt for license information
-// See CONTRIBUTORS.txt for the list of WebAuthn Swift project authors
 //
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
 
 @testable import WebAuthn
-import XCTest
+import Testing
+import Foundation
 import SwiftCBOR
 import Crypto
 
-final class WebAuthnManagerAuthenticationTests: XCTestCase {
+struct WebAuthnManagerAuthenticationTests {
     var webAuthnManager: WebAuthnManager!
 
     let challenge: [UInt8] = [1, 0, 1]
@@ -25,7 +25,7 @@ final class WebAuthnManagerAuthenticationTests: XCTestCase {
     let relyingPartyName = "Testy test"
     let relyingPartyOrigin = "https://example.com"
 
-    override func setUp() {
+    init() {
         let configuration = WebAuthnManager.Configuration(
             relyingPartyID: relyingPartyID,
             relyingPartyName: relyingPartyName,
@@ -34,98 +34,145 @@ final class WebAuthnManagerAuthenticationTests: XCTestCase {
         webAuthnManager = .init(configuration: configuration, challengeGenerator: .mock(generate: challenge))
     }
 
-    func testBeginAuthentication() async throws {
+    @Test
+    func beginAuthentication() async throws {
         let allowCredentials: [PublicKeyCredentialDescriptor] = [.init(type: .publicKey, id: [1, 0, 2, 30])]
-        let options = try webAuthnManager.beginAuthentication(
+        let options = webAuthnManager.beginAuthentication(
             timeout: .seconds(1234),
             allowCredentials: allowCredentials,
             userVerification: .preferred
         )
 
-        XCTAssertEqual(options.challenge, challenge)
-        XCTAssertEqual(options.timeout, .seconds(1234))
-        XCTAssertEqual(options.relyingPartyID, relyingPartyID)
-        XCTAssertEqual(options.allowCredentials, allowCredentials)
-        XCTAssertEqual(options.userVerification, .preferred)
+        #expect(options.challenge == challenge)
+        #expect(options.timeout == .seconds(1234))
+        #expect(options.relyingPartyID == relyingPartyID)
+        #expect(options.allowCredentials == allowCredentials)
+        #expect(options.userVerification == .preferred)
     }
 
-    func testFinishAuthenticationFailsIfCredentialTypeIsInvalid() throws {
-        try assertThrowsError(
-            finishAuthentication(type: "invalid"),
-            expect: WebAuthnError.invalidAssertionCredentialType
-        )
-    }
-
-    func testFinishAuthenticationFailsIfClientDataJSONDecodingFails() throws {
-        try assertThrowsError(finishAuthentication(clientDataJSON: [0])) { (_: DecodingError) in
-            return
+    @Test(arguments: [
+        TestKeyConfiguration.ecdsa,
+        TestKeyConfiguration.rsa,
+    ])
+    func finishAuthenticationFailsIfCredentialTypeIsInvalid(keyConfiguration: TestKeyConfiguration) throws {
+        #expect(throws: WebAuthnError.invalidAssertionCredentialType) {
+            try finishAuthentication(
+                signature: keyConfiguration.signer.signature,
+                type: "invalid",
+                credentialPublicKey: keyConfiguration.credentialPublicKey
+            )
         }
     }
 
-    func testFinishAuthenticationFailsIfCeremonyTypeDoesNotMatch() throws {
+    @Test(arguments: [
+        TestKeyConfiguration.ecdsa,
+        TestKeyConfiguration.rsa,
+    ])
+    func finishAuthenticationFailsIfClientDataJSONDecodingFails(keyConfiguration: TestKeyConfiguration) throws {
+        #expect(throws: DecodingError.self) {
+            try finishAuthentication(
+                clientDataJSON: [0],
+                signature: keyConfiguration.signer.signature,
+                credentialPublicKey: keyConfiguration.credentialPublicKey
+            )
+        }
+    }
+    
+    @Test(arguments: [
+        TestKeyConfiguration.ecdsa,
+        TestKeyConfiguration.rsa,
+    ])
+    func finishAuthenticationFailsIfCeremonyTypeDoesNotMatch(keyConfiguration: TestKeyConfiguration) throws {
         var clientDataJSON = TestClientDataJSON()
         clientDataJSON.type = "webauthn.create"
-        try assertThrowsError(
-            finishAuthentication(clientDataJSON: clientDataJSON.jsonBytes),
-            expect: CollectedClientData.CollectedClientDataVerifyError.ceremonyTypeDoesNotMatch
-        )
+        #expect(throws: CollectedClientData.CollectedClientDataVerifyError.ceremonyTypeDoesNotMatch) {
+            try finishAuthentication(
+                clientDataJSON: clientDataJSON.jsonBytes,
+                signature: keyConfiguration.signer.signature,
+                credentialPublicKey: keyConfiguration.credentialPublicKey
+            )
+        }
     }
 
-    func testFinishAuthenticationFailsIfRelyingPartyIDHashDoesNotMatch() throws {
-        try assertThrowsError(
-            finishAuthentication(
+    @Test(arguments: [
+        TestKeyConfiguration.ecdsa,
+        TestKeyConfiguration.rsa,
+    ])
+    func finishAuthenticationFailsIfRelyingPartyIDHashDoesNotMatch(keyConfiguration: TestKeyConfiguration) throws {
+        #expect(throws: WebAuthnError.relyingPartyIDHashDoesNotMatch) {
+            try finishAuthentication(
                 authenticatorData: TestAuthDataBuilder()
                     .validAuthenticationMock()
                     .relyingPartyIDHash(fromRelyingPartyID: "wrong-id.org")
                     .build()
-                    .byteArrayRepresentation
-            ),
-            expect: WebAuthnError.relyingPartyIDHashDoesNotMatch
-        )
+                    .byteArrayRepresentation,
+                signature: keyConfiguration.signer.signature,
+                credentialPublicKey: keyConfiguration.credentialPublicKey
+            )
+        }
     }
 
-    func testFinishAuthenticationFailsIfUserPresentFlagIsNotSet() throws {
-        try assertThrowsError(
-            finishAuthentication(
+    @Test(arguments: [
+        TestKeyConfiguration.ecdsa,
+        TestKeyConfiguration.rsa,
+    ])
+    func finishAuthenticationFailsIfUserPresentFlagIsNotSet(keyConfiguration: TestKeyConfiguration) throws {
+        #expect(throws: WebAuthnError.userPresentFlagNotSet) {
+            try finishAuthentication(
                 authenticatorData: TestAuthDataBuilder()
                     .validAuthenticationMock()
                     .flags(0b10000000)
                     .build()
-                    .byteArrayRepresentation
-            ),
-            expect: WebAuthnError.userPresentFlagNotSet
-        )
+                    .byteArrayRepresentation,
+                signature: keyConfiguration.signer.signature,
+                credentialPublicKey: keyConfiguration.credentialPublicKey
+            )
+        }
     }
 
-    func testFinishAuthenticationFailsIfUserIsNotVerified() throws {
-        try assertThrowsError(
-            finishAuthentication(
+    @Test(arguments: [
+        TestKeyConfiguration.ecdsa,
+        TestKeyConfiguration.rsa,
+    ])
+    func finishAuthenticationFailsIfUserIsNotVerified(keyConfiguration: TestKeyConfiguration) throws {
+        #expect(throws: WebAuthnError.userVerifiedFlagNotSet) {
+            try finishAuthentication(
                 authenticatorData: TestAuthDataBuilder()
                     .validAuthenticationMock()
                     .flags(0b10000001)
                     .build()
                     .byteArrayRepresentation,
+                signature: keyConfiguration.signer.signature,
+                credentialPublicKey: keyConfiguration.credentialPublicKey,
                 requireUserVerification: true
-            ),
-            expect: WebAuthnError.userVerifiedFlagNotSet
-        )
+            )
+        }
     }
 
-    func testFinishAuthenticationFailsIfCredentialCounterIsNotUpToDate() throws {
-        try assertThrowsError(
-            finishAuthentication(
+    @Test(arguments: [
+        TestKeyConfiguration.ecdsa,
+        TestKeyConfiguration.rsa,
+    ])
+    func finishAuthenticationFailsIfCredentialCounterIsNotUpToDate(keyConfiguration: TestKeyConfiguration) throws {
+        #expect(throws: WebAuthnError.potentialReplayAttack) {
+            try finishAuthentication(
                 authenticatorData: TestAuthDataBuilder()
                     .validAuthenticationMock()
                     .counter([0, 0, 0, 1]) // signCount = 1
                     .build()
                     .byteArrayRepresentation,
+                signature: keyConfiguration.signer.signature,
+                credentialPublicKey: keyConfiguration.credentialPublicKey,
                 credentialCurrentSignCount: 2
-            ),
-            expect: WebAuthnError.potentialReplayAttack
-        )
+            )
+        }
     }
 
-    func testFinishAuthenticationSucceeds() throws {
+    @Test(arguments: [
+        TestKeyConfiguration.ecdsa,
+        TestKeyConfiguration.rsa,
+    ])
+    func finishAuthenticationSucceeds(keyConfiguration: TestKeyConfiguration) throws {
         let credentialID = TestConstants.mockCredentialID
         let oldSignCount: UInt32 = 0
 
@@ -143,18 +190,19 @@ final class WebAuthnManagerAuthenticationTests: XCTestCase {
         let clientData = TestClientDataJSON(type: "webauthn.get").jsonBytes
         let clientDataHash = SHA256.hash(data: clientData)
         let signatureBase = Data(authenticatorData) + clientDataHash
-        let signature = try TestECCKeyPair.signature(data: signatureBase).derRepresentation
+        let signature = try keyConfiguration.signer.sign(data: signatureBase)
 
         let verifiedAuthentication = try finishAuthentication(
             credentialID: credentialID,
             clientDataJSON: clientData,
             authenticatorData: authenticatorData,
             signature: [UInt8](signature),
+            credentialPublicKey: keyConfiguration.credentialPublicKey,
             credentialCurrentSignCount: oldSignCount
         )
 
-        XCTAssertEqual(verifiedAuthentication.credentialID, credentialID.base64URLEncodedString())
-        XCTAssertEqual(verifiedAuthentication.newSignCount, oldSignCount + 1)
+        #expect(verifiedAuthentication.credentialID == credentialID.base64URLEncodedString())
+        #expect(verifiedAuthentication.newSignCount == oldSignCount + 1)
     }
 
     /// Using the default parameters `finishAuthentication` should succeed.
@@ -162,13 +210,13 @@ final class WebAuthnManagerAuthenticationTests: XCTestCase {
         credentialID: [UInt8] = TestConstants.mockCredentialID,
         clientDataJSON: [UInt8] = TestClientDataJSON(type: "webauthn.get").jsonBytes,
         authenticatorData: [UInt8] = TestAuthDataBuilder().validAuthenticationMock().build().byteArrayRepresentation,
-        signature: [UInt8] = TestECCKeyPair.signature,
+        signature: [UInt8],
         userHandle: [UInt8]? = "36323638424436452d303831452d344331312d413743332d334444304146333345433134".hexadecimal!,
         attestationObject: [UInt8]? = nil,
         authenticatorAttachment: AuthenticatorAttachment? = .platform,
         type: CredentialType = .publicKey,
         expectedChallenge: [UInt8] = TestConstants.mockChallenge,
-        credentialPublicKey: [UInt8] = TestCredentialPublicKeyBuilder().validMock().buildAsByteArray(),
+        credentialPublicKey: [UInt8],
         credentialCurrentSignCount: UInt32 = 0,
         requireUserVerification: Bool = false
     ) throws -> VerifiedAuthentication {

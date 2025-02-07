@@ -1,12 +1,11 @@
 //===----------------------------------------------------------------------===//
 //
-// This source file is part of the WebAuthn Swift open source project
+// This source file is part of the Swift WebAuthn open source project
 //
-// Copyright (c) 2024 the WebAuthn Swift project authors
+// Copyright (c) 2024 the Swift WebAuthn project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE.txt for license information
-// See CONTRIBUTORS.txt for the list of WebAuthn Swift project authors
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -65,12 +64,12 @@ public struct AuthenticatorAttestationGloballyUniqueID: Hashable, Sendable {
 public typealias AAGUID = AuthenticatorAttestationGloballyUniqueID
 
 extension AuthenticatorAttestationGloballyUniqueID: Codable {
-    public init(from decoder: Decoder) throws {
+    public init(from decoder: any Decoder) throws {
         let container = try decoder.singleValueContainer()
         id = try container.decode(UUID.self)
     }
     
-    public func encode(to encoder: Encoder) throws {
+    public func encode(to encoder: any Encoder) throws {
         var container = encoder.singleValueContainer()
         try container.encode(id)
     }

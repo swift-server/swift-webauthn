@@ -1,12 +1,11 @@
 //===----------------------------------------------------------------------===//
 //
-// This source file is part of the WebAuthn Swift open source project
+// This source file is part of the Swift WebAuthn open source project
 //
-// Copyright (c) 2023 the WebAuthn Swift project authors
+// Copyright (c) 2023 the Swift WebAuthn project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE.txt for license information
-// See CONTRIBUTORS.txt for the list of WebAuthn Swift project authors
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -59,7 +58,7 @@ struct TestAuthDataBuilder {
         build().byteArrayRepresentation.base64URLEncodedString()
     }
 
-    func validMock() -> Self {
+    func validMockECDSA() -> Self {
         self
             .relyingPartyIDHash(fromRelyingPartyID: "example.com")
             .flags(0b11000101)
@@ -67,7 +66,20 @@ struct TestAuthDataBuilder {
             .attestedCredData(
                 credentialIDLength: [0b00000000, 0b00000001],
                 credentialID: [0b00000001],
-                credentialPublicKey: TestCredentialPublicKeyBuilder().validMock().buildAsByteArray()
+                credentialPublicKey: TestCredentialPublicKeyBuilder().validMockECDSA().buildAsByteArray()
+            )
+            .extensions([UInt8](repeating: 0, count: 20))
+    }
+    
+    func validMockRSA() -> Self {
+        self
+            .relyingPartyIDHash(fromRelyingPartyID: "example.com")
+            .flags(0b11000101)
+            .counter([0b00000000, 0b00000000, 0b00000000, 0b00000000])
+            .attestedCredData(
+                credentialIDLength: [0b00000000, 0b00000001],
+                credentialID: [0b00000001],
+                credentialPublicKey: TestCredentialPublicKeyBuilder().validMockRSA().buildAsByteArray()
             )
             .extensions([UInt8](repeating: 0, count: 20))
     }
@@ -87,7 +99,7 @@ struct TestAuthDataBuilder {
     }
 
     func relyingPartyIDHash(fromRelyingPartyID relyingPartyID: String) -> Self {
-        let relyingPartyIDData = relyingPartyID.data(using: .utf8)!
+        let relyingPartyIDData = Data(relyingPartyID.utf8)
         let relyingPartyIDHash = SHA256.hash(data: relyingPartyIDData)
         var temp = self
         temp.wrapped.relyingPartyIDHash = [UInt8](relyingPartyIDHash)

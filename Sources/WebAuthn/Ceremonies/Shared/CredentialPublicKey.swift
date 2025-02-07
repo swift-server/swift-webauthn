@@ -1,12 +1,11 @@
 //===----------------------------------------------------------------------===//
 //
-// This source file is part of the WebAuthn Swift open source project
+// This source file is part of the Swift WebAuthn open source project
 //
-// Copyright (c) 2022 the WebAuthn Swift project authors
+// Copyright (c) 2022 the Swift WebAuthn project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE.txt for license information
-// See CONTRIBUTORS.txt for the list of WebAuthn Swift project authors
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -77,8 +76,7 @@ enum CredentialPublicKey: Sendable {
         case .ellipticKey:
             self = try .ec2(EC2PublicKey(publicKeyObject: publicKeyObject, algorithm: algorithm))
         case .rsaKey:
-            throw WebAuthnError.unsupported
-            // self = try .rsa(RSAPublicKeyData(publicKeyObject: publicKeyObject, algorithm: algorithm))
+            self = try .rsa(RSAPublicKeyData(publicKeyObject: publicKeyObject, algorithm: algorithm))
         case .octetKey:
             throw WebAuthnError.unsupported
             // self = try .okp(OKPPublicKey(publicKeyObject: publicKeyObject, algorithm: algorithm))
@@ -109,7 +107,7 @@ struct EC2PublicKey: PublicKey, Sendable {
         self.yCoordinate = yCoordinate
     }
 
-    init(publicKeyObject: CBOR, algorithm: COSEAlgorithmIdentifier) throws {
+    init(publicKeyObject: CBOR, algorithm: COSEAlgorithmIdentifier) throws(WebAuthnError) {
         self.algorithm = algorithm
 
         // Curve is key -1 - or -0 for SwiftCBOR
@@ -118,18 +116,18 @@ struct EC2PublicKey: PublicKey, Sendable {
         guard let curveRaw = publicKeyObject[COSEKey.crv.cbor],
             case let .unsignedInt(curve) = curveRaw,
             let coseCurve = COSECurve(rawValue: curve) else {
-            throw WebAuthnError.invalidCurve
+            throw .invalidCurve
         }
         self.curve = coseCurve
 
         guard let xCoordRaw = publicKeyObject[COSEKey.x.cbor],
               case let .byteString(xCoordinateBytes) = xCoordRaw else {
-            throw WebAuthnError.invalidXCoordinate
+            throw .invalidXCoordinate
         }
         xCoordinate = xCoordinateBytes
         guard let yCoordRaw = publicKeyObject[COSEKey.y.cbor],
               case let .byteString(yCoordinateBytes) = yCoordRaw else {
-            throw WebAuthnError.invalidYCoordinate
+            throw .invalidYCoordinate
         }
         yCoordinate = yCoordinateBytes
     }
@@ -154,11 +152,12 @@ struct EC2PublicKey: PublicKey, Sendable {
                 .isValidSignature(ecdsaSignature, for: data) else {
                 throw WebAuthnError.invalidSignature
             }
+        default:
+            throw WebAuthnError.unsupportedCredentialPublicKeyAlgorithm
         }
     }
 }
 
-/// Currently not in use
 struct RSAPublicKeyData: PublicKey, Sendable {
     let algorithm: COSEAlgorithmIdentifier
     // swiftlint:disable:next identifier_name
@@ -168,43 +167,38 @@ struct RSAPublicKeyData: PublicKey, Sendable {
 
     var rawRepresentation: [UInt8] { n + e }
 
-    init(publicKeyObject: CBOR, algorithm: COSEAlgorithmIdentifier) throws {
+    init(publicKeyObject: CBOR, algorithm: COSEAlgorithmIdentifier) throws(WebAuthnError) {
         self.algorithm = algorithm
 
         guard let nRaw = publicKeyObject[COSEKey.n.cbor],
               case let .byteString(nBytes) = nRaw else {
-            throw WebAuthnError.invalidModulus
+            throw .invalidModulus
         }
         n = nBytes
 
         guard let eRaw = publicKeyObject[COSEKey.e.cbor],
               case let .byteString(eBytes) = eRaw else {
-            throw WebAuthnError.invalidExponent
+            throw .invalidExponent
         }
         e = eBytes
     }
 
     func verify(signature: some DataProtocol, data: some DataProtocol) throws {
-        throw WebAuthnError.unsupported
-        // let rsaSignature = _RSA.Signing.RSASignature(derRepresentation: signature)
+        let rsaSignature = _RSA.Signing.RSASignature(rawRepresentation: signature)
 
-        // var rsaPadding: _RSA.Signing.Padding
-        // switch algorithm {
-        // case .algRS1, .algRS256, .algRS384, .algRS512:
-        //     rsaPadding = .insecurePKCS1v1_5
-        // case .algPS256, .algPS384, .algPS512:
-        //     rsaPadding = .PSS
-        // default:
-        //     throw WebAuthnError.unsupportedCOSEAlgorithmForRSAPublicKey
-        // }
+        var rsaPadding: _RSA.Signing.Padding
+        switch algorithm {
+        case .algRS1, .algRS256, .algRS384, .algRS512:
+            rsaPadding = .insecurePKCS1v1_5
+        case .algPS256, .algPS384, .algPS512:
+            rsaPadding = .PSS
+        default:
+            throw WebAuthnError.unsupportedCOSEAlgorithmForRSAPublicKey
+        }
 
-        // guard try _RSA.Signing.PublicKey(rawRepresentation: rawRepresentation).isValidSignature(
-        //     rsaSignature,
-        //     for: data,
-        //     padding: rsaPadding
-        // ) else {
-        //     throw WebAuthnError.invalidSignature
-        // }
+        let publicKey = try _RSA.Signing.PublicKey(n: n, e: e)
+        guard publicKey.isValidSignature(rsaSignature, for: data, padding: rsaPadding)
+        else { throw WebAuthnError.invalidSignature }
     }
 }
 
@@ -214,17 +208,17 @@ struct OKPPublicKey: PublicKey, Sendable {
     let curve: UInt64
     let xCoordinate: [UInt8]
 
-    init(publicKeyObject: CBOR, algorithm: COSEAlgorithmIdentifier) throws {
+    init(publicKeyObject: CBOR, algorithm: COSEAlgorithmIdentifier) throws(WebAuthnError) {
         self.algorithm = algorithm
         // Curve is key -1, or NegativeInt 0 for SwiftCBOR
         guard let curveRaw = publicKeyObject[.negativeInt(0)], case let .unsignedInt(curve) = curveRaw else {
-            throw WebAuthnError.invalidCurve
+            throw .invalidCurve
         }
         self.curve = curve
         // X Coordinate is key -2, or NegativeInt 1 for SwiftCBOR
         guard let xCoordRaw = publicKeyObject[.negativeInt(1)],
             case let .byteString(xCoordinateBytes) = xCoordRaw else {
-            throw WebAuthnError.invalidXCoordinate
+            throw .invalidXCoordinate
         }
         xCoordinate = xCoordinateBytes
     }

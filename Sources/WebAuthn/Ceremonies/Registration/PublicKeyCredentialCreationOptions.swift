@@ -1,12 +1,11 @@
 //===----------------------------------------------------------------------===//
 //
-// This source file is part of the WebAuthn Swift open source project
+// This source file is part of the Swift WebAuthn open source project
 //
-// Copyright (c) 2022 the WebAuthn Swift project authors
+// Copyright (c) 2022 the Swift WebAuthn project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE.txt for license information
-// See CONTRIBUTORS.txt for the list of WebAuthn Swift project authors
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -63,7 +62,7 @@ public struct PublicKeyCredentialCreationOptions: Encodable, Sendable {
     /// https://www.w3.org/TR/webauthn-3/#dom-publickeycredentialcreationoptions-authenticatorselection
     let authenticatorSelection:  AuthenticatorSelectionCriteria
 
-    public func encode(to encoder: Encoder) throws {
+    public func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
 
         try container.encode(challenge.base64URLEncodedString(), forKey: .challenge)
@@ -114,7 +113,7 @@ public struct PublicKeyCredentialParameters: Equatable, Encodable, Sendable {
 }
 
 extension Array where Element == PublicKeyCredentialParameters {
-    /// A list of `PublicKeyCredentialParameters` WebAuthn Swift currently supports.
+    /// A list of `PublicKeyCredentialParameters` Swift WebAuthn currently supports.
     public static var supported: [Element] {
         COSEAlgorithmIdentifier.allCases.map {
             Element.init(type: .publicKey, alg: $0)
@@ -166,7 +165,7 @@ public struct PublicKeyCredentialUserEntity: Encodable, Sendable {
         self.displayName = displayName
     }
 
-    public func encode(to encoder: Encoder) throws {
+    public func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
 
         try container.encode(id.base64URLEncodedString(), forKey: .id)

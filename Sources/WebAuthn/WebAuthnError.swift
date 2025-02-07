@@ -1,12 +1,11 @@
 //===----------------------------------------------------------------------===//
 //
-// This source file is part of the WebAuthn Swift open source project
+// This source file is part of the Swift WebAuthn open source project
 //
-// Copyright (c) 2022 the WebAuthn Swift project authors
+// Copyright (c) 2022 the Swift WebAuthn project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE.txt for license information
-// See CONTRIBUTORS.txt for the list of WebAuthn Swift project authors
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -30,7 +29,6 @@ public struct WebAuthnError: Error, Hashable, Sendable {
         case invalidUserID
         case unsupportedCredentialPublicKeyAlgorithm
         case credentialIDAlreadyExists
-        case invalidRelyingPartyID
         case userVerifiedFlagNotSet
         case potentialReplayAttack
         case invalidAssertionCredentialType
@@ -53,6 +51,7 @@ public struct WebAuthnError: Error, Hashable, Sendable {
         case leftOverBytesInAuthenticatorData
         case credentialIDTooLong
         case credentialIDTooShort
+        case invalidPublicKeyLength
 
         // MARK: CredentialPublicKey
         case badPublicKeyBytes
@@ -90,7 +89,6 @@ public struct WebAuthnError: Error, Hashable, Sendable {
     public static let invalidUserID = Self(reason: .invalidUserID)
     public static let unsupportedCredentialPublicKeyAlgorithm = Self(reason: .unsupportedCredentialPublicKeyAlgorithm)
     public static let credentialIDAlreadyExists = Self(reason: .credentialIDAlreadyExists)
-    public static let invalidRelyingPartyID = Self(reason: .invalidRelyingPartyID)
     public static let userVerifiedFlagNotSet = Self(reason: .userVerifiedFlagNotSet)
     public static let potentialReplayAttack = Self(reason: .potentialReplayAttack)
     public static let invalidAssertionCredentialType = Self(reason: .invalidAssertionCredentialType)
@@ -113,6 +111,7 @@ public struct WebAuthnError: Error, Hashable, Sendable {
     public static let leftOverBytesInAuthenticatorData = Self(reason: .leftOverBytesInAuthenticatorData)
     public static let credentialIDTooLong = Self(reason: .credentialIDTooLong)
     public static let credentialIDTooShort = Self(reason: .credentialIDTooShort)
+    public static let invalidPublicKeyLength = Self(reason: .invalidPublicKeyLength)
 
     // MARK: CredentialPublicKey
     public static let badPublicKeyBytes = Self(reason: .badPublicKeyBytes)

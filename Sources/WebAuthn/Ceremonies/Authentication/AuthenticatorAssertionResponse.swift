@@ -1,12 +1,11 @@
 //===----------------------------------------------------------------------===//
 //
-// This source file is part of the WebAuthn Swift open source project
+// This source file is part of the Swift WebAuthn open source project
 //
-// Copyright (c) 2022 the WebAuthn Swift project authors
+// Copyright (c) 2022 the Swift WebAuthn project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE.txt for license information
-// See CONTRIBUTORS.txt for the list of WebAuthn Swift project authors
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -50,7 +49,7 @@ public struct AuthenticatorAssertionResponse: Sendable {
 }
 
 extension AuthenticatorAssertionResponse: Decodable {
-    public init(from decoder: Decoder) throws {
+    public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
         clientDataJSON = try container.decodeBytesFromURLEncodedBase64(forKey: .clientDataJSON)
@@ -102,9 +101,7 @@ struct ParsedAuthenticatorAssertionResponse: Sendable {
             relyingPartyOrigin: relyingPartyOrigin
         )
 
-        guard let expectedRelyingPartyIDData = relyingPartyID.data(using: .utf8) else {
-            throw WebAuthnError.invalidRelyingPartyID
-        }
+        let expectedRelyingPartyIDData = Data(relyingPartyID.utf8)
         let expectedRelyingPartyIDHash = SHA256.hash(data: expectedRelyingPartyIDData)
         guard expectedRelyingPartyIDHash == authenticatorData.relyingPartyIDHash else {
             throw WebAuthnError.relyingPartyIDHashDoesNotMatch
